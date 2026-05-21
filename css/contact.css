@@ -47,7 +47,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    color: var(--color-gold);
+    color: #ee4887;
     font-size: 1rem;
     flex-shrink: 0;
 }

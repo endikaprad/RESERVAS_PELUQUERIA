@@ -31,10 +31,7 @@
     align-items: center;
     justify-content: space-between;
     padding: 1rem 3rem;
-    background: rgba(9, 8, 15, 0.55);
-    backdrop-filter: blur(24px) saturate(180%);
     -webkit-backdrop-filter: blur(24px) saturate(180%);
-    border-bottom: 1px solid rgba(245, 240, 232, 0.07);
     transition: background 0.3s ease, box-shadow 0.3s ease, padding 0.3s ease, border-color 0.3s ease;
 }
 
@@ -44,6 +41,7 @@
     box-shadow: 0 4px 32px rgba(0, 0, 0, 0.5);
     border-bottom: 1px solid var(--red);
     transform: translateY(-6px);
+    backdrop-filter: blur(24px) saturate(180%);
 }
 
 .nav-logo {
@@ -483,7 +481,7 @@ section {
 /* ===== RESPONSIVE ===== */
 @media (max-width: 900px) {
     .navbar { padding: 1rem 1.5rem; }
-    .navbar.scrolled { padding: 0.7rem 1.5rem; }
+    .navbar.scrolled { padding: 0.7rem 1.5rem; transform: translateY(-7px);}
     .nav-brand-name { display: flex; }
     .nav-links { display: none; }
     .nav-links.open {
