@@ -49,11 +49,77 @@
 .nav-logo {
     display: flex;
     align-items: center;
-    gap: 0.875rem;
-    flex-direction: column;
-    align-items: flex-start;
     line-height: 1;
-    gap: 3px;
+}
+
+.nav-logo-img {
+    height: 38px;
+    width: auto;
+    object-fit: contain;
+    display: block;
+    transition: opacity 0.3s ease;
+    filter: brightness(1);
+}
+
+.nav-logo-img:hover {
+    opacity: 0.85;
+}
+
+/* ===== NAVBAR BRAND NAME (next to logo) ===== */
+.nav-brand-name {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    margin-left: 0.75rem;
+}
+
+.nbn-prado {
+    font-family: var(--font-display);
+    font-size: 1.35rem;
+    font-weight: 900;
+    font-style: italic;
+    letter-spacing: -0.02em;
+    line-height: 1;
+    color: var(--color-text);
+    position: relative;
+}
+
+.nbn-prado::after {
+    content: 'PRADO';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, var(--color-text) 0%, rgba(212,43,43,0.9) 55%, var(--color-text) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-size: 200% 200%;
+    animation: nbnShine 4s ease-in-out infinite;
+}
+
+@keyframes nbnShine {
+    0%, 100% { background-position: 0% 50%; }
+    50%       { background-position: 100% 50%; }
+}
+
+.nbn-separator {
+    width: 2px;
+    height: 1.2rem;
+    background: linear-gradient(to bottom, transparent, var(--red), transparent);
+    border-radius: 2px;
+    flex-shrink: 0;
+}
+
+.nbn-sub {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    font-family: var(--font-body);
+    font-size: 0.52rem;
+    font-weight: 600;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--color-muted);
+    line-height: 1.5;
 }
 
 /* Mini animated barber pole in logo */
@@ -418,6 +484,7 @@ section {
 @media (max-width: 900px) {
     .navbar { padding: 1rem 1.5rem; }
     .navbar.scrolled { padding: 0.7rem 1.5rem; }
+    .nav-brand-name { display: flex; }
     .nav-links { display: none; }
     .nav-links.open {
         display: flex; flex-direction: column;

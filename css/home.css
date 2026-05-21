@@ -170,7 +170,7 @@ body::after {
     gap: 3rem;
 }
 
-.hero-split .hero-content { position:relative; z-index:1; max-width:none; min-width:0; }
+.hero-split .hero-content { position:relative; z-index:1; max-width:none; min-width:0; transform: translateY(-52px); }
 
 .hero-visual {
     position: relative;
@@ -179,6 +179,7 @@ body::after {
     align-items: center;
     justify-content: center;
     height: 100%;
+    transform: translateY(-63px);
 }
 
 .hero-visual-inner {
@@ -425,4 +426,74 @@ body::after {
     .hero-visual { display:none; }
     .hero-stat-row { gap:1.5rem; flex-wrap:wrap; }
     .cta-banner { padding:2.5rem 1.5rem; }
+}
+/* ===== HERO BRAND NAME ===== */
+.hero-brand-name {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 2rem;
+    opacity: 0;
+    animation: fadeUp 0.9s 0.05s forwards;
+}
+
+.hbn-prado {
+    font-family: var(--font-display);
+    font-size: clamp(3.5rem, 8vw, 6.5rem);
+    font-weight: 900;
+    font-style: italic;
+    letter-spacing: -0.03em;
+    line-height: 1;
+    color: var(--color-text);
+    text-shadow:
+        0 0 60px rgba(212, 43, 43, 0.35),
+        0 0 120px rgba(212, 43, 43, 0.15);
+    position: relative;
+}
+
+.hbn-prado::after {
+    content: 'PRADO';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, var(--color-text) 0%, rgba(212,43,43,0.9) 55%, var(--color-text) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-size: 200% 200%;
+    animation: shineText 4s ease-in-out infinite;
+}
+
+@keyframes shineText {
+    0%, 100% { background-position: 0% 50%; }
+    50%       { background-position: 100% 50%; }
+}
+
+.hbn-separator {
+    width: 3px;
+    height: clamp(2.5rem, 5vw, 4.5rem);
+    background: linear-gradient(to bottom, transparent, var(--red), transparent);
+    border-radius: 2px;
+    flex-shrink: 0;
+}
+
+.hbn-sub {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    font-family: var(--font-body);
+    font-size: clamp(0.6rem, 1.2vw, 0.8rem);
+    font-weight: 600;
+    letter-spacing: 0.35em;
+    text-transform: uppercase;
+    color: var(--color-muted);
+    line-height: 1.6;
+}
+
+@media (max-width: 900px) {
+    .hero-brand-name {
+        gap: 0.75rem;
+    }
+    .hbn-prado {
+        font-size: clamp(3rem, 14vw, 5rem);
+    }
 }
