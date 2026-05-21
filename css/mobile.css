@@ -1,0 +1,798 @@
+/* ============================================================
+   PRADO BARBER CO. — MOBILE REDESIGN
+   Añadir como último CSS en todas las páginas
+   ============================================================ */
+
+@media (max-width: 768px) {
+
+    /* ===== RESET DE OVERFLOW ===== */
+    html,
+    body {
+        overflow-x: clip;
+        width: 100%;
+    }
+
+    /* ===== NAVBAR ===== */
+    .navbar {
+        padding: 1rem 1.25rem;
+        height: 60px;
+        z-index: 100;
+    }
+
+    .nav-logo .brand {
+        font-size: 1.2rem;
+    }
+
+    .nav-logo .tagline {
+        font-size: 0.58rem;
+        letter-spacing: 0.18em;
+    }
+
+    /* Hamburger */
+    .hamburger {
+        display: flex !important;
+        position: relative;
+        z-index: 1000;
+    }
+
+    .hamburger span {
+        transition: transform 0.3s ease, opacity 0.3s ease !important;
+    }
+
+    /* Menú oculto por defecto */
+    .nav-links:not(.open) {
+        display: none;
+    }
+
+    /* ── OVERLAY ABIERTO ── */
+    /* El JS sobreescribe display/position/etc inline.
+     Aquí definimos el aspecto visual de los links */
+
+    /* Overlay — pantalla completa con animación */
+    .nav-links.open {
+        display: flex !important;
+        flex-direction: column;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        width: 100vw;
+        height: 100dvh;
+        z-index: 500;
+        background: #0a0900;
+        justify-content: center;
+        align-items: center;
+        gap: 0;
+        padding: 0;
+        margin: 0;
+        border: none;
+        border-radius: 0;
+        overflow-y: auto;
+        animation: menuSlideIn 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    @keyframes menuSlideIn {
+        from {
+            clip-path: inset(0 0 100% 0);
+            opacity: 0.4;
+        }
+
+        to {
+            clip-path: inset(0 0 0% 0);
+            opacity: 1;
+        }
+    }
+
+    /* Decoración: línea dorada sutil en la parte superior */
+    .nav-links.open::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 1px;
+        background: linear-gradient(90deg, transparent, var(--color-gold-dim), transparent);
+    }
+
+    /* Decoración: texto de marca translúcido de fondo */
+    .nav-links.open::after {
+        content: 'PRADO';
+        position: absolute;
+        bottom: 2rem;
+        left: 50%;
+        transform: translateX(-50%);
+        font-family: var(--font-display);
+        font-size: 5rem;
+        font-weight: 900;
+        color: rgba(201, 168, 76, 0.04);
+        letter-spacing: 0.3em;
+        pointer-events: none;
+        white-space: nowrap;
+        user-select: none;
+    }
+
+    /* Links dentro del overlay */
+    .nav-links.open a {
+        position: relative;
+        display: block !important;
+        width: 100%;
+        text-align: center;
+        font-family: var(--font-display) !important;
+        font-size: 1.6rem !important;
+        font-weight: 700 !important;
+        font-style: italic;
+        letter-spacing: 0.02em !important;
+        text-transform: none !important;
+        color: rgba(240, 236, 227, 0.35) !important;
+        padding: 0.85rem 2rem !important;
+        border: none !important;
+        border-radius: 0 !important;
+        background: transparent !important;
+        transition: color 0.25s ease, transform 0.25s ease !important;
+    }
+
+    .nav-links.open a:hover {
+        color: var(--color-gold) !important;
+        transform: scale(1.04) !important;
+        background: transparent !important;
+    }
+
+    .nav-links.open a.active {
+        color: var(--color-text) !important;
+        font-style: italic;
+    }
+
+    /* Línea decorativa bajo el link activo */
+    .nav-links.open a.active::after {
+        content: '';
+        display: block !important;
+        width: 24px;
+        height: 1px;
+        background: var(--color-gold);
+        margin: 0.2rem auto 0;
+        opacity: 0.8;
+        position: static !important;
+        transform: none !important;
+    }
+
+    /* Botón reservar: diferente, destacado */
+    .nav-links.open a.nav-cta {
+        font-family: var(--font-body) !important;
+        font-size: 0.72rem !important;
+        font-weight: 500 !important;
+        font-style: normal !important;
+        letter-spacing: 0.2em !important;
+        text-transform: uppercase !important;
+        color: var(--color-gold) !important;
+        border: 1px solid var(--color-gold-dim) !important;
+        border-radius: var(--radius-sm) !important;
+        padding: 0.85rem 2.5rem !important;
+        margin-top: 1.5rem !important;
+        width: auto !important;
+        display: inline-block !important;
+        transition: background 0.25s ease, color 0.25s ease, border-color 0.25s ease, transform 0.25s ease !important;
+    }
+
+    .nav-links.open a.nav-cta:hover {
+        background: var(--color-gold) !important;
+        color: #000 !important;
+        border-color: var(--color-gold) !important;
+        transform: translateY(-2px) !important;
+    }
+
+    .nav-links.open a.nav-cta::after {
+        display: none !important;
+    }
+
+    /* ===== HERO — INDEX ===== */
+    .hero,
+    .hero-split {
+        padding: 0 1.25rem;
+        padding-top: 80px;
+        min-height: 100svh;
+        display: flex;
+        align-items: center;
+        grid-template-columns: 1fr;
+    }
+
+    .hero-split {
+        padding-bottom: 3rem;
+        gap: 0;
+    }
+
+    .hero-visual {
+        display: none !important;
+    }
+
+    .hero-content {
+        max-width: 100%;
+        width: 100%;
+    }
+
+    .hero-eyebrow {
+        margin-bottom: 1.25rem;
+        gap: 0.6rem;
+    }
+
+    .hero-eyebrow span {
+        font-size: 0.62rem;
+        letter-spacing: 0.22em;
+    }
+
+    .hero-eyebrow::before {
+        width: 24px;
+    }
+
+    .hero h1 {
+        font-size: clamp(2.6rem, 11vw, 3.5rem);
+        line-height: 1.05;
+        margin-bottom: 1.1rem;
+    }
+
+    .hero-desc {
+        font-size: 0.95rem;
+        line-height: 1.75;
+        margin-bottom: 2rem;
+        max-width: 100%;
+        color: var(--color-muted);
+    }
+
+    .hero-actions {
+        flex-direction: column;
+        gap: 0.75rem;
+        align-items: stretch;
+    }
+
+    .hero-actions .btn {
+        width: 100%;
+        justify-content: center;
+        padding: 1rem 1.5rem;
+        font-size: 0.72rem;
+    }
+
+    .hero-stat-row {
+        margin-top: 2.5rem;
+        padding-top: 1.75rem;
+        gap: 0;
+        justify-content: space-between;
+        flex-wrap: nowrap;
+    }
+
+    .hero-stat {
+        flex: 1;
+        text-align: center;
+    }
+
+    .hero-stat:not(:last-child) {
+        border-right: 1px solid var(--color-border);
+        padding-right: 0.75rem;
+        margin-right: 0.75rem;
+    }
+
+    .hero-stat .num {
+        font-size: 1.5rem;
+    }
+
+    .hero-stat .label {
+        font-size: 0.65rem;
+        line-height: 1.4;
+    }
+
+    /* ===== SECTIONS ===== */
+    section {
+        padding: 3.5rem 1.25rem;
+    }
+
+    .section-title {
+        font-size: clamp(1.7rem, 7vw, 2.2rem);
+        margin-bottom: 1rem;
+    }
+
+    .section-sub {
+        font-size: 0.9rem;
+        max-width: 100%;
+    }
+
+    /* ===== SERVICES GRID ===== */
+    .services-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+        margin-top: 2rem;
+    }
+
+    .service-card {
+        transform: none !important;
+    }
+
+    /* ===== CARDS GRID (Por qué elegirnos) ===== */
+    .cards-grid,
+    div[style*="grid-template-columns: repeat(auto-fit, minmax(240px"] {
+        grid-template-columns: 1fr !important;
+        gap: 1rem;
+    }
+
+    .card {
+        padding: 1.5rem;
+    }
+
+    /* ===== TEAM GRID ===== */
+    .team-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1.25rem;
+        margin-top: 2rem;
+    }
+
+    .team-photo {
+        aspect-ratio: 3/4;
+        margin-bottom: 0.875rem;
+    }
+
+    .team-photo-placeholder {
+        font-size: 2.75rem;
+    }
+
+    .team-name {
+        font-size: 1rem;
+    }
+
+    .team-role {
+        font-size: 0.68rem;
+    }
+
+    /* ===== TESTIMONIALS ===== */
+    .testimonials-track {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+        margin-top: 2rem;
+    }
+
+    .testimonial-card {
+        padding: 1.5rem;
+    }
+
+    .testimonial-text {
+        font-size: 0.95rem;
+    }
+
+    /* ===== CTA BANNER ===== */
+    .cta-banner {
+        padding: 2.25rem 1.5rem;
+        border-radius: var(--radius-lg);
+    }
+
+    .cta-banner h2 {
+        font-size: 1.6rem;
+    }
+
+    .cta-banner p {
+        font-size: 0.875rem;
+    }
+
+    .cta-banner div[style*="display:flex"] {
+        flex-direction: column !important;
+        align-items: center;
+        gap: 0.75rem !important;
+    }
+
+    .cta-banner .btn {
+        width: 100%;
+        justify-content: center;
+    }
+
+    /* ===== FOOTER ===== */
+    footer {
+        padding: 2.5rem 1.25rem 1.5rem;
+    }
+
+    .footer-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 2rem;
+    }
+
+    .footer-brand {
+        grid-column: 1 / -1;
+    }
+
+    .footer-brand .brand {
+        font-size: 1.4rem;
+    }
+
+    .footer-brand p {
+        font-size: 0.8rem;
+        max-width: 100%;
+    }
+
+    .footer-col h4 {
+        font-size: 0.65rem;
+        margin-bottom: 0.875rem;
+    }
+
+    .footer-col a {
+        font-size: 0.82rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .footer-bottom {
+        flex-direction: column;
+        gap: 0.35rem;
+        text-align: center;
+        padding-top: 1.5rem;
+        font-size: 0.7rem;
+    }
+
+    /* ===== GOLD DIVIDER ===== */
+    .gold-divider {
+        margin: 1.1rem 0;
+    }
+
+    /* ===== PAGE HEROES (interior pages) ===== */
+    .page-hero,
+    div[style*="padding:9rem 3rem"],
+    div[style*="padding: 9rem 3rem"] {
+        padding: 7rem 1.25rem 2.5rem !important;
+    }
+
+    div[style*="padding:8rem 3rem"],
+    div[style*="padding: 8rem 3rem"] {
+        padding: 7rem 1.25rem 2rem !important;
+    }
+
+    /* ===== SERVICIOS PAGE ===== */
+    .services-full {
+        padding: 0 1.25rem 3.5rem;
+    }
+
+    .svc-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.875rem;
+        padding: 1.1rem 1.1rem;
+    }
+
+    .svc-row-meta {
+        width: 100%;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .svc-row-btn {
+        margin-left: 0;
+    }
+
+    .svc-row-name {
+        font-size: 0.95rem;
+    }
+
+    .svc-row-desc {
+        font-size: 0.78rem;
+    }
+
+    .svc-row-price {
+        font-size: 1.1rem;
+    }
+
+    /* ===== EQUIPO PAGE ===== */
+    .team-full {
+        padding: 0 1.25rem 3.5rem;
+    }
+
+    .barber-profile {
+        grid-template-columns: 1fr;
+        padding: 1.5rem;
+        gap: 1.5rem;
+        border-radius: var(--radius-lg);
+    }
+
+    .barber-profile-photo {
+        aspect-ratio: 3/2;
+        font-size: 3.5rem;
+    }
+
+    .barber-profile-name {
+        font-size: 1.6rem;
+    }
+
+    .barber-profile-bio {
+        font-size: 0.85rem;
+    }
+
+    .barber-skills {
+        gap: 0.4rem;
+    }
+
+    .skill-tag {
+        font-size: 0.68rem;
+        padding: 0.25rem 0.6rem;
+    }
+
+    /* ===== CONTACTO PAGE ===== */
+    .contact-layout {
+        grid-template-columns: 1fr !important;
+        gap: 1.75rem;
+        padding: 0 1.25rem 3.5rem !important;
+    }
+
+    .contact-form {
+        padding: 1.5rem;
+    }
+
+    .contact-form h3 {
+        font-size: 1.15rem;
+        margin-bottom: 1.25rem;
+    }
+
+    .form-row {
+        grid-template-columns: 1fr !important;
+    }
+
+    .contact-item-value {
+        font-size: 0.85rem;
+    }
+
+    .hours-row {
+        font-size: 0.82rem;
+    }
+
+    /* ===== BOOKING PAGE ===== */
+    .booking-hero {
+        padding: 6.5rem 1.25rem 1.75rem;
+    }
+
+    .booking-wrapper {
+        padding: 0 1.25rem 4rem;
+    }
+
+    .steps-bar {
+        margin-bottom: 2rem;
+        gap: 0;
+    }
+
+    .step-line {
+        width: 28px !important;
+    }
+
+    .step-label {
+        display: none;
+    }
+
+    .step-circle {
+        width: 32px;
+        height: 32px;
+        font-size: 0.7rem;
+    }
+
+    .service-select-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 0.75rem;
+    }
+
+    .service-option {
+        padding: 1.1rem;
+    }
+
+    .service-option .svc-name {
+        font-size: 0.88rem;
+    }
+
+    .service-option .svc-price {
+        font-size: 1rem;
+    }
+
+    .barber-select-grid {
+        grid-template-columns: 1fr;
+        gap: 0.75rem;
+    }
+
+    .barber-option {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        gap: 1rem;
+        text-align: left;
+        padding: 1.1rem;
+    }
+
+    .barber-avatar-book {
+        width: 52px;
+        height: 52px;
+        flex-shrink: 0;
+        margin: 0;
+    }
+
+    .calendar-wrapper {
+        padding: 1.1rem;
+    }
+
+    .cal-cell {
+        font-size: 0.78rem;
+    }
+
+    .time-slots {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 0.45rem;
+    }
+
+    .time-slot {
+        font-size: 0.78rem;
+        padding: 0.55rem 0.35rem;
+    }
+
+    .booking-summary {
+        padding: 1.25rem;
+    }
+
+    .summary-row {
+        font-size: 0.84rem;
+        padding: 0.6rem 0;
+    }
+
+    /* Form en columna única en booking */
+    div[style*="grid-template-columns:1fr 1fr"] {
+        grid-template-columns: 1fr !important;
+    }
+
+    .booking-nav {
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        margin-top: 1.5rem;
+        padding-top: 1.25rem;
+    }
+
+    .booking-nav .btn-primary {
+        flex: 1;
+        justify-content: center;
+    }
+
+    /* ===== GALERÍA PAGE ===== */
+    .gallery-wrapper {
+        padding: 0 1.25rem 3.5rem;
+    }
+
+    .gallery-filters {
+        gap: 0.4rem;
+        margin-bottom: 2rem;
+    }
+
+    .filter-btn {
+        font-size: 0.68rem;
+        padding: 0.45rem 0.875rem;
+    }
+
+    .masonry-grid {
+        columns: 2 !important;
+        column-gap: 0.75rem;
+    }
+
+    .gallery-item {
+        margin-bottom: 0.75rem;
+    }
+
+    .gh-tall {
+        height: 200px !important;
+    }
+
+    .gh-medium {
+        height: 160px !important;
+    }
+
+    .gh-short {
+        height: 120px !important;
+    }
+
+    .gh-xtall {
+        height: 250px !important;
+    }
+
+    .gp-icon {
+        font-size: 2.5rem;
+    }
+
+    /* ===== LIGHTBOX MÓVIL ===== */
+    .lightbox-inner {
+        flex-direction: column !important;
+        max-height: 90svh;
+        width: 92vw !important;
+        overflow-y: auto;
+        border-radius: var(--radius-lg) !important;
+    }
+
+    .lightbox-photo {
+        height: 260px !important;
+        border-radius: var(--radius-lg) var(--radius-lg) 0 0 !important;
+    }
+
+    .lightbox-info {
+        padding: 1.25rem !important;
+    }
+
+    .lightbox-close {
+        top: 0.75rem !important;
+        right: 0.75rem !important;
+        width: 32px !important;
+        height: 32px !important;
+        font-size: 0.9rem !important;
+    }
+
+    .lightbox-nav {
+        width: 36px !important;
+        height: 36px !important;
+        font-size: 1.2rem !important;
+    }
+
+    /* ===== CONFIRMATION BOX ===== */
+    .confirmation-box {
+        padding: 2rem 1rem;
+    }
+
+    .confirmation-box h2 {
+        font-size: 1.5rem;
+    }
+
+    .confirmation-box div[style*="display:flex"] {
+        flex-direction: column !important;
+        align-items: stretch !important;
+    }
+
+    .confirmation-box .btn {
+        width: 100%;
+        justify-content: center;
+    }
+
+    /* ===== SECCIÓN POR QUÉ EN INDEX ===== */
+    section>div[style*="display:grid"],
+    section>div>div[style*="display:grid"] {
+        display: grid !important;
+        grid-template-columns: 1fr !important;
+    }
+
+    /* ===== GLOBAL BTN TOUCH TARGETS ===== */
+    .btn {
+        min-height: 46px;
+    }
+
+    /* ===== SECTION LABEL ===== */
+    .section-label {
+        font-size: 0.62rem;
+        letter-spacing: 0.2em;
+    }
+
+    /* ===== TESTIMONIALES SECTION BG ===== */
+    section[style*="padding:5rem 3rem"] {
+        padding: 3.5rem 1.25rem !important;
+    }
+
+    /* ===== BADGE ===== */
+    .badge {
+        font-size: 0.6rem;
+        padding: 0.18rem 0.55rem;
+    }
+
+}
+
+/* ===== EXTRA SMALL (menos de 380px) ===== */
+@media (max-width: 380px) {
+    .hero h1 {
+        font-size: 2.4rem;
+    }
+
+    .service-select-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .team-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .footer-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .masonry-grid {
+        columns: 1 !important;
+    }
+
+    .time-slots {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}

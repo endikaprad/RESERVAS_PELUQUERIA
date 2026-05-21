@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="es">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Galería · Prado Barber Co.</title>
+        <link rel="stylesheet" href="css/variables.css" />
+        <link rel="stylesheet" href="css/layout.css" />
+        <link rel="stylesheet" href="css/components.css" />
+        <link rel="stylesheet" href="css/home.css" />
+        <link rel="stylesheet" href="css/mobile.css" />
+        <link rel="stylesheet" href="css/galeria.css" />
+
+        <script src="js/main.js" defer></script>
+        <script src="js/gallery.js" defer></script>
+    </head>
+    <body>
+
+        <nav class="navbar">
+            <a href="index.html" class="nav-logo">
+                <span class="brand">Prado Barber Co.</span>
+                <span class="tagline">Est. 2024 · Bilbao</span>
+            </a>
+            <div class="nav-links">
+                <a href="index.html">Inicio</a>
+                <a href="servicios.html">Servicios</a>
+                <a href="equipo.html">Equipo</a>
+                <a href="galeria.html" class="active">Galería</a>
+                <a href="contacto.html">Contacto</a>
+                <a href="reservas.html" class="nav-cta">Reservar</a>
+            </div>
+            <button class="hamburger" aria-label="Menú">
+                <span></span><span></span><span></span>
+            </button>
+        </nav>
+
+        <!-- PAGE HEADER -->
+        <div
+            style="padding:9rem 3rem 3rem; text-align:center; max-width:600px; margin:0 auto;">
+            <span class="section-label">Nuestro trabajo habla por
+                nosotros</span>
+            <h1 class="section-title">Galería de<br /><em>trabajos</em></h1>
+            <div class="gold-divider" style="margin:1.5rem auto;"></div>
+            <p class="section-sub" style="margin:0 auto;">
+                Cada corte es una obra. Aquí dejamos constancia del oficio.
+            </p>
+        </div>
+
+        <!-- STATS -->
+        <div class="gallery-stats">
+            <div class="gstat reveal">
+                <div class="gstat-num" data-target="320"
+                    data-suffix="+">0+</div>
+                <div class="gstat-label">Trabajos realizados</div>
+            </div>
+            <div class="gstat reveal reveal-delay-1">
+                <div class="gstat-num" data-target="4.9"
+                    data-decimal="true">0.0</div>
+                <div class="gstat-label">Valoración media</div>
+            </div>
+            <div class="gstat reveal reveal-delay-2">
+                <div class="gstat-num" data-target="3" data-suffix=" barberos">0
+                    barberos</div>
+                <div class="gstat-label">Especialistas</div>
+            </div>
+        </div>
+
+        <!-- FILTERS -->
+        <div class="gallery-wrapper">
+            <div class="gallery-filters reveal">
+                <button class="filter-btn active"
+                    data-filter="all">Todos</button>
+                <button class="filter-btn" data-filter="corte">Cortes</button>
+                <button class="filter-btn" data-filter="barba">Barba</button>
+                <button class="filter-btn"
+                    data-filter="degradado">Degradados</button>
+                <button class="filter-btn"
+                    data-filter="premium">Premium</button>
+            </div>
+
+            <!-- MASONRY GRID -->
+            <div class="masonry-grid" id="gallery-grid">
+
+                <!-- Item 1 -->
+                <div class="gallery-item reveal" data-category="degradado"
+                    data-index="0">
+                    <div
+                        class="gallery-photo-placeholder gh-tall gp-1 gp-glow gp-lines">
+                        <div class="gallery-photo-inner">
+                            <div class="gp-icon">EP</div>
+                            <div class="gp-label">High Fade</div>
+                        </div>
+                    </div>
+                    <div class="gallery-overlay">
+                        <span class="overlay-tag">Degradado</span>
+                        <div class="overlay-title">High Fade con textura</div>
+                        <div class="overlay-barber">por Endika Prado</div>
+                    </div>
+                </div>
+
+                <!-- Item 2 -->
+                <div class="gallery-item reveal reveal-delay-1"
+                    data-category="barba" data-index="1">
+                    <div class="gallery-photo-placeholder gh-medium gp-2">
+                        <div class="gallery-photo-inner">
+                            <div class="gp-icon">MV</div>
+                            <div class="gp-label">Barba Esculpida</div>
+                        </div>
+                    </div>
+                    <div class="gallery-overlay">
+                        <span class="overlay-tag">Barba</span>
+                        <div class="overlay-title">Barba esculpida con
+                            navaja</div>
+                        <div class="overlay-barber">por Marcos Vila</div>
+                    </div>
+                </div>
+
+                <!-- Item 3 -->
+                <div class="gallery-item reveal reveal-delay-2"
+                    data-category="corte" data-index="2">
+                    <div
+                        class="gallery-photo-placeholder gh-short gp-3 gp-lines">
+                        <div class="gallery-photo-inner">
+                            <div class="gp-icon">AR</div>
+                            <div class="gp-label">Corte Clásico</div>
+                        </div>
+                    </div>
+                    <div class="gallery-overlay">
+                        <span class="overlay-tag">Corte</span>
+                        <div class="overlay-title">Corte clásico a tijera</div>
+                        <div class="overlay-barber">por Alex Ramos</div>
+                    </div>
+                </div>
+
+                <!-- Item 4 -->
+                <div class="gallery-item reveal reveal-delay-1"
+                    data-category="premium" data-index="3">
+                    <div
+                        class="gallery-photo-placeholder gh-xtall gp-4 gp-glow">
+                        <div class="gallery-photo-inner">
+                            <div class="gp-icon">EP</div>
+                            <div class="gp-label">Sesión Premium</div>
+                        </div>
+                    </div>
+                    <div class="gallery-overlay">
+                        <span class="overlay-tag">Premium</span>
+                        <div class="overlay-title">Sesión completa con
+                            masaje</div>
+                        <div class="overlay-barber">por Endika Prado</div>
+                    </div>
+                </div>
+
+                <!-- Item 5 -->
+                <div class="gallery-item reveal reveal-delay-3"
+                    data-category="degradado" data-index="4">
+                    <div
+                        class="gallery-photo-placeholder gh-medium gp-5 gp-lines">
+                        <div class="gallery-photo-inner">
+                            <div class="gp-icon">AR</div>
+                            <div class="gp-label">Mid Fade</div>
+                        </div>
+                    </div>
+                    <div class="gallery-overlay">
+                        <span class="overlay-tag">Degradado</span>
+                        <div class="overlay-title">Mid fade con diseño
+                            lateral</div>
+                        <div class="overlay-barber">por Alex Ramos</div>
+                    </div>
+                </div>
+
+                <!-- Item 6 -->
+                <div class="gallery-item reveal reveal-delay-2"
+                    data-category="barba" data-index="5">
+                    <div class="gallery-photo-placeholder gh-tall gp-6 gp-glow">
+                        <div class="gallery-photo-inner">
+                            <div class="gp-icon">MV</div>
+                            <div class="gp-label">Afeitado Navaja</div>
+                        </div>
+                    </div>
+                    <div class="gallery-overlay">
+                        <span class="overlay-tag">Barba</span>
+                        <div class="overlay-title">Afeitado clásico con toalla
+                            caliente</div>
+                        <div class="overlay-barber">por Marcos Vila</div>
+                    </div>
+                </div>
+
+                <!-- Item 7 -->
+                <div class="gallery-item reveal reveal-delay-4"
+                    data-category="corte" data-index="6">
+                    <div class="gallery-photo-placeholder gh-short gp-7">
+                        <div class="gallery-photo-inner">
+                            <div class="gp-icon">EP</div>
+                            <div class="gp-label">Texturizado</div>
+                        </div>
+                    </div>
+                    <div class="gallery-overlay">
+                        <span class="overlay-tag">Corte</span>
+                        <div class="overlay-title">Texturizado natural</div>
+                        <div class="overlay-barber">por Endika Prado</div>
+                    </div>
+                </div>
+
+                <!-- Item 8 -->
+                <div class="gallery-item reveal reveal-delay-3"
+                    data-category="degradado" data-index="7">
+                    <div
+                        class="gallery-photo-placeholder gh-medium gp-8 gp-lines gp-glow">
+                        <div class="gallery-photo-inner">
+                            <div class="gp-icon">EP</div>
+                            <div class="gp-label">Low Fade</div>
+                        </div>
+                    </div>
+                    <div class="gallery-overlay">
+                        <span class="overlay-tag">Degradado</span>
+                        <div class="overlay-title">Low fade con acabado
+                            perfecto</div>
+                        <div class="overlay-barber">por Endika Prado</div>
+                    </div>
+                </div>
+
+                <!-- Item 9 -->
+                <div class="gallery-item reveal reveal-delay-5"
+                    data-category="premium" data-index="8">
+                    <div class="gallery-photo-placeholder gh-tall gp-9 gp-glow">
+                        <div class="gallery-photo-inner">
+                            <div class="gp-icon">MV</div>
+                            <div class="gp-label">Corte + Barba</div>
+                        </div>
+                    </div>
+                    <div class="gallery-overlay">
+                        <span class="overlay-tag">Premium</span>
+                        <div class="overlay-title">Pack Corte + Barba
+                            esculpida</div>
+                        <div class="overlay-barber">por Marcos Vila</div>
+                    </div>
+                </div>
+
+                <!-- Item 10 -->
+                <div class="gallery-item reveal reveal-delay-4"
+                    data-category="corte" data-index="9">
+                    <div
+                        class="gallery-photo-placeholder gh-medium gp-10 gp-lines">
+                        <div class="gallery-photo-inner">
+                            <div class="gp-icon">AR</div>
+                            <div class="gp-label">Corte Urbano</div>
+                        </div>
+                    </div>
+                    <div class="gallery-overlay">
+                        <span class="overlay-tag">Corte</span>
+                        <div class="overlay-title">Corte urbano con acabado
+                            mate</div>
+                        <div class="overlay-barber">por Alex Ramos</div>
+                    </div>
+                </div>
+
+                <!-- Item 11 -->
+                <div class="gallery-item reveal reveal-delay-2"
+                    data-category="barba" data-index="10">
+                    <div class="gallery-photo-placeholder gh-short gp-11">
+                        <div class="gallery-photo-inner">
+                            <div class="gp-icon">MV</div>
+                            <div class="gp-label">Perfilado</div>
+                        </div>
+                    </div>
+                    <div class="gallery-overlay">
+                        <span class="overlay-tag">Barba</span>
+                        <div class="overlay-title">Perfilado y arreglo
+                            express</div>
+                        <div class="overlay-barber">por Marcos Vila</div>
+                    </div>
+                </div>
+
+                <!-- Item 12 -->
+                <div class="gallery-item reveal reveal-delay-5"
+                    data-category="degradado" data-index="11">
+                    <div
+                        class="gallery-photo-placeholder gh-xtall gp-12 gp-glow gp-lines">
+                        <div class="gallery-photo-inner">
+                            <div class="gp-icon">AR</div>
+                            <div class="gp-label">Skin Fade</div>
+                        </div>
+                    </div>
+                    <div class="gallery-overlay">
+                        <span class="overlay-tag">Degradado</span>
+                        <div class="overlay-title">Skin fade con diseño</div>
+                        <div class="overlay-barber">por Alex Ramos</div>
+                    </div>
+                </div>
+
+            </div><!-- /masonry -->
+
+            <!-- CTA -->
+            <div class="cta-banner reveal" style="margin-top:4rem;">
+                <span class="section-label">¿Te gusta lo que ves?</span>
+                <h2>Reserva tu cita hoy</h2>
+                <p>Tu próximo look te está esperando en el sillón de Prado.</p>
+                <div
+                    style="display:flex; gap:1rem; justify-content:center; flex-wrap:wrap;">
+                    <a href="equipo.html" class="btn btn-outline">Conocer el
+                        equipo</a>
+                    <a href="reservas.html" class="btn btn-primary">Reservar
+                        ahora</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- LIGHTBOX -->
+        <div class="lightbox" id="lightbox" role="dialog" aria-modal="true"
+            aria-label="Imagen ampliada">
+            <div class="lightbox-inner" id="lightbox-inner">
+                <div class="lightbox-photo" id="lightbox-photo">
+                    <button class="lightbox-close" id="lb-close"
+                        aria-label="Cerrar">✕</button>
+                    <button class="lightbox-nav lightbox-prev" id="lb-prev"
+                        aria-label="Anterior">‹</button>
+                    <button class="lightbox-nav lightbox-next" id="lb-next"
+                        aria-label="Siguiente">›</button>
+                </div>
+                <div class="lightbox-info">
+                    <div class="lightbox-tag" id="lb-tag"></div>
+                    <div class="lightbox-title" id="lb-title"></div>
+                    <div class="lightbox-meta">
+                        <span id="lb-barber"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            <div class="footer-grid">
+                <div class="footer-brand">
+                    <div class="brand">Prado Barber Co.</div>
+                    <p>Barbería de carácter en el corazón de Bilbao.</p>
+                </div>
+                <div class="footer-col">
+                    <h4>Navegación</h4>
+                    <a href="index.html">Inicio</a>
+                    <a href="servicios.html">Servicios</a>
+                    <a href="reservas.html">Reservar</a>
+                </div>
+                <div class="footer-col">
+                    <h4>Horario</h4>
+                    <a href="#">Lun–Vie: 9:00 – 20:00</a>
+                    <a href="#">Sábado: 9:00 – 14:00</a>
+                    <a href="#">Domingo: Cerrado</a>
+                </div>
+                <div class="footer-col">
+                    <h4>Contacto</h4>
+                    <a href="#">Gran Vía, 12 · Bilbao</a>
+                    <a href="tel:+34944000000">+34 944 000 000</a>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <span>© 2025 Prado Barber Co.</span>
+                <span>Hecho con precisión en Bilbao ✦</span>
+            </div>
+        </footer>
+
+    </body>
+</html>

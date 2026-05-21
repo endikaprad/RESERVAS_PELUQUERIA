@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="es">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Contacto · Prado Barber Co.</title>
+        <link rel="stylesheet" href="css/variables.css" />
+        <link rel="stylesheet" href="css/layout.css" />
+        <link rel="stylesheet" href="css/components.css" />
+        <link rel="stylesheet" href="css/home.css" />
+        <link rel="stylesheet" href="css/mobile.css" />
+        <link rel="stylesheet" href="css/contact.css" />
+
+        <script src="js/main.js" defer></script>
+        <script src="js/contact.js" defer></script>
+    </head>
+    <body>
+
+        <nav class="navbar">
+            <a href="index.html" class="nav-logo">
+                <span class="brand">Prado Barber Co.</span>
+                <span class="tagline">Est. 2024 · Bilbao</span>
+            </a>
+            <div class="nav-links">
+                <a href="index.html">Inicio</a>
+                <a href="servicios.html">Servicios</a>
+                <a href="equipo.html">Equipo</a>
+                <a href="galeria.html">Galería</a>
+                <a href="contacto.html" class="active">Contacto</a>
+                <a href="reservas.html" class="nav-cta">Reservar</a>
+            </div>
+            <button class="hamburger" aria-label="Menú">
+                <span></span><span></span><span></span>
+            </button>
+        </nav>
+
+        <div
+            style="padding:9rem 3rem 3rem; text-align:center; max-width:600px; margin:0 auto;">
+            <span class="section-label">Estamos aquí</span>
+            <h1 class="section-title">Contacta con<br /><em>nosotros</em></h1>
+            <div class="gold-divider" style="margin:1.5rem auto;"></div>
+        </div>
+
+        <div class="contact-layout">
+            <!-- INFO -->
+            <div class="contact-info-block reveal">
+                <div class="contact-item">
+                    <div class="contact-item-icon">📍</div>
+                    <div>
+                        <div class="contact-item-label">Dirección</div>
+                        <div class="contact-item-value">Calle Gran Vía,
+                            12<br />48001 Bilbao, Bizkaia</div>
+                    </div>
+                </div>
+                <div class="contact-item">
+                    <div class="contact-item-icon">📞</div>
+                    <div>
+                        <div class="contact-item-label">Teléfono</div>
+                        <div class="contact-item-value">
+                            <a href="tel:+34944000000"
+                                style="color:var(--color-gold);">+34 944 000
+                                000</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="contact-item">
+                    <div class="contact-item-icon">✉</div>
+                    <div>
+                        <div class="contact-item-label">Email</div>
+                        <div class="contact-item-value">
+                            <a href="mailto:hola@pradobarber.es"
+                                style="color:var(--color-gold);">hola@pradobarber.es</a>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <div class="section-label"
+                        style="margin-bottom:1rem;">Horario</div>
+                    <div class="hours-grid">
+                        <div class="hours-row">
+                            <span class="hours-day">Lunes – Viernes</span>
+                            <span class="hours-time">9:00 – 20:00</span>
+                        </div>
+                        <div class="hours-row">
+                            <span class="hours-day">Sábado</span>
+                            <span class="hours-time">9:00 – 14:00</span>
+                        </div>
+                        <div class="hours-row">
+                            <span class="hours-day">Domingo</span>
+                            <span class="hours-closed">Cerrado</span>
+                        </div>
+                    </div>
+                </div>
+
+                <a href="reservas.html" class="btn btn-primary"
+                    style="align-self:flex-start;">
+                    Reservar cita online
+                </a>
+            </div>
+
+            <!-- FORM -->
+            <div class="contact-form reveal reveal-delay-1">
+                <h3>Envíanos un mensaje</h3>
+                <div class="form-row" style="margin-bottom:1rem;">
+                    <div class="form-group">
+                        <label for="c-name">Nombre</label>
+                        <input type="text" id="c-name"
+                            placeholder="Tu nombre" />
+                    </div>
+                    <div class="form-group">
+                        <label for="c-email">Email</label>
+                        <input type="email" id="c-email"
+                            placeholder="tu@email.com" />
+                    </div>
+                </div>
+                <div class="form-group" style="margin-bottom:1rem;">
+                    <label for="c-subject">Asunto</label>
+                    <input type="text" id="c-subject"
+                        placeholder="¿En qué podemos ayudarte?" />
+                </div>
+                <div class="form-group" style="margin-bottom:1.5rem;">
+                    <label for="c-message">Mensaje</label>
+                    <textarea id="c-message" rows="5"
+                        placeholder="Cuéntanos..."></textarea>
+                </div>
+                <button class="btn btn-primary" style="width:100%;"
+                    onclick="sendContact()">
+                    Enviar mensaje ✦
+                </button>
+            </div>
+        </div>
+
+        <footer>
+            <div class="footer-grid">
+                <div class="footer-brand">
+                    <div class="brand">Prado Barber Co.</div>
+                    <p>Barbería de carácter en el corazón de Bilbao.</p>
+                </div>
+                <div class="footer-col">
+                    <h4>Navegación</h4>
+                    <a href="index.html">Inicio</a>
+                    <a href="servicios.html">Servicios</a>
+                    <a href="reservas.html">Reservar</a>
+                </div>
+                <div class="footer-col">
+                    <h4>Horario</h4>
+                    <a href="#">Lun–Vie: 9:00 – 20:00</a>
+                    <a href="#">Sábado: 9:00 – 14:00</a>
+                    <a href="#">Domingo: Cerrado</a>
+                </div>
+                <div class="footer-col">
+                    <h4>Contacto</h4>
+                    <a href="#">Gran Vía, 12 · Bilbao</a>
+                    <a href="tel:+34944000000">+34 944 000 000</a>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <span>© 2025 Prado Barber Co.</span>
+                <span>Hecho con precisión en Bilbao ✦</span>
+            </div>
+        </footer>
+    </body>
+</html>

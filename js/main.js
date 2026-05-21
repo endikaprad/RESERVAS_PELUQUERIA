@@ -1,0 +1,124 @@
+// ===== NAVBAR =====
+const navbar   = document.querySelector('.navbar');
+const hamburger = document.querySelector('.hamburger');
+const navLinks  = document.querySelector('.nav-links');
+
+if (navbar) {
+    window.addEventListener('scroll', () => {
+        navbar.classList.toggle('scrolled', window.scrollY > 60);
+    });
+}
+
+if (hamburger && navLinks) {
+    hamburger.addEventListener('click', () => {
+        const isOpen = navLinks.classList.toggle('open');
+
+        // Hamburger → X
+        hamburger.querySelectorAll('span')[0].style.transform = isOpen ? 'rotate(45deg) translate(4px, 4px)' : '';
+        hamburger.querySelectorAll('span')[1].style.opacity   = isOpen ? '0' : '';
+        hamburger.querySelectorAll('span')[2].style.transform = isOpen ? 'rotate(-45deg) translate(4px, -4px)' : '';
+
+        document.body.style.overflow = isOpen ? 'hidden' : '';
+
+        // Stagger animation en los links al abrir
+        if (isOpen) {
+            navLinks.querySelectorAll('a').forEach((a, i) => {
+                a.style.opacity   = '0';
+                a.style.transform = 'translateY(18px)';
+                a.style.transition = 'none';
+                requestAnimationFrame(() => requestAnimationFrame(() => {
+                    a.style.transition = `opacity 0.4s ease ${i * 0.07}s, transform 0.4s ease ${i * 0.07}s`;
+                    a.style.opacity    = '1';
+                    a.style.transform  = 'translateY(0)';
+                }));
+            });
+        } else {
+            navLinks.querySelectorAll('a').forEach(a => { a.style.cssText = ''; });
+        }
+    });
+
+    navLinks.querySelectorAll('a').forEach(link => {
+        link.addEventListener('click', () => {
+            navLinks.classList.remove('open');
+            navLinks.querySelectorAll('a').forEach(a => { a.style.cssText = ''; });
+            hamburger.querySelectorAll('span').forEach(s => {
+                s.style.transform = '';
+                s.style.opacity   = '';
+            });
+            document.body.style.overflow = '';
+        });
+    });
+}
+
+// ===== ACTIVE NAV LINK =====
+function setActiveNavLink() {
+    const page = location.pathname.split('/').pop() || 'index.html';
+    document.querySelectorAll('.nav-links a').forEach(a => {
+        a.classList.toggle('active', a.getAttribute('href') === page);
+    });
+}
+setActiveNavLink();
+
+// ===== SCROLL REVEAL =====
+const revealObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+        if (entry.isIntersecting) {
+            entry.target.classList.add('revealed');
+            revealObserver.unobserve(entry.target);
+        }
+    });
+}, { threshold: 0.12 });
+document.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
+
+// ===== TOAST =====
+function showToast(message, icon = '✦') {
+    let toast = document.querySelector('.toast');
+    if (!toast) {
+        toast = document.createElement('div');
+        toast.className = 'toast';
+        document.body.appendChild(toast);
+    }
+    toast.innerHTML = `<span class="toast-icon">${icon}</span><span>${message}</span>`;
+    toast.classList.add('show');
+    clearTimeout(toast._timer);
+    toast._timer = setTimeout(() => toast.classList.remove('show'), 3500);
+}
+
+// ===== SMOOTH ANCHOR SCROLL =====
+document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+    anchor.addEventListener('click', e => {
+        const target = document.querySelector(anchor.getAttribute('href'));
+        if (target) {
+            e.preventDefault();
+            target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    });
+});
+
+// ===== COUNTER ANIMATION =====
+function animateCounter(el) {
+    const target = parseFloat(el.dataset.target);
+    const isDecimal = el.dataset.decimal === 'true';
+    const suffix = el.dataset.suffix || '';
+    const duration = 1400;
+    const start = performance.now();
+    function update(now) {
+        const progress = Math.min((now - start) / duration, 1);
+        const eased = 1 - Math.pow(1 - progress, 3);
+        const value = eased * target;
+        el.textContent = (isDecimal ? value.toFixed(1) : Math.floor(value)) + suffix;
+        if (progress < 1) requestAnimationFrame(update);
+    }
+    requestAnimationFrame(update);
+}
+const counterObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+        if (entry.isIntersecting) {
+            animateCounter(entry.target);
+            counterObserver.unobserve(entry.target);
+        }
+    });
+}, { threshold: 0.5 });
+document.querySelectorAll('[data-target]').forEach(el => counterObserver.observe(el));
+
+window.showToast = showToast;

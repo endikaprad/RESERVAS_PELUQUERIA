@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="es">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Prado Barber Co. — Barbería de Lujo</title>
+        <link rel="stylesheet" href="css/variables.css" />
+        <link rel="stylesheet" href="css/layout.css" />
+        <link rel="stylesheet" href="css/components.css" />
+        <link rel="stylesheet" href="css/home.css" />
+        <link rel="stylesheet" href="css/mobile.css" />
+
+        <script src="js/main.js" defer></script>
+    </head>
+    <body>
+
+        <!-- NAVBAR -->
+        <nav class="navbar">
+            <a href="index.html" class="nav-logo">
+                <span class="brand">Prado Barber Co.</span>
+                <span class="tagline">Est. 2024 · Bilbao</span>
+            </a>
+            <div class="nav-links">
+                <a href="index.html" class="active">Inicio</a>
+                <a href="servicios.html">Servicios</a>
+                <a href="equipo.html">Equipo</a>
+                <a href="galeria.html">Galería</a>
+                <a href="contacto.html">Contacto</a>
+                <a href="reservas.html" class="nav-cta">Reservar</a>
+            </div>
+            <button class="hamburger" aria-label="Menú">
+                <span></span><span></span><span></span>
+            </button>
+        </nav>
+
+        <!-- HERO -->
+        <header class="hero hero-split">
+            <div class="hero-bg"></div>
+            <div class="hero-lines"></div>
+
+            <!-- LEFT: contenido -->
+            <div class="hero-content">
+                <div class="hero-eyebrow">
+                    <span>Barbería de referencia en Bilbao</span>
+                </div>
+                <h1>El arte de<br />lucir <em>impecable.</em></h1>
+                <p class="hero-desc">
+                    En Prado Barber Co. cada corte es una firma. Tradición,
+                    precisión y carácter en cada sesión. Porque los detalles son lo que te
+                    distingue.
+                </p>
+                <div class="hero-actions">
+                    <a href="reservas.html" class="btn btn-primary">Reservar cita</a>
+                    <a href="servicios.html" class="btn btn-outline">Ver servicios</a>
+                </div>
+                <div class="hero-stat-row">
+                    <div class="hero-stat">
+                        <div class="num" data-target="1200" data-suffix="+">0</div>
+                        <div class="label">Clientes satisfechos</div>
+                    </div>
+                    <div class="hero-stat">
+                        <div class="num" data-target="8" data-suffix=" años">0</div>
+                        <div class="label">De experiencia</div>
+                    </div>
+                    <div class="hero-stat">
+                        <div class="num" data-target="4.9" data-decimal="true" data-suffix="★">0</div>
+                        <div class="label">Valoración media</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- RIGHT: panel decorativo -->
+            <div class="hero-visual">
+                <div class="hero-visual-inner">
+
+                    <!-- Tarjeta próxima cita -->
+                    <div class="hv-card hv-card-booking">
+                        <div class="hv-card-label">Próxima disponibilidad</div>
+                        <div class="hv-card-title">Hoy · 17:00</div>
+                        <div class="hv-card-sub">Endika Prado · Corte Clásico</div>
+                        <a href="reservas.html" class="hv-card-btn">Reservar →</a>
+                    </div>
+
+                    <!-- Tarjeta servicios destacados -->
+                    <div class="hv-card hv-card-services">
+                        <div class="hv-service-row">
+                            <span class="hv-service-dot"></span>
+                            <span class="hv-service-name">Corte Clásico</span>
+                            <span class="hv-service-price">18 €</span>
+                        </div>
+                        <div class="hv-service-row">
+                            <span class="hv-service-dot"></span>
+                            <span class="hv-service-name">Degradado Fade</span>
+                            <span class="hv-service-price">22 €</span>
+                        </div>
+                        <div class="hv-service-row">
+                            <span class="hv-service-dot"></span>
+                            <span class="hv-service-name">Corte + Barba</span>
+                            <span class="hv-service-price">26 €</span>
+                        </div>
+                        <div class="hv-service-row hv-service-row-premium">
+                            <span class="hv-service-dot hv-dot-gold"></span>
+                            <span class="hv-service-name">Sesión Premium</span>
+                            <span class="hv-service-price hv-price-gold">45 €</span>
+                        </div>
+                    </div>
+
+                    <!-- Badge valoración -->
+                    <div class="hv-badge">
+                        <span class="hv-badge-stars">★★★★★</span>
+                        <span class="hv-badge-text">4.9 · +320 reseñas</span>
+                    </div>
+
+                    <!-- Decoración vertical -->
+                    <div class="hv-deco-line"></div>
+                    <div class="hv-deco-circle"></div>
+                </div>
+            </div>
+        </header>
+
+        <!-- SERVICIOS DESTACADOS -->
+        <section id="servicios">
+            <div class="reveal">
+                <span class="section-label">Lo que ofrecemos</span>
+                <h2 class="section-title">Servicios <em>de autor</em></h2>
+                <div class="gold-divider"></div>
+                <p class="section-sub">Técnicas clásicas y contemporáneas al
+                    servicio de tu estilo personal.</p>
+            </div>
+            <div class="services-grid">
+                <div class="service-card reveal reveal-delay-1">
+                    <div class="service-card-body">
+                        <div class="service-card-header">
+                            <span class="service-name">Corte Clásico</span>
+                            <span class="service-price">18 €</span>
+                        </div>
+                        <div class="service-duration">30 minutos</div>
+                    </div>
+                </div>
+                <div class="service-card reveal reveal-delay-2">
+                    <div class="service-card-body">
+                        <div class="service-card-header">
+                            <span class="service-name">Arreglo de Barba</span>
+                            <span class="service-price">12 €</span>
+                        </div>
+                        <div class="service-duration">20 minutos</div>
+                    </div>
+                </div>
+                <div class="service-card reveal reveal-delay-3">
+                    <div class="service-card-body">
+                        <div class="service-card-header">
+                            <span class="service-name">Corte + Barba</span>
+                            <span class="service-price">26 €</span>
+                        </div>
+                        <div class="service-duration">50 minutos</div>
+                    </div>
+                </div>
+                <div class="service-card reveal reveal-delay-4">
+                    <div class="service-card-body">
+                        <div class="service-card-header">
+                            <span class="service-name">Sesión Premium</span>
+                            <span class="service-price">45 €</span>
+                        </div>
+                        <div class="service-duration">75 minutos · Todo
+                            incluido</div>
+                    </div>
+                </div>
+            </div>
+            <div style="text-align:center; margin-top:2.5rem;">
+                <a href="servicios.html" class="btn btn-outline">Ver todos los
+                    servicios</a>
+            </div>
+        </section>
+
+        <!-- POR QUÉ NOSOTROS -->
+        <section
+            style="background:var(--color-surface); border-top:1px solid var(--color-border); border-bottom:1px solid var(--color-border); max-width:100%; padding:5rem 3rem;">
+            <div style="max-width:1200px; margin:0 auto;">
+                <div class="reveal"
+                    style="text-align:center; margin-bottom:3rem;">
+                    <span class="section-label">¿Por qué Prado?</span>
+                    <h2 class="section-title">Diferencia que se nota</h2>
+                </div>
+                <div
+                    style="display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:1.5rem;">
+                    <div class="card reveal reveal-delay-1">
+                        <div class="card-icon">✦</div>
+                        <h3>Maestría artesanal</h3>
+                        <p>Formación continua en las técnicas más exclusivas de
+                            la barbería moderna y clásica.</p>
+                    </div>
+                    <div class="card reveal reveal-delay-2">
+                        <div class="card-icon">◈</div>
+                        <h3>Productos premium</h3>
+                        <p>Solo trabajamos con marcas de primera: Uppercut,
+                            American Crew y Baxter of California.</p>
+                    </div>
+                    <div class="card reveal reveal-delay-3">
+                        <div class="card-icon">⊕</div>
+                        <h3>Reserva en 60 segundos</h3>
+                        <p>Sistema de reservas online, confirmación instantánea
+                            y recordatorio automático.</p>
+                    </div>
+                    <div class="card reveal reveal-delay-4">
+                        <div class="card-icon">◇</div>
+                        <h3>Ambiente exclusivo</h3>
+                        <p>Espacio diseñado para que cada visita sea una
+                            experiencia, no solo un servicio.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- EQUIPO -->
+        <section id="equipo">
+            <div class="reveal" style="text-align:center; margin-bottom:3rem;">
+                <span class="section-label">Las manos detrás del arte</span>
+                <h2 class="section-title">Nuestro equipo</h2>
+                <div class="gold-divider" style="margin:1.5rem auto;"></div>
+            </div>
+            <div class="team-grid">
+                <div class="team-card reveal reveal-delay-1">
+                    <div class="team-photo"><div
+                            class="team-photo-placeholder">EP</div></div>
+                    <div class="team-name">Endika Prado</div>
+                    <div class="team-role">Fundador · Master Barber</div>
+                </div>
+                <div class="team-card reveal reveal-delay-2">
+                    <div class="team-photo"><div
+                            class="team-photo-placeholder">MV</div></div>
+                    <div class="team-name">Marcos Vila</div>
+                    <div class="team-role">Barba & Navaja</div>
+                </div>
+                <div class="team-card reveal reveal-delay-3">
+                    <div class="team-photo"><div
+                            class="team-photo-placeholder">AR</div></div>
+                    <div class="team-name">Alex Ramos</div>
+                    <div class="team-role">Corte Clásico & Fade</div>
+                </div>
+            </div>
+            <div style="text-align:center; margin-top:2rem;">
+                <a href="equipo.html" class="btn btn-ghost">Conoce al equipo
+                    →</a>
+            </div>
+        </section>
+
+        <!-- TESTIMONIALS -->
+        <section
+            style="background:var(--color-surface); border-top:1px solid var(--color-border); max-width:100%; padding:5rem 3rem;">
+            <div style="max-width:1200px; margin:0 auto;">
+                <div class="reveal" style="margin-bottom:3rem;">
+                    <span class="section-label">Lo que dicen nuestros
+                        clientes</span>
+                    <h2 class="section-title">Palabras que valen</h2>
+                </div>
+                <div class="testimonials-track">
+                    <div class="testimonial-card reveal reveal-delay-1">
+                        <div class="testimonial-stars">★★★★★</div>
+                        <p
+                            class="testimonial-text">"El mejor corte de mi vida. Endika sabe exactamente lo que necesitas antes de que tú mismo lo sepas."</p>
+                        <div class="testimonial-author">
+                            <div class="avatar-initials"
+                                style="width:40px;height:40px;font-size:.9rem;">JM</div>
+                            <div class="testimonial-info">
+                                <div class="name">Javier Morales</div>
+                                <div class="date">Mayo 2025</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="testimonial-card reveal reveal-delay-2">
+                        <div class="testimonial-stars">★★★★★</div>
+                        <p
+                            class="testimonial-text">"Ambiente increíble, producto de calidad y un resultado que te hace salir sintiéndote otra persona."</p>
+                        <div class="testimonial-author">
+                            <div class="avatar-initials"
+                                style="width:40px;height:40px;font-size:.9rem;">PL</div>
+                            <div class="testimonial-info">
+                                <div class="name">Pablo López</div>
+                                <div class="date">Abril 2025</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="testimonial-card reveal reveal-delay-3">
+                        <div class="testimonial-stars">★★★★★</div>
+                        <p
+                            class="testimonial-text">"Reservar online fue rapidísimo. La atención es 10/10, sin duda el mejor sitio de Bilbao."</p>
+                        <div class="testimonial-author">
+                            <div class="avatar-initials"
+                                style="width:40px;height:40px;font-size:.9rem;">DG</div>
+                            <div class="testimonial-info">
+                                <div class="name">Diego García</div>
+                                <div class="date">Marzo 2025</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- CTA -->
+        <section>
+            <div class="cta-banner reveal">
+                <span class="section-label">Reserva tu cita</span>
+                <h2>¿Listo para lucir al máximo?</h2>
+                <p>Elige tu servicio, tu barbero y tu horario en menos de un
+                    minuto.</p>
+                <a href="reservas.html" class="btn btn-primary"
+                    style="font-size:.85rem; padding:1rem 2.5rem;">
+                    Reservar ahora
+                </a>
+            </div>
+        </section>
+
+        <!-- FOOTER -->
+        <footer>
+            <div class="footer-grid">
+                <div class="footer-brand">
+                    <div class="brand">Prado Barber Co.</div>
+                    <p>Barbería de carácter en el corazón de Bilbao. Tradición,
+                        estilo y precisión en cada corte.</p>
+                </div>
+                <div class="footer-col">
+                    <h4>Navegación</h4>
+                    <a href="index.html">Inicio</a>
+                    <a href="servicios.html">Servicios</a>
+                    <a href="equipo.html">Equipo</a>
+                    <a href="galeria.html">Galería</a>
+                </div>
+                <div class="footer-col">
+                    <h4>Reservas</h4>
+                    <a href="reservas.html">Reservar cita</a>
+                    <a href="contacto.html">Contacto</a>
+                    <a href="#">Política de cancelación</a>
+                </div>
+                <div class="footer-col">
+                    <h4>Contacto</h4>
+                    <a href="#">Calle Gran Vía, 12 · Bilbao</a>
+                    <a href="tel:+34944000000">+34 944 000 000</a>
+                    <a href="mailto:hola@pradobarber.es">hola@pradobarber.es</a>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <span>© 2025 Prado Barber Co. Todos los derechos
+                    reservados.</span>
+                <span>Hecho con precisión en Bilbao ✦</span>
+            </div>
+        </footer>
+
+    </body>
+</html>

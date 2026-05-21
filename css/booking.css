@@ -1,0 +1,450 @@
+/* ===== BOOKING PAGE ===== */
+.booking-hero {
+    padding: 8rem 3rem 3rem;
+    text-align: center;
+    max-width: 700px;
+    margin: 0 auto;
+}
+
+/* ===== BOOKING WIZARD ===== */
+.booking-wrapper {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 0 3rem 6rem;
+}
+
+/* Steps progress */
+.steps-bar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    margin-bottom: 3rem;
+}
+
+.step-item {
+    display: flex;
+    align-items: center;
+    gap: 0;
+}
+
+.step-circle {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: 1px solid var(--color-border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--color-muted);
+    background: var(--color-surface);
+    transition: var(--transition);
+    position: relative;
+    z-index: 1;
+}
+
+.step-circle.active {
+    border-color: var(--color-gold);
+    color: var(--color-gold);
+    background: rgba(201, 168, 76, 0.08);
+}
+
+.step-circle.done {
+    border-color: var(--color-gold);
+    background: var(--color-gold);
+    color: #000;
+}
+
+.step-label {
+    font-size: 0.7rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--color-muted);
+    margin: 0.4rem 0 0;
+    white-space: nowrap;
+}
+
+.step-line {
+    width: 80px;
+    height: 1px;
+    background: var(--color-border);
+    position: relative;
+    margin: 0 4px;
+    margin-bottom: 18px;
+}
+
+.step-line.done {
+    background: var(--color-gold-dim);
+}
+
+.step-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+/* ===== STEP PANELS ===== */
+.step-panel {
+    display: none;
+    animation: fadeIn 0.4s ease;
+}
+
+.step-panel.active {
+    display: block;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(12px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ===== SERVICE SELECTOR ===== */
+.service-select-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2.5rem;
+}
+
+.service-option {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: 1.5rem;
+    cursor: pointer;
+    transition: var(--transition);
+    text-align: left;
+}
+
+.service-option:hover {
+    border-color: var(--color-gold-dim);
+}
+
+.service-option.selected {
+    border-color: var(--color-gold);
+    background: rgba(201, 168, 76, 0.06);
+}
+
+.service-option .svc-name {
+    font-family: var(--font-display);
+    font-size: 1rem;
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+}
+
+.service-option .svc-meta {
+    font-size: 0.8rem;
+    color: var(--color-muted);
+}
+
+.service-option .svc-price {
+    font-size: 1.1rem;
+    color: var(--color-gold);
+    font-weight: 500;
+    margin-top: 0.75rem;
+}
+
+/* ===== BARBER SELECTOR ===== */
+.barber-select-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2.5rem;
+}
+
+.barber-option {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: 1.5rem;
+    cursor: pointer;
+    transition: var(--transition);
+    text-align: center;
+}
+
+.barber-option:hover {
+    border-color: var(--color-gold-dim);
+}
+
+.barber-option.selected {
+    border-color: var(--color-gold);
+    background: rgba(201, 168, 76, 0.06);
+}
+
+.barber-avatar-book {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: rgba(201, 168, 76, 0.1);
+    border: 1px solid rgba(201, 168, 76, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-display);
+    font-size: 1.3rem;
+    color: var(--color-gold);
+    margin: 0 auto 0.75rem;
+}
+
+.barber-option .b-name {
+    font-weight: 500;
+    font-size: 0.95rem;
+    margin-bottom: 0.25rem;
+}
+
+.barber-option .b-spec {
+    font-size: 0.75rem;
+    color: var(--color-muted);
+}
+
+/* ===== CALENDAR ===== */
+.calendar-wrapper {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.cal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.5rem;
+}
+
+.cal-title {
+    font-family: var(--font-display);
+    font-size: 1.1rem;
+    font-weight: 700;
+}
+
+.cal-nav {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.cal-nav button {
+    width: 32px;
+    height: 32px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    color: var(--color-muted);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+    transition: var(--transition);
+}
+
+.cal-nav button:hover {
+    border-color: var(--color-gold);
+    color: var(--color-gold);
+}
+
+.cal-days-header {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+    margin-bottom: 0.5rem;
+}
+
+.cal-day-label {
+    text-align: center;
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--color-muted);
+    padding: 0.25rem 0;
+}
+
+.cal-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+}
+
+.cal-cell {
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-sm);
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: var(--transition);
+    border: 1px solid transparent;
+}
+
+.cal-cell:hover:not(.disabled):not(.empty) {
+    border-color: var(--color-gold-dim);
+    color: var(--color-gold);
+}
+
+.cal-cell.selected {
+    background: var(--color-gold);
+    color: #000;
+    font-weight: 500;
+}
+
+.cal-cell.today:not(.selected) {
+    border-color: var(--color-gold-dim);
+    color: var(--color-gold);
+}
+
+.cal-cell.disabled {
+    color: var(--color-border);
+    cursor: not-allowed;
+}
+
+.cal-cell.empty {
+    cursor: default;
+}
+
+/* ===== TIME SLOTS ===== */
+.time-slots {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(88px, 1fr));
+    gap: 0.5rem;
+    margin-bottom: 2.5rem;
+}
+
+.time-slot {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: 0.6rem 0.5rem;
+    text-align: center;
+    font-size: 0.825rem;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.time-slot:hover:not(.taken) {
+    border-color: var(--color-gold-dim);
+    color: var(--color-gold);
+}
+
+.time-slot.selected {
+    border-color: var(--color-gold);
+    background: rgba(201, 168, 76, 0.08);
+    color: var(--color-gold);
+    font-weight: 500;
+}
+
+.time-slot.taken {
+    opacity: 0.3;
+    cursor: not-allowed;
+    text-decoration: line-through;
+}
+
+/* ===== BOOKING SUMMARY ===== */
+.booking-summary {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: 1.75rem;
+    margin-bottom: 2rem;
+}
+
+.summary-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.7rem 0;
+    border-bottom: 1px solid var(--color-border);
+    font-size: 0.9rem;
+}
+
+.summary-row:last-of-type {
+    border-bottom: none;
+}
+
+.summary-label {
+    color: var(--color-muted);
+}
+
+.summary-total .summary-label {
+    color: var(--color-text);
+    font-weight: 500;
+}
+
+.summary-total .summary-value {
+    color: var(--color-gold);
+    font-size: 1.2rem;
+    font-weight: 500;
+}
+
+/* ===== CONFIRMATION ===== */
+.confirmation-box {
+    text-align: center;
+    padding: 3rem 2rem;
+}
+
+.confirmation-icon {
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    background: rgba(201, 168, 76, 0.1);
+    border: 1px solid rgba(201, 168, 76, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.75rem;
+    color: var(--color-gold);
+    margin: 0 auto 1.5rem;
+}
+
+.confirmation-box h2 {
+    font-family: var(--font-display);
+    font-size: 1.75rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+
+.confirmation-box p {
+    color: var(--color-muted);
+    margin-bottom: 2rem;
+}
+
+/* ===== BOOKING NAV BUTTONS ===== */
+.booking-nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--color-border);
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 600px) {
+    .booking-hero {
+        padding: 7rem 1.5rem 2rem;
+    }
+
+    .booking-wrapper {
+        padding: 0 1.5rem 4rem;
+    }
+
+    .step-line {
+        width: 40px;
+    }
+
+    .step-label {
+        display: none;
+    }
+
+    .time-slots {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}

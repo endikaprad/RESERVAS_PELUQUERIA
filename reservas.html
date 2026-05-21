@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="es">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Reservas · Prado Barber Co.</title>
+        <link rel="stylesheet" href="css/variables.css" />
+        <link rel="stylesheet" href="css/layout.css" />
+        <link rel="stylesheet" href="css/components.css" />
+        <link rel="stylesheet" href="css/booking.css" />
+        <link rel="stylesheet" href="css/mobile.css" />
+
+        <script src="js/main.js" defer></script>
+        <script src="js/booking.js" defer></script>
+    </head>
+    <body>
+
+        <!-- NAVBAR -->
+        <nav class="navbar">
+            <a href="index.html" class="nav-logo">
+                <span class="brand">Prado Barber Co.</span>
+                <span class="tagline">Est. 2024 · Bilbao</span>
+            </a>
+            <div class="nav-links">
+                <a href="index.html">Inicio</a>
+                <a href="servicios.html">Servicios</a>
+                <a href="equipo.html">Equipo</a>
+                <a href="galeria.html">Galería</a>
+                <a href="contacto.html">Contacto</a>
+                <a href="reservas.html" class="nav-cta active">Reservar</a>
+            </div>
+            <button class="hamburger" aria-label="Menú">
+                <span></span><span></span><span></span>
+            </button>
+        </nav>
+
+        <!-- HERO -->
+        <div class="booking-hero">
+            <span class="section-label">Sistema de reservas</span>
+            <h1 class="section-title">Reserva tu <em>cita</em></h1>
+            <p class="section-sub" style="margin:0 auto;">
+                Elige servicio, barbero, fecha y hora. Confirmación instantánea.
+            </p>
+        </div>
+
+        <!-- WIZARD -->
+        <div class="booking-wrapper">
+
+            <!-- STEPS BAR -->
+            <div class="steps-bar">
+                <div class="step-item">
+                    <div class="step-wrapper">
+                        <div class="step-circle active">1</div>
+                        <div class="step-label">Servicio</div>
+                    </div>
+                </div>
+                <div class="step-line"></div>
+                <div class="step-item">
+                    <div class="step-wrapper">
+                        <div class="step-circle">2</div>
+                        <div class="step-label">Barbero</div>
+                    </div>
+                </div>
+                <div class="step-line"></div>
+                <div class="step-item">
+                    <div class="step-wrapper">
+                        <div class="step-circle">3</div>
+                        <div class="step-label">Fecha</div>
+                    </div>
+                </div>
+                <div class="step-line"></div>
+                <div class="step-item">
+                    <div class="step-wrapper">
+                        <div class="step-circle">4</div>
+                        <div class="step-label">Confirmar</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- STEP 1: SERVICIO -->
+            <div class="step-panel active" id="step-1">
+                <span class="section-label">Paso 1</span>
+                <h2 class="section-title"
+                    style="font-size:1.75rem; margin-bottom:0.5rem;">
+                    ¿Qué servicio buscas?
+                </h2>
+                <p
+                    style="color:var(--color-muted); font-size:.875rem; margin-bottom:2rem;">
+                    Selecciona el servicio que quieres reservar.
+                </p>
+                <div class="service-select-grid" id="service-grid"></div>
+                <div class="booking-nav" style="justify-content:flex-end;">
+                    <button class="btn btn-primary" id="btn-next-1" disabled>
+                        Continuar →
+                    </button>
+                </div>
+            </div>
+
+            <!-- STEP 2: BARBERO -->
+            <div class="step-panel" id="step-2">
+                <span class="section-label">Paso 2</span>
+                <h2 class="section-title"
+                    style="font-size:1.75rem; margin-bottom:0.5rem;">
+                    Elige tu barbero
+                </h2>
+                <p
+                    style="color:var(--color-muted); font-size:.875rem; margin-bottom:2rem;">
+                    ¿Con quién prefieres trabajar hoy?
+                </p>
+                <div class="barber-select-grid" id="barber-grid"></div>
+                <div class="booking-nav">
+                    <button class="btn btn-ghost" id="btn-back-2">←
+                        Volver</button>
+                    <button class="btn btn-primary" id="btn-next-2"
+                        disabled>Continuar →</button>
+                </div>
+            </div>
+
+            <!-- STEP 3: FECHA & HORA -->
+            <div class="step-panel" id="step-3">
+                <span class="section-label">Paso 3</span>
+                <h2 class="section-title"
+                    style="font-size:1.75rem; margin-bottom:0.5rem;">
+                    Fecha y hora
+                </h2>
+                <p
+                    style="color:var(--color-muted); font-size:.875rem; margin-bottom:2rem;">
+                    Los domingos permanecemos cerrados.
+                </p>
+
+                <div class="calendar-wrapper">
+                    <div class="cal-header">
+                        <span class="cal-title" id="cal-title"></span>
+                        <div class="cal-nav">
+                            <button onclick="calNav(-1)"
+                                aria-label="Mes anterior">‹</button>
+                            <button onclick="calNav(1)"
+                                aria-label="Mes siguiente">›</button>
+                        </div>
+                    </div>
+                    <div class="cal-days-header">
+                        <div class="cal-day-label">Lun</div>
+                        <div class="cal-day-label">Mar</div>
+                        <div class="cal-day-label">Mié</div>
+                        <div class="cal-day-label">Jue</div>
+                        <div class="cal-day-label">Vie</div>
+                        <div class="cal-day-label">Sáb</div>
+                        <div class="cal-day-label">Dom</div>
+                    </div>
+                    <div class="cal-grid" id="cal-grid"></div>
+                </div>
+
+                <h3
+                    style="font-size:.875rem; letter-spacing:.1em; text-transform:uppercase;
+                 color:var(--color-muted); margin-bottom:1rem;">
+                    Horarios disponibles
+                </h3>
+                <div class="time-slots" id="time-slots"></div>
+
+                <div class="booking-nav">
+                    <button class="btn btn-ghost" id="btn-back-3">←
+                        Volver</button>
+                    <button class="btn btn-primary" id="btn-next-3"
+                        disabled>Continuar →</button>
+                </div>
+            </div>
+
+            <!-- STEP 4: CONFIRMAR -->
+            <div class="step-panel" id="step-4">
+                <span class="section-label">Paso 4</span>
+                <h2 class="section-title"
+                    style="font-size:1.75rem; margin-bottom:0.5rem;">
+                    Confirma tu reserva
+                </h2>
+                <p
+                    style="color:var(--color-muted); font-size:.875rem; margin-bottom:2rem;">
+                    Revisa el resumen y rellena tus datos.
+                </p>
+
+                <!-- Resumen -->
+                <div class="booking-summary">
+                    <div class="summary-row">
+                        <span class="summary-label">Servicio</span>
+                        <span id="sum-service">—</span>
+                    </div>
+                    <div class="summary-row">
+                        <span class="summary-label">Barbero</span>
+                        <span id="sum-barber">—</span>
+                    </div>
+                    <div class="summary-row">
+                        <span class="summary-label">Fecha</span>
+                        <span id="sum-date">—</span>
+                    </div>
+                    <div class="summary-row">
+                        <span class="summary-label">Hora</span>
+                        <span id="sum-time">—</span>
+                    </div>
+                    <div class="summary-row">
+                        <span class="summary-label">Duración</span>
+                        <span id="sum-duration">—</span>
+                    </div>
+                    <div class="summary-row summary-total">
+                        <span class="summary-label">Total</span>
+                        <span class="summary-value" id="sum-price">—</span>
+                    </div>
+                </div>
+
+                <!-- Datos del cliente -->
+                <div
+                    style="display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-bottom:1rem;">
+                    <div class="form-group">
+                        <label for="client-name">Nombre completo *</label>
+                        <input type="text" id="client-name"
+                            placeholder="Ej. Jon Ibáñez" />
+                    </div>
+                    <div class="form-group">
+                        <label for="client-phone">Teléfono *</label>
+                        <input type="tel" id="client-phone"
+                            placeholder="+34 600 000 000" />
+                    </div>
+                    <div class="form-group" style="grid-column:1/-1;">
+                        <label for="client-email">Email *</label>
+                        <input type="email" id="client-email"
+                            placeholder="tu@email.com" />
+                    </div>
+                    <div class="form-group" style="grid-column:1/-1;">
+                        <label for="client-notes">Notas adicionales</label>
+                        <textarea id="client-notes" rows="3"
+                            placeholder="¿Algo que debamos saber? (opcional)"></textarea>
+                    </div>
+                </div>
+
+                <div class="booking-nav">
+                    <button class="btn btn-ghost" id="btn-back-4">←
+                        Volver</button>
+                    <button class="btn btn-primary" id="btn-confirm" disabled>
+                        Confirmar reserva ✦
+                    </button>
+                </div>
+            </div>
+
+            <!-- STEP 5: CONFIRMACIÓN -->
+            <div class="step-panel" id="step-5">
+                <div class="confirmation-box">
+                    <div class="confirmation-icon">✦</div>
+                    <h2>¡Reserva confirmada!</h2>
+                    <p>Nos vemos pronto. Te hemos enviado los detalles por
+                        email.</p>
+                    <div id="confirmation-detail"
+                        style="background:var(--color-surface); border:1px solid var(--color-border);
+                    border-radius:var(--radius-lg); padding:1.5rem; margin:2rem auto;
+                    max-width:400px; font-size:.9rem; line-height:1.8;">
+                    </div>
+                    <div
+                        style="display:flex; gap:1rem; justify-content:center; flex-wrap:wrap;">
+                        <a href="index.html" class="btn btn-outline">Volver al
+                            inicio</a>
+                        <a href="reservas.html" class="btn btn-primary"
+                            onclick="location.reload();return false;">
+                            Nueva reserva
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+        </div><!-- /booking-wrapper -->
+
+        <!-- FOOTER -->
+        <footer>
+            <div class="footer-grid">
+                <div class="footer-brand">
+                    <div class="brand">Prado Barber Co.</div>
+                    <p>Barbería de carácter en el corazón de Bilbao.</p>
+                </div>
+                <div class="footer-col">
+                    <h4>Navegación</h4>
+                    <a href="index.html">Inicio</a>
+                    <a href="servicios.html">Servicios</a>
+                    <a href="equipo.html">Equipo</a>
+                </div>
+                <div class="footer-col">
+                    <h4>Horario</h4>
+                    <a href="#">Lun–Vie: 9:00 – 20:00</a>
+                    <a href="#">Sábado: 9:00 – 14:00</a>
+                    <a href="#">Domingo: Cerrado</a>
+                </div>
+                <div class="footer-col">
+                    <h4>Contacto</h4>
+                    <a href="#">Gran Vía, 12 · Bilbao</a>
+                    <a href="tel:+34944000000">+34 944 000 000</a>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <span>© 2025 Prado Barber Co.</span>
+                <span>Hecho con precisión en Bilbao ✦</span>
+            </div>
+        </footer>
+    </body>
+</html>
