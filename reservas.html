@@ -89,8 +89,7 @@
                     style="font-size:1.75rem; margin-bottom:0.5rem;">
                     ¿Qué servicio buscas?
                 </h2>
-                <p
-                    style="color:var(--color-muted); font-size:.875rem; margin-bottom:2rem;">
+                <p style="color:var(--color-muted); font-size:.875rem; margin-bottom:2rem;">
                     Selecciona el servicio que quieres reservar.
                 </p>
                 <div class="service-select-grid" id="service-grid"></div>
@@ -108,16 +107,13 @@
                     style="font-size:1.75rem; margin-bottom:0.5rem;">
                     Elige tu barbero
                 </h2>
-                <p
-                    style="color:var(--color-muted); font-size:.875rem; margin-bottom:2rem;">
+                <p style="color:var(--color-muted); font-size:.875rem; margin-bottom:2rem;">
                     ¿Con quién prefieres trabajar hoy?
                 </p>
                 <div class="barber-select-grid" id="barber-grid"></div>
                 <div class="booking-nav">
-                    <button class="btn btn-ghost" id="btn-back-2">←
-                        Volver</button>
-                    <button class="btn btn-primary" id="btn-next-2"
-                        disabled>Continuar →</button>
+                    <button class="btn btn-ghost" id="btn-back-2">← Volver</button>
+                    <button class="btn btn-primary" id="btn-next-2" disabled>Continuar →</button>
                 </div>
             </div>
 
@@ -128,8 +124,7 @@
                     style="font-size:1.75rem; margin-bottom:0.5rem;">
                     Fecha y hora
                 </h2>
-                <p
-                    style="color:var(--color-muted); font-size:.875rem; margin-bottom:2rem;">
+                <p style="color:var(--color-muted); font-size:.875rem; margin-bottom:2rem;">
                     Los domingos permanecemos cerrados.
                 </p>
 
@@ -137,10 +132,8 @@
                     <div class="cal-header">
                         <span class="cal-title" id="cal-title"></span>
                         <div class="cal-nav">
-                            <button onclick="calNav(-1)"
-                                aria-label="Mes anterior">‹</button>
-                            <button onclick="calNav(1)"
-                                aria-label="Mes siguiente">›</button>
+                            <button data-cal-nav="-1" aria-label="Mes anterior">‹</button>
+                            <button data-cal-nav="1"  aria-label="Mes siguiente">›</button>
                         </div>
                     </div>
                     <div class="cal-days-header">
@@ -155,18 +148,15 @@
                     <div class="cal-grid" id="cal-grid"></div>
                 </div>
 
-                <h3
-                    style="font-size:.875rem; letter-spacing:.1em; text-transform:uppercase;
-                 color:var(--color-muted); margin-bottom:1rem;">
+                <h3 style="font-size:.875rem; letter-spacing:.1em; text-transform:uppercase;
+                     color:var(--color-muted); margin-bottom:1rem;">
                     Horarios disponibles
                 </h3>
                 <div class="time-slots" id="time-slots"></div>
 
                 <div class="booking-nav">
-                    <button class="btn btn-ghost" id="btn-back-3">←
-                        Volver</button>
-                    <button class="btn btn-primary" id="btn-next-3"
-                        disabled>Continuar →</button>
+                    <button class="btn btn-ghost" id="btn-back-3">← Volver</button>
+                    <button class="btn btn-primary" id="btn-next-3" disabled>Continuar →</button>
                 </div>
             </div>
 
@@ -177,12 +167,10 @@
                     style="font-size:1.75rem; margin-bottom:0.5rem;">
                     Confirma tu reserva
                 </h2>
-                <p
-                    style="color:var(--color-muted); font-size:.875rem; margin-bottom:2rem;">
+                <p style="color:var(--color-muted); font-size:.875rem; margin-bottom:2rem;">
                     Revisa el resumen y rellena tus datos.
                 </p>
 
-                <!-- Resumen -->
                 <div class="booking-summary">
                     <div class="summary-row">
                         <span class="summary-label">Servicio</span>
@@ -210,23 +198,18 @@
                     </div>
                 </div>
 
-                <!-- Datos del cliente -->
-                <div
-                    style="display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-bottom:1rem;">
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-bottom:1rem;">
                     <div class="form-group">
                         <label for="client-name">Nombre completo *</label>
-                        <input type="text" id="client-name"
-                            placeholder="Ej. Jon Ibáñez" />
+                        <input type="text" id="client-name" placeholder="Ej. Jon Ibáñez" />
                     </div>
                     <div class="form-group">
                         <label for="client-phone">Teléfono *</label>
-                        <input type="tel" id="client-phone"
-                            placeholder="+34 600 000 000" />
+                        <input type="tel" id="client-phone" placeholder="+34 600 000 000" />
                     </div>
                     <div class="form-group" style="grid-column:1/-1;">
                         <label for="client-email">Email *</label>
-                        <input type="email" id="client-email"
-                            placeholder="tu@email.com" />
+                        <input type="email" id="client-email" placeholder="tu@email.com" />
                     </div>
                     <div class="form-group" style="grid-column:1/-1;">
                         <label for="client-notes">Notas adicionales</label>
@@ -236,8 +219,7 @@
                 </div>
 
                 <div class="booking-nav">
-                    <button class="btn btn-ghost" id="btn-back-4">←
-                        Volver</button>
+                    <button class="btn btn-ghost" id="btn-back-4">← Volver</button>
                     <button class="btn btn-primary" id="btn-confirm" disabled>
                         Confirmar reserva ✦
                     </button>
@@ -249,17 +231,14 @@
                 <div class="confirmation-box">
                     <div class="confirmation-icon">✦</div>
                     <h2>¡Reserva confirmada!</h2>
-                    <p>Nos vemos pronto. Te hemos enviado los detalles por
-                        email.</p>
+                    <p>Nos vemos pronto. Te hemos enviado los detalles por email.</p>
                     <div id="confirmation-detail"
                         style="background:var(--color-surface); border:1px solid var(--color-border);
-                    border-radius:var(--radius-lg); padding:1.5rem; margin:2rem auto;
-                    max-width:400px; font-size:.9rem; line-height:1.8;">
+                        border-radius:var(--radius-lg); padding:1.5rem; margin:2rem auto;
+                        max-width:400px; font-size:.9rem; line-height:1.8;">
                     </div>
-                    <div
-                        style="display:flex; gap:1rem; justify-content:center; flex-wrap:wrap;">
-                        <a href="index.html" class="btn btn-outline">Volver al
-                            inicio</a>
+                    <div style="display:flex; gap:1rem; justify-content:center; flex-wrap:wrap;">
+                        <a href="index.html" class="btn btn-outline">Volver al inicio</a>
                         <a href="reservas.html" class="btn btn-primary"
                             onclick="location.reload();return false;">
                             Nueva reserva

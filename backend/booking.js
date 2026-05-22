@@ -1,11 +1,11 @@
 // ============================================================
-//  PRADO BARBER CO. — booking.js  (versión con backend MySQL)
+//  PRADO BARBER CO. — booking.js  (versión corregida)
+//  Fix: event delegation en lugar de onclick inline
 // ============================================================
 
-// ── Ruta base de la API (ajusta si tu carpeta backend está en otro lugar) ──
 const API_BASE = './backend/api';
 
-// ===== DATA (estática — catálogo) =====
+// ===== DATA =====
 const SERVICES = [
     { id: 'corte',       name: 'Corte Clásico',    duration: '30 min', price: 18 },
     { id: 'barba',       name: 'Arreglo de Barba', duration: '20 min', price: 12 },
@@ -37,9 +37,9 @@ const booking = {
     client: { name: '', phone: '', email: '', notes: '' },
 };
 
-let calendarDate  = new Date();
-let takenSlots    = [];          // se recarga de la BD al elegir fecha+barbero
-let loadingSlots  = false;
+let calendarDate = new Date();
+let takenSlots   = [];
+let loadingSlots = false;
 
 // ===== STEP NAV =====
 function goToStep(n) {
@@ -56,9 +56,9 @@ function updateStepsBar() {
     document.querySelectorAll('.step-circle').forEach((el, i) => {
         const stepN = i + 1;
         el.classList.remove('active', 'done');
-        if (stepN < booking.step)      { el.classList.add('done');   el.textContent = '✓'; }
-        else if (stepN === booking.step){ el.classList.add('active'); el.textContent = stepN; }
-        else                            { el.textContent = stepN; }
+        if (stepN < booking.step)       { el.classList.add('done');   el.textContent = '✓'; }
+        else if (stepN === booking.step) { el.classList.add('active'); el.textContent = stepN; }
+        else                             { el.textContent = stepN; }
     });
     document.querySelectorAll('.step-line').forEach((el, i) => {
         el.classList.toggle('done', i + 1 < booking.step);
@@ -71,7 +71,7 @@ function renderServices() {
     if (!grid) return;
     grid.innerHTML = SERVICES.map(s => `
         <div class="service-option ${booking.service?.id === s.id ? 'selected' : ''}"
-             onclick="selectService('${s.id}')">
+             data-service-id="${s.id}">
           <div class="svc-name">${s.name}</div>
           <div class="svc-meta">${s.duration}</div>
           <div class="svc-price">${s.price} €</div>
@@ -81,7 +81,8 @@ function renderServices() {
 function selectService(id) {
     booking.service = SERVICES.find(s => s.id === id);
     renderServices();
-    document.getElementById('btn-next-1').disabled = false;
+    const btn = document.getElementById('btn-next-1');
+    if (btn) btn.disabled = false;
 }
 
 // ===== STEP 2: BARBER =====
@@ -90,7 +91,7 @@ function renderBarbers() {
     if (!grid) return;
     grid.innerHTML = BARBERS.map(b => `
         <div class="barber-option ${booking.barber?.id === b.id ? 'selected' : ''}"
-             onclick="selectBarber('${b.id}')">
+             data-barber-id="${b.id}">
           <div class="barber-avatar-book">${b.initials}</div>
           <div class="b-name">${b.name}</div>
           <div class="b-spec">${b.spec}</div>
@@ -100,8 +101,8 @@ function renderBarbers() {
 function selectBarber(id) {
     booking.barber = BARBERS.find(b => b.id === id);
     renderBarbers();
-    document.getElementById('btn-next-2').disabled = false;
-    // Si ya hay fecha elegida, recargar slots con el nuevo barbero
+    const btn = document.getElementById('btn-next-2');
+    if (btn) btn.disabled = false;
     if (booking.date) loadTakenSlots();
 }
 
@@ -118,7 +119,7 @@ function renderCalendar() {
 
     const MONTHS = ['Enero','Febrero','Marzo','Abril','Mayo','Junio',
                     'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-    title.textContent = `${MONTHS[month]} ${year}`;
+    if (title) title.textContent = `${MONTHS[month]} ${year}`;
 
     const firstDay    = new Date(year, month, 1).getDay();
     const offset      = (firstDay + 6) % 7;
@@ -145,8 +146,8 @@ function renderCalendar() {
         if (isToday)    cls += ' today';
         if (isSelected) cls += ' selected';
 
-        const onclick = disabled ? '' : `onclick="selectDate(${year},${month},${d})"`;
-        html += `<div class="${cls}" ${onclick}>${d}</div>`;
+        const dataAttr = disabled ? '' : `data-cal-day="${d}" data-cal-month="${month}" data-cal-year="${year}"`;
+        html += `<div class="${cls}" ${dataAttr}>${d}</div>`;
     }
     grid.innerHTML = html;
 }
@@ -155,10 +156,9 @@ function selectDate(y, m, d) {
     booking.date = new Date(y, m, d);
     booking.time = null;
     renderCalendar();
-    loadTakenSlots();   // ← consulta la BD
+    loadTakenSlots();
 }
 
-// ── Carga horas ocupadas desde la API ───────────────────────
 async function loadTakenSlots() {
     if (!booking.date || !booking.barber) {
         takenSlots = [];
@@ -177,7 +177,7 @@ async function loadTakenSlots() {
         const json = await res.json();
         takenSlots = json.ok ? json.data.ocupadas : [];
     } catch (e) {
-        console.warn('No se pudo conectar a la API, sin slots ocupados:', e);
+        console.warn('No se pudo conectar a la API:', e);
         takenSlots = [];
     } finally {
         loadingSlots = false;
@@ -200,15 +200,13 @@ function renderTimeSlots() {
     const isToday     = booking.date &&
         booking.date.toDateString() === now.toDateString();
     const currentHHMM = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
-
-    // En sábado solo hasta 14:00
-    const esSabado = booking.date && booking.date.getDay() === 6;
+    const esSabado    = booking.date && booking.date.getDay() === 6;
 
     wrap.innerHTML = TIME_SLOTS
         .filter(t => !esSabado || t < '14:00')
         .map(t => {
             const taken    = takenSlots.includes(t);
-            const pastTime = isToday && t <= currentHHMM;   // no reservar hora pasada/actual
+            const pastTime = isToday && t <= currentHHMM;
             const disabled = taken || pastTime;
             const selected = booking.time === t;
 
@@ -220,8 +218,8 @@ function renderTimeSlots() {
             if (taken)    label += ' <small>●</small>';
             if (pastTime) label = `<s>${t}</s>`;
 
-            const onclick = disabled ? '' : `onclick="selectTime('${t}')"`;
-            return `<div class="${cls}" ${onclick}>${label}</div>`;
+            const dataAttr = disabled ? '' : `data-time="${t}"`;
+            return `<div class="${cls}" ${dataAttr}>${label}</div>`;
         }).join('');
 
     const next = document.getElementById('btn-next-3');
@@ -240,7 +238,7 @@ function calNav(dir) {
     renderCalendar();
 }
 
-// ===== STEP 4: CONFIRM =====
+// ===== STEP 4: SUMMARY =====
 function renderSummary() {
     const DAYS   = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
     const MONTHS = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
@@ -279,12 +277,12 @@ function validateClientForm() {
     return valid;
 }
 
-// ===== CONFIRM — llama a la API ==============================
+// ===== CONFIRM =====
 async function confirmBooking() {
     if (!validateClientForm()) return;
 
     const btn = document.getElementById('btn-confirm');
-    btn.disabled  = true;
+    btn.disabled    = true;
     btn.textContent = 'Procesando…';
 
     const payload = {
@@ -310,11 +308,9 @@ async function confirmBooking() {
             goToStep(5);
             renderConfirmation();
         } else {
-            // Error de negocio (p.e. hueco ya ocupado)
             if (window.showToast) showToast(json.error || 'Error al reservar', '⚠');
             btn.disabled    = false;
             btn.textContent = 'Confirmar reserva ✦';
-            // Si el hueco fue ocupado por otro, recargar los slots
             if (res.status === 409) {
                 booking.time = null;
                 await loadTakenSlots();
@@ -355,12 +351,63 @@ function formatDate(date) {
 
 // ===== INIT =====
 document.addEventListener('DOMContentLoaded', () => {
+
+    // Render inicial
     renderServices();
     renderBarbers();
     renderCalendar();
     renderTimeSlots();
     syncClientForm();
 
+    // ── Event delegation: servicio ──────────────────────────
+    const serviceGrid = document.getElementById('service-grid');
+    if (serviceGrid) {
+        serviceGrid.addEventListener('click', (e) => {
+            const option = e.target.closest('[data-service-id]');
+            if (option) selectService(option.dataset.serviceId);
+        });
+    }
+
+    // ── Event delegation: barbero ───────────────────────────
+    const barberGrid = document.getElementById('barber-grid');
+    if (barberGrid) {
+        barberGrid.addEventListener('click', (e) => {
+            const option = e.target.closest('[data-barber-id]');
+            if (option) selectBarber(option.dataset.barberId);
+        });
+    }
+
+    // ── Event delegation: calendario ───────────────────────
+    const calGrid = document.getElementById('cal-grid');
+    if (calGrid) {
+        calGrid.addEventListener('click', (e) => {
+            const cell = e.target.closest('[data-cal-day]');
+            if (cell) {
+                selectDate(
+                    parseInt(cell.dataset.calYear),
+                    parseInt(cell.dataset.calMonth),
+                    parseInt(cell.dataset.calDay)
+                );
+            }
+        });
+    }
+
+    // ── Event delegation: franjas horarias ─────────────────
+    const timeSlots = document.getElementById('time-slots');
+    if (timeSlots) {
+        timeSlots.addEventListener('click', (e) => {
+            const slot = e.target.closest('[data-time]');
+            if (slot) selectTime(slot.dataset.time);
+        });
+    }
+
+    // ── Navegación del calendario ───────────────────────────
+    const calPrev = document.querySelector('[data-cal-nav="-1"]');
+    const calNext = document.querySelector('[data-cal-nav="1"]');
+    if (calPrev) calPrev.addEventListener('click', () => calNav(-1));
+    if (calNext) calNext.addEventListener('click', () => calNav(1));
+
+    // ── Botones siguiente / volver ──────────────────────────
     const btn1      = document.getElementById('btn-next-1');
     const btn2      = document.getElementById('btn-next-2');
     const btn3      = document.getElementById('btn-next-3');
@@ -375,15 +422,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (booking.date && booking.time) { renderSummary(); goToStep(4); syncClientForm(); }
     });
 
-    if (btnBack2)  btnBack2.addEventListener('click',  () => goToStep(1));
-    if (btnBack3)  btnBack3.addEventListener('click',  () => goToStep(2));
-    if (btnBack4)  btnBack4.addEventListener('click',  () => goToStep(3));
-    if (btnConfirm)btnConfirm.addEventListener('click', confirmBooking);
+    if (btnBack2)   btnBack2.addEventListener('click',  () => goToStep(1));
+    if (btnBack3)   btnBack3.addEventListener('click',  () => goToStep(2));
+    if (btnBack4)   btnBack4.addEventListener('click',  () => goToStep(3));
+    if (btnConfirm) btnConfirm.addEventListener('click', confirmBooking);
 });
-
-// Expose for inline onclick
-window.selectService = selectService;
-window.selectBarber  = selectBarber;
-window.selectDate    = selectDate;
-window.selectTime    = selectTime;
-window.calNav        = calNav;
