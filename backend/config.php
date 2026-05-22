@@ -9,6 +9,8 @@ define('DB_USER',    'if0_41992824');
 define('DB_PASS',    'Endika2710SQDEV');
 define('DB_CHARSET', 'utf8mb4');
 
+date_default_timezone_set('Europe/Madrid'); //añadida la zona horaria de España para evitar problemas con las fechas/hora
+
 function getDB(): PDO {
     static $pdo = null;
     if ($pdo === null) {
