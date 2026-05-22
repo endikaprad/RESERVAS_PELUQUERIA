@@ -70,14 +70,24 @@ if (!isset($_SESSION['admin'])) {
     exit;
 }
 
-// ── PANEL PRINCIPAL ──────────────────────────────────────────
+// ── Acción rápida desde admin (aceptar/denegar) ──────────────
 require_once __DIR__ . '/config.php';
-
 $db = getDB();
+
+if (isset($_GET['accion']) && isset($_GET['token'])) {
+    $accion = $_GET['accion'];
+    $token  = $_GET['token'];
+    if (in_array($accion, ['aceptar', 'denegar'], true) && $token) {
+        // Redirigir al endpoint dedicado y volver al admin después
+        header('Location: api/reserva-action.php?token=' . urlencode($token) . '&accion=' . urlencode($accion) . '&from=admin');
+        exit;
+    }
+}
 
 // Filtros
 $filtroBarbero = $_GET['barbero'] ?? 'todos';
 $filtroFecha   = $_GET['fecha']   ?? 'hoy';
+$filtroEstado  = $_GET['estado']  ?? 'todos';
 $fechaCustom   = $_GET['fecha_custom'] ?? '';
 
 $hoy = date('Y-m-d');
@@ -91,6 +101,11 @@ if ($filtroBarbero !== 'todos') {
     $params[] = $filtroBarbero;
 }
 
+if ($filtroEstado !== 'todos') {
+    $where .= ' AND r.estado = ?';
+    $params[] = $filtroEstado;
+}
+
 if ($filtroFecha === 'hoy') {
     $where .= ' AND r.fecha = ?';
     $params[] = $hoy;
@@ -99,7 +114,7 @@ if ($filtroFecha === 'hoy') {
     $params[] = $hoy;
     $params[] = date('Y-m-d', strtotime('+7 days'));
 } elseif ($filtroFecha === 'todas') {
-    // sin filtro de fecha
+    // sin filtro
 } elseif ($filtroFecha === 'custom' && $fechaCustom) {
     $where .= ' AND r.fecha = ?';
     $params[] = $fechaCustom;
@@ -108,7 +123,7 @@ if ($filtroFecha === 'hoy') {
 $stmt = $db->prepare("
     SELECT r.id, r.fecha, r.hora,
            r.cliente_nombre, r.cliente_telefono, r.cliente_email, r.notas,
-           r.creado_en,
+           r.estado, r.token, r.creado_en,
            s.nombre AS servicio, s.precio, s.duracion,
            b.nombre AS barbero
     FROM reservas r
@@ -126,10 +141,15 @@ $stmtHoy = $db->prepare("SELECT COUNT(*) as total, SUM(s.precio) as ingresos
 $stmtHoy->execute([$hoy]);
 $statsHoy = $stmtHoy->fetch();
 
+// Stats pendientes
+$stmtPend = $db->prepare("SELECT COUNT(*) as total FROM reservas WHERE estado = 'pendiente'");
+$stmtPend->execute();
+$statsPend = $stmtPend->fetch();
+
 // Barberos para filtro
 $barberos = $db->query('SELECT id, nombre FROM barberos ORDER BY nombre')->fetchAll();
 
-$diasES = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+$diasES  = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
 $mesesES = ['','ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
 ?>
 <!DOCTYPE html>
@@ -152,17 +172,19 @@ $mesesES = ['','ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov'
         .logout-btn:hover{border-color:#d42b2b;color:#d42b2b;}
 
         /* LAYOUT */
-        .admin-body{max-width:1200px;margin:0 auto;padding:2rem;}
+        .admin-body{max-width:1300px;margin:0 auto;padding:2rem;}
 
         /* STATS */
         .stats-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:1rem;margin-bottom:2rem;}
         .stat-card{background:#111119;border:1px solid #252530;border-radius:12px;padding:1.5rem;}
         .stat-label{font-size:.68rem;letter-spacing:.2em;text-transform:uppercase;color:#7a7880;margin-bottom:.5rem;}
         .stat-value{font-family:'Playfair Display',serif;font-size:2rem;font-weight:700;color:#d42b2b;line-height:1;}
+        .stat-value.gold{color:#c9a84c;}
+        .stat-value.orange{color:#f59e0b;}
         .stat-sub{font-size:.75rem;color:#7a7880;margin-top:.25rem;}
 
         /* FILTERS */
-        .filters{background:#111119;border:1px solid #252530;border-radius:12px;padding:1.25rem 1.5rem;margin-bottom:1.5rem;display:flex;gap:1rem;flex-wrap:wrap;align-items:center;}
+        .filters{background:#111119;border:1px solid #252530;border-radius:12px;padding:1.25rem 1.5rem;margin-bottom:1.5rem;}
         .filters form{display:flex;gap:.75rem;flex-wrap:wrap;align-items:center;width:100%;}
         .filter-label{font-size:.68rem;letter-spacing:.15em;text-transform:uppercase;color:#7a7880;}
         select,input[type=date]{background:#18181f;border:1px solid #252530;border-radius:6px;padding:.5rem .75rem;color:#f0ece3;font-family:'DM Sans',sans-serif;font-size:.85rem;}
@@ -182,18 +204,45 @@ $mesesES = ['','ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov'
         .td-fecha{white-space:nowrap;}
         .td-hora{font-family:'Playfair Display',serif;font-size:1rem;color:#d42b2b;white-space:nowrap;}
         .td-cliente strong{display:block;font-weight:500;}
-        .td-cliente span{font-size:.78rem;color:#7a7880;}
+        .td-cliente span{font-size:.78rem;color:#7a7880;display:block;}
         .td-servicio{white-space:nowrap;}
         .td-precio{color:#c9a84c;font-weight:500;white-space:nowrap;}
         .td-barbero .b-badge{display:inline-block;padding:.2rem .6rem;background:rgba(212,43,43,.08);border:1px solid rgba(212,43,43,.2);border-radius:100px;font-size:.7rem;color:#d42b2b;}
-        .td-notas{font-size:.78rem;color:#7a7880;max-width:180px;}
+        .td-notas{font-size:.78rem;color:#7a7880;max-width:160px;}
+
+        /* ESTADO BADGES */
+        .estado-badge{display:inline-flex;align-items:center;gap:.35rem;padding:.25rem .7rem;border-radius:100px;font-size:.7rem;font-weight:600;letter-spacing:.05em;white-space:nowrap;}
+        .estado-pendiente{background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);color:#f59e0b;}
+        .estado-aceptada{background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.3);color:#22c55e;}
+        .estado-denegada{background:rgba(212,43,43,.1);border:1px solid rgba(212,43,43,.3);color:#d42b2b;}
+
+        /* ACCIÓN BOTONES */
+        .action-btns{display:flex;gap:.4rem;flex-wrap:wrap;}
+        .btn-accept{background:rgba(34,197,94,.15);border:1px solid rgba(34,197,94,.3);color:#22c55e;
+                    border-radius:4px;padding:.3rem .7rem;font-size:.68rem;font-weight:600;
+                    letter-spacing:.08em;text-transform:uppercase;cursor:pointer;text-decoration:none;
+                    transition:all .2s;white-space:nowrap;}
+        .btn-accept:hover{background:#22c55e;color:#000;}
+        .btn-deny{background:rgba(212,43,43,.1);border:1px solid rgba(212,43,43,.25);color:#d42b2b;
+                  border-radius:4px;padding:.3rem .7rem;font-size:.68rem;font-weight:600;
+                  letter-spacing:.08em;text-transform:uppercase;cursor:pointer;text-decoration:none;
+                  transition:all .2s;white-space:nowrap;}
+        .btn-deny:hover{background:#d42b2b;color:#fff;}
+
         .empty-state{padding:4rem;text-align:center;color:#7a7880;font-size:.9rem;}
         .empty-icon{font-size:2.5rem;margin-bottom:1rem;opacity:.3;}
+
+        /* Alerta pendientes */
+        .alert-pendientes{background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.25);
+                          border-radius:10px;padding:1rem 1.5rem;margin-bottom:1.5rem;
+                          display:flex;align-items:center;gap:1rem;font-size:.875rem;}
+        .alert-pendientes strong{color:#f59e0b;}
 
         @media(max-width:768px){
             .admin-body{padding:1rem;}
             th,td{padding:.65rem .75rem;}
-            .td-notas,.td-creado{display:none;}
+            .td-notas{display:none;}
+            .action-btns{flex-direction:column;}
         }
     </style>
 </head>
@@ -208,6 +257,15 @@ $mesesES = ['','ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov'
 
 <div class="admin-body">
 
+    <!-- ALERTA PENDIENTES -->
+    <?php if ($statsPend['total'] > 0): ?>
+    <div class="alert-pendientes">
+        <span style="font-size:1.25rem;">⏳</span>
+        <span>Tienes <strong><?= $statsPend['total'] ?> reserva<?= $statsPend['total'] != 1 ? 's' : '' ?> pendiente<?= $statsPend['total'] != 1 ? 's' : '' ?></strong> de confirmación.</span>
+        <a href="?estado=pendiente&fecha=todas" style="margin-left:auto;color:#f59e0b;font-size:.78rem;letter-spacing:.1em;text-transform:uppercase;">Ver →</a>
+    </div>
+    <?php endif; ?>
+
     <!-- STATS HOY -->
     <div class="stats-row">
         <div class="stat-card">
@@ -217,8 +275,13 @@ $mesesES = ['','ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov'
         </div>
         <div class="stat-card">
             <div class="stat-label">Ingresos hoy</div>
-            <div class="stat-value"><?= number_format($statsHoy['ingresos'] ?? 0, 0) ?> €</div>
+            <div class="stat-value gold"><?= number_format($statsHoy['ingresos'] ?? 0, 0) ?> €</div>
             <div class="stat-sub">estimado</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Pendientes</div>
+            <div class="stat-value orange"><?= $statsPend['total'] ?></div>
+            <div class="stat-sub">sin confirmar</div>
         </div>
         <div class="stat-card">
             <div class="stat-label">Mostrando</div>
@@ -238,6 +301,14 @@ $mesesES = ['','ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov'
                         <?= htmlspecialchars($b['nombre']) ?>
                     </option>
                 <?php endforeach; ?>
+            </select>
+
+            <span class="filter-label">Estado:</span>
+            <select name="estado">
+                <option value="todos"     <?= $filtroEstado==='todos'    ?'selected':'' ?>>Todos</option>
+                <option value="pendiente" <?= $filtroEstado==='pendiente'?'selected':'' ?>>⏳ Pendientes</option>
+                <option value="aceptada"  <?= $filtroEstado==='aceptada' ?'selected':'' ?>>✅ Aceptadas</option>
+                <option value="denegada"  <?= $filtroEstado==='denegada' ?'selected':'' ?>>❌ Denegadas</option>
             </select>
 
             <span class="filter-label">Fecha:</span>
@@ -279,6 +350,8 @@ $mesesES = ['','ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov'
                     <th>Servicio</th>
                     <th>Precio</th>
                     <th>Barbero</th>
+                    <th>Estado</th>
+                    <th>Acción</th>
                     <th>Notas</th>
                 </tr>
             </thead>
@@ -288,8 +361,12 @@ $mesesES = ['','ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov'
                     $diaNum = (int)$dt->format('w');
                     $mesNum = (int)$dt->format('n');
                     $fechaStr = $diasES[$diaNum] . ' ' . $dt->format('j') . ' ' . $mesesES[$mesNum];
+
+                    // Clases de fila por estado
+                    $rowStyle = '';
+                    if ($r['estado'] === 'denegada') $rowStyle = 'opacity:.55;';
                 ?>
-                <tr>
+                <tr style="<?= $rowStyle ?>">
                     <td style="color:#7a7880;font-size:.78rem;">#<?= $r['id'] ?></td>
                     <td class="td-fecha"><?= $fechaStr ?></td>
                     <td class="td-hora"><?= substr($r['hora'],0,5) ?></td>
@@ -298,12 +375,40 @@ $mesesES = ['','ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov'
                         <span><?= htmlspecialchars($r['cliente_email']) ?></span>
                         <span><?= htmlspecialchars($r['cliente_telefono']) ?></span>
                     </td>
-                    <td class="td-servicio"><?= htmlspecialchars($r['servicio']) ?><br>
+                    <td class="td-servicio">
+                        <?= htmlspecialchars($r['servicio']) ?><br>
                         <span style="font-size:.75rem;color:#7a7880;"><?= $r['duracion'] ?></span>
                     </td>
                     <td class="td-precio"><?= number_format($r['precio'],0) ?> €</td>
                     <td class="td-barbero">
                         <span class="b-badge"><?= htmlspecialchars($r['barbero']) ?></span>
+                    </td>
+                    <td>
+                        <?php if ($r['estado'] === 'pendiente'): ?>
+                            <span class="estado-badge estado-pendiente">⏳ Pendiente</span>
+                        <?php elseif ($r['estado'] === 'aceptada'): ?>
+                            <span class="estado-badge estado-aceptada">✓ Aceptada</span>
+                        <?php else: ?>
+                            <span class="estado-badge estado-denegada">✕ Denegada</span>
+                        <?php endif; ?>
+                    </td>
+                    <td>
+                        <?php if ($r['estado'] === 'pendiente'): ?>
+                        <div class="action-btns">
+                            <a href="?accion=aceptar&token=<?= urlencode($r['token']) ?>&<?= http_build_query(['barbero'=>$filtroBarbero,'fecha'=>$filtroFecha,'estado'=>$filtroEstado,'fecha_custom'=>$fechaCustom]) ?>"
+                               class="btn-accept"
+                               onclick="return confirm('¿Aceptar la reserva de <?= htmlspecialchars(addslashes($r['cliente_nombre'])) ?>?')">
+                               ✓ Aceptar
+                            </a>
+                            <a href="?accion=denegar&token=<?= urlencode($r['token']) ?>&<?= http_build_query(['barbero'=>$filtroBarbero,'fecha'=>$filtroFecha,'estado'=>$filtroEstado,'fecha_custom'=>$fechaCustom]) ?>"
+                               class="btn-deny"
+                               onclick="return confirm('¿Denegar la reserva de <?= htmlspecialchars(addslashes($r['cliente_nombre'])) ?>?')">
+                               ✕ Denegar
+                            </a>
+                        </div>
+                        <?php else: ?>
+                            <span style="color:#7a7880;font-size:.75rem;">—</span>
+                        <?php endif; ?>
                     </td>
                     <td class="td-notas"><?= $r['notas'] ? htmlspecialchars($r['notas']) : '—' ?></td>
                 </tr>

@@ -51,16 +51,22 @@ CREATE TABLE IF NOT EXISTS reservas (
     cliente_telefono VARCHAR(30)   NOT NULL,
     cliente_email   VARCHAR(150)   NOT NULL,
     notas           TEXT,
+    estado          ENUM('pendiente','aceptada','denegada') NOT NULL DEFAULT 'pendiente',
+    token           VARCHAR(64)    NOT NULL DEFAULT '',
     creado_en       DATETIME       NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     FOREIGN KEY (servicio_id) REFERENCES servicios(id),
     FOREIGN KEY (barbero_id)  REFERENCES barberos(id),
 
-    -- Evita doble reserva: mismo barbero, misma fecha y hora
     UNIQUE KEY uq_barbero_fecha_hora (barbero_id, fecha, hora)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- ── Vista: próximas disponibilidades (útil para el index) ──
+-- ── Migración: añadir columnas a tabla existente (ignorar si ya existen) ──
+ALTER TABLE reservas
+    ADD COLUMN IF NOT EXISTS estado ENUM('pendiente','aceptada','denegada') NOT NULL DEFAULT 'pendiente' AFTER notas,
+    ADD COLUMN IF NOT EXISTS token  VARCHAR(64) NOT NULL DEFAULT '' AFTER estado;
+
+-- ── Vista: próximas disponibilidades ──────────────────────
 CREATE OR REPLACE VIEW proxima_disponibilidad AS
 SELECT
     b.nombre           AS barbero,
