@@ -15,15 +15,10 @@ jobs:
       - name: Instalar lftp
         run: sudo apt-get install -y lftp
 
-      - name: Test conexión FTP
+      - name: Ver estructura del servidor
         env:
           FTP_HOST: ${{ secrets.FTP_HOST }}
           FTP_USER: ${{ secrets.FTP_USER }}
           FTP_PASS: ${{ secrets.FTP_PASS }}
         run: |
-          lftp -u "$FTP_USER","$FTP_PASS" "$FTP_HOST" <<EOF
-          set ftp:ssl-allow yes
-          set ftp:passive-mode yes
-          ls -la
-          bye
-          EOF
+          curl -v --ftp-ssl ftp://$FTP_HOST/ -u "$FTP_USER:$FTP_PASS" 2>&1
