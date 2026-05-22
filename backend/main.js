@@ -1,5 +1,11 @@
+// ============================================================
+//  PRADO BARBER CO. — main.js  (versión con backend MySQL)
+// ============================================================
+
+const API_BASE = './backend/api';   // ajusta si la carpeta cambia
+
 // ===== NAVBAR =====
-const navbar   = document.querySelector('.navbar');
+const navbar    = document.querySelector('.navbar');
 const hamburger = document.querySelector('.hamburger');
 const navLinks  = document.querySelector('.nav-links');
 
@@ -13,18 +19,15 @@ if (hamburger && navLinks) {
     hamburger.addEventListener('click', () => {
         const isOpen = navLinks.classList.toggle('open');
 
-        // Hamburger → X
-        hamburger.querySelectorAll('span')[0].style.transform = isOpen ? 'rotate(45deg) translate(4px, 4px)' : '';
+        hamburger.querySelectorAll('span')[0].style.transform = isOpen ? 'rotate(45deg) translate(4px, 4px)'   : '';
         hamburger.querySelectorAll('span')[1].style.opacity   = isOpen ? '0' : '';
         hamburger.querySelectorAll('span')[2].style.transform = isOpen ? 'rotate(-45deg) translate(4px, -4px)' : '';
-
         document.body.style.overflow = isOpen ? 'hidden' : '';
 
-        // Stagger animation en los links al abrir
         if (isOpen) {
             navLinks.querySelectorAll('a').forEach((a, i) => {
-                a.style.opacity   = '0';
-                a.style.transform = 'translateY(18px)';
+                a.style.opacity    = '0';
+                a.style.transform  = 'translateY(18px)';
                 a.style.transition = 'none';
                 requestAnimationFrame(() => requestAnimationFrame(() => {
                     a.style.transition = `opacity 0.4s ease ${i * 0.07}s, transform 0.4s ease ${i * 0.07}s`;
@@ -97,15 +100,15 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
 
 // ===== COUNTER ANIMATION =====
 function animateCounter(el) {
-    const target = parseFloat(el.dataset.target);
-    const isDecimal = el.dataset.decimal === 'true';
-    const suffix = el.dataset.suffix || '';
+    const target   = parseFloat(el.dataset.target);
+    const isDecimal= el.dataset.decimal === 'true';
+    const suffix   = el.dataset.suffix || '';
     const duration = 1400;
-    const start = performance.now();
+    const start    = performance.now();
     function update(now) {
         const progress = Math.min((now - start) / duration, 1);
-        const eased = 1 - Math.pow(1 - progress, 3);
-        const value = eased * target;
+        const eased    = 1 - Math.pow(1 - progress, 3);
+        const value    = eased * target;
         el.textContent = (isDecimal ? value.toFixed(1) : Math.floor(value)) + suffix;
         if (progress < 1) requestAnimationFrame(update);
     }
@@ -120,5 +123,36 @@ const counterObserver = new IntersectionObserver((entries) => {
     });
 }, { threshold: 0.5 });
 document.querySelectorAll('[data-target]').forEach(el => counterObserver.observe(el));
+
+// ===== PRÓXIMA DISPONIBILIDAD (widget del index) =============
+// Solo se ejecuta si el elemento existe en la página
+async function loadNextAvailable() {
+    const titleEl  = document.getElementById('hv-next-title');
+    const subEl    = document.getElementById('hv-next-sub');
+    if (!titleEl) return;   // No estamos en el index
+
+    titleEl.textContent = 'Cargando…';
+    subEl.textContent   = '';
+
+    try {
+        const res  = await fetch(`${API_BASE}/next-available.php`);
+        const json = await res.json();
+
+        if (json.ok && json.data.barbero) {
+            const d = json.data;
+            titleEl.textContent = d.etiqueta;
+            subEl.textContent   = `${d.barbero} · Corte Clásico`;
+        } else {
+            titleEl.textContent = 'Consultar disponibilidad';
+            subEl.textContent   = 'Llámanos o escríbenos';
+        }
+    } catch (e) {
+        // Sin backend: mostrar el texto por defecto del HTML
+        titleEl.textContent = 'Hoy · 17:00';
+        subEl.textContent   = 'Endika Prado · Corte Clásico';
+    }
+}
+
+document.addEventListener('DOMContentLoaded', loadNextAvailable);
 
 window.showToast = showToast;
