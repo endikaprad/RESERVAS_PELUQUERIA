@@ -275,7 +275,7 @@ $mesesES = ['','ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov'
         </div>
         <div class="stat-card">
             <div class="stat-label">Ingresos hoy</div>
-            <div class="stat-value gold"><?= number_format($statsHoy['ingresos'] ?? 0, 0) ?> €</div>
+            <div class="stat-value"><?= number_format($statsHoy['ingresos'] ?? 0, 0) ?> €</div>
             <div class="stat-sub">estimado</div>
         </div>
         <div class="stat-card">
