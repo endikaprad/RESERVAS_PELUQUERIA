@@ -1,19 +1,14 @@
 <?php
 // ============================================================
 //  PRADO BARBER CO. — Configuración de base de datos
-//  Edita los valores según tu entorno local/servidor
 // ============================================================
 
-define('DB_HOST', 'localhost');
-define('DB_NAME', 'pradobarber');
-define('DB_USER', 'root');       // ← cambia a tu usuario
-define('DB_PASS', '');           // ← cambia a tu contraseña
+define('DB_HOST',    'sql101.infinityfree.com');
+define('DB_NAME',    'if0_41992824_pradobarber');
+define('DB_USER',    'if0_41992824');
+define('DB_PASS',    'Endika2710SQDEV');
 define('DB_CHARSET', 'utf8mb4');
 
-/**
- * Devuelve una conexión PDO singleton.
- * Lanza una excepción si no puede conectar.
- */
 function getDB(): PDO {
     static $pdo = null;
     if ($pdo === null) {
