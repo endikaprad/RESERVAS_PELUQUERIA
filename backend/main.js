@@ -1,8 +1,12 @@
 // ============================================================
-//  PRADO BARBER CO. — main.js  (versión con backend MySQL)
+//  PRADO BARBER CO. — main.js
 // ============================================================
 
-const API_BASE = './backend/api';   // ajusta si la carpeta cambia
+// API_BASE se declara en booking.js para evitar conflictos de scope.
+// En otras páginas (sin booking.js) se define aquí como fallback:
+if (typeof API_BASE === 'undefined') {
+    window.API_BASE = './backend/api';
+}
 
 // ===== NAVBAR =====
 const navbar    = document.querySelector('.navbar');
@@ -124,18 +128,17 @@ const counterObserver = new IntersectionObserver((entries) => {
 }, { threshold: 0.5 });
 document.querySelectorAll('[data-target]').forEach(el => counterObserver.observe(el));
 
-// ===== PRÓXIMA DISPONIBILIDAD (widget del index) =============
-// Solo se ejecuta si el elemento existe en la página
+// ===== PRÓXIMA DISPONIBILIDAD (widget del index) =====
 async function loadNextAvailable() {
-    const titleEl  = document.getElementById('hv-next-title');
-    const subEl    = document.getElementById('hv-next-sub');
-    if (!titleEl) return;   // No estamos en el index
+    const titleEl = document.getElementById('hv-next-title');
+    const subEl   = document.getElementById('hv-next-sub');
+    if (!titleEl) return;
 
     titleEl.textContent = 'Cargando…';
     subEl.textContent   = '';
 
     try {
-        const res  = await fetch(`${API_BASE}/next-available.php`);
+        const res  = await fetch(`${window.API_BASE}/next-available.php`);
         const json = await res.json();
 
         if (json.ok && json.data.barbero) {
@@ -147,7 +150,6 @@ async function loadNextAvailable() {
             subEl.textContent   = 'Llámanos o escríbenos';
         }
     } catch (e) {
-        // Sin backend: mostrar el texto por defecto del HTML
         titleEl.textContent = 'Hoy · 17:00';
         subEl.textContent   = 'Endika Prado · Corte Clásico';
     }

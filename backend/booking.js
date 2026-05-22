@@ -1,9 +1,9 @@
 // ============================================================
-//  PRADO BARBER CO. — booking.js  (versión corregida)
+//  PRADO BARBER CO. — booking.js
 // ============================================================
 
-// API_BASE ya declarado en main.js — no redeclarar
-// const API_BASE = './backend/api';  ← ELIMINADO
+// Declaración única de API_BASE (evita conflicto con main.js)
+window.API_BASE = window.API_BASE || './backend/api';
 
 // ===== DATA =====
 const SERVICES = [
@@ -173,7 +173,7 @@ async function loadTakenSlots() {
     const barbero = booking.barber.id;
 
     try {
-        const res  = await fetch(`${API_BASE}/slots.php?fecha=${fecha}&barbero=${barbero}`);
+        const res  = await fetch(`${window.API_BASE}/slots.php?fecha=${fecha}&barbero=${barbero}`);
         const json = await res.json();
         takenSlots = json.ok ? json.data.ocupadas : [];
     } catch (e) {
@@ -297,7 +297,7 @@ async function confirmBooking() {
     };
 
     try {
-        const res  = await fetch(`${API_BASE}/booking.php`, {
+        const res  = await fetch(`${window.API_BASE}/booking.php`, {
             method:  'POST',
             headers: { 'Content-Type': 'application/json' },
             body:    JSON.stringify(payload),
@@ -350,7 +350,11 @@ function formatDate(date) {
 }
 
 // ===== INIT =====
-document.addEventListener('DOMContentLoaded', () => {
+// Usa readyState guard: si InfinityFree retrasa el script,
+// DOMContentLoaded ya habrá disparado y el listener nunca se ejecuta.
+function initBooking() {
+    const grid = document.getElementById('service-grid');
+    if (!grid) return; // No estamos en reservas.html
 
     renderServices();
     renderBarbers();
@@ -425,4 +429,11 @@ document.addEventListener('DOMContentLoaded', () => {
     if (btnBack3)   btnBack3.addEventListener('click',  () => goToStep(2));
     if (btnBack4)   btnBack4.addEventListener('click',  () => goToStep(3));
     if (btnConfirm) btnConfirm.addEventListener('click', confirmBooking);
-});
+}
+
+// Guard para cuando InfinityFree retrasa la carga del script
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initBooking);
+} else {
+    initBooking();
+}
