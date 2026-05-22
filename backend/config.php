@@ -24,7 +24,7 @@ function getDB(): PDO {
             PDO::ATTR_EMULATE_PREPARES   => false,
         ];
         $pdo = new PDO($dsn, DB_USER, DB_PASS, $options);
-        $pdo->exec("SET time_zone = '+09:00'");
+        $pdo->exec("SET time_zone = 'Europe/Madrid'");
     }
     return $pdo;
 }
