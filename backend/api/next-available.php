@@ -18,7 +18,7 @@
 //  }
 // ============================================================
 
-require_once __DIR__ . '/_helpers.php';
+require_once __DIR__ . '/helpers.php';
 
 // Huecos disponibles del negocio (igual que TIME_SLOTS en el JS)
 const TODOS_LOS_SLOTS = [

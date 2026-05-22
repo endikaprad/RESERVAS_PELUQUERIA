@@ -6,7 +6,7 @@
 //  para que el frontend las marque como "taken".
 // ============================================================
 
-require_once __DIR__ . '/_helpers.php';
+require_once __DIR__ . '/helpers.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
     jsonError('Método no permitido', 405);

@@ -14,7 +14,7 @@
 //  }
 // ============================================================
 
-require_once __DIR__ . '/_helpers.php';
+require_once __DIR__ . '/helpers.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     jsonError('Método no permitido', 405);
