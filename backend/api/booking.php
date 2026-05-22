@@ -1,17 +1,6 @@
 <?php
 // ============================================================
 //  POST /api/booking.php
-//  Body JSON:
-//  {
-//    "servicio": "corte",
-//    "barbero":  "endika",
-//    "fecha":    "2026-05-28",
-//    "hora":     "10:00",
-//    "nombre":   "Jon Ibáñez",
-//    "telefono": "+34 600 000 000",
-//    "email":    "jon@email.com",
-//    "notas":    "opcional"
-//  }
 // ============================================================
 
 require_once __DIR__ . '/helpers.php';
@@ -22,7 +11,6 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 
 $body = readBody();
 
-// ── Extraer y sanear campos ──────────────────────────────────
 $servicio = trim($body['servicio'] ?? '');
 $barbero  = trim($body['barbero']  ?? '');
 $fecha    = trim($body['fecha']    ?? '');
@@ -32,7 +20,6 @@ $telefono = trim($body['telefono'] ?? '');
 $email    = trim($body['email']    ?? '');
 $notas    = trim($body['notas']    ?? '');
 
-// ── Validaciones ─────────────────────────────────────────────
 if (!$servicio || !$barbero || !$fecha || !$hora || !$nombre || !$telefono || !$email) {
     jsonError('Faltan campos obligatorios');
 }
@@ -46,25 +33,24 @@ if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
     jsonError('Email inválido');
 }
 
-// ── Validar que no sea en el pasado ──────────────────────────
-$ahora      = new DateTime('now');
-$fechaHora  = new DateTime($fecha . ' ' . $hora . ':00');
+$ahora     = new DateTime('now');
+$fechaHora = new DateTime($fecha . ' ' . $hora . ':00');
 if ($fechaHora <= $ahora) {
     jsonError('No puedes reservar en el pasado ni en la hora actual');
 }
 
-// ── Insertar en BD ───────────────────────────────────────────
 try {
     $db = getDB();
 
-    // Verificar que servicio y barbero existen
-    $s = $db->prepare('SELECT id FROM servicios WHERE id = ?');
+    $s = $db->prepare('SELECT id, nombre FROM servicios WHERE id = ?');
     $s->execute([$servicio]);
-    if (!$s->fetch()) jsonError('Servicio no encontrado');
+    $servicioRow = $s->fetch();
+    if (!$servicioRow) jsonError('Servicio no encontrado');
 
-    $b = $db->prepare('SELECT id FROM barberos WHERE id = ?');
+    $b = $db->prepare('SELECT id, nombre FROM barberos WHERE id = ?');
     $b->execute([$barbero]);
-    if (!$b->fetch()) jsonError('Barbero no encontrado');
+    $barberoRow = $b->fetch();
+    if (!$barberoRow) jsonError('Barbero no encontrado');
 
     $insert = $db->prepare(
         'INSERT INTO reservas
@@ -79,17 +65,64 @@ try {
 
     $id = $db->lastInsertId();
 
+    // ── Formatear fecha en español ───────────────────────────
+    $dias   = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+    $meses  = ['enero','febrero','marzo','abril','mayo','junio',
+               'julio','agosto','septiembre','octubre','noviembre','diciembre'];
+    $dt     = new DateTime($fecha);
+    $fechaFormateada = $dias[$dt->format('w')] . ', ' .
+                       $dt->format('j') . ' de ' .
+                       $meses[(int)$dt->format('n') - 1] . ' de ' .
+                       $dt->format('Y');
+
+    // ── Email al PELUQUERO ───────────────────────────────────
+    $asuntoPeluquero = "Nueva reserva · {$nombre} · {$fechaFormateada} {$hora}";
+    $cuerpoTxt = "NUEVA RESERVA — PRADO BARBER CO.\n\n";
+    $cuerpoTxt .= "Cliente:   {$nombre}\n";
+    $cuerpoTxt .= "Teléfono:  {$telefono}\n";
+    $cuerpoTxt .= "Email:     {$email}\n\n";
+    $cuerpoTxt .= "Servicio:  {$servicioRow['nombre']}\n";
+    $cuerpoTxt .= "Barbero:   {$barberoRow['nombre']}\n";
+    $cuerpoTxt .= "Fecha:     {$fechaFormateada}\n";
+    $cuerpoTxt .= "Hora:      {$hora}\n";
+    if ($notas) $cuerpoTxt .= "Notas:     {$notas}\n";
+    $cuerpoTxt .= "\nReserva #{$id} guardada en el sistema.";
+
+    $headersPeluquero  = "From: reservas@pradopeluqueria.infinityfree.me\r\n";
+    $headersPeluquero .= "Reply-To: {$email}\r\n";
+    $headersPeluquero .= "Content-Type: text/plain; charset=UTF-8\r\n";
+
+    mail('endikrapradodev@gmail.com', $asuntoPeluquero, $cuerpoTxt, $headersPeluquero);
+
+    // ── Email de confirmación al CLIENTE ─────────────────────
+    $asuntoCliente = "Reserva confirmada · Prado Barber Co.";
+    $cuerpoCliente  = "Hola {$nombre},\n\n";
+    $cuerpoCliente .= "Tu reserva en Prado Barber Co. está confirmada:\n\n";
+    $cuerpoCliente .= "  Servicio:  {$servicioRow['nombre']}\n";
+    $cuerpoCliente .= "  Barbero:   {$barberoRow['nombre']}\n";
+    $cuerpoCliente .= "  Fecha:     {$fechaFormateada}\n";
+    $cuerpoCliente .= "  Hora:      {$hora}\n\n";
+    $cuerpoCliente .= "Si necesitas cancelar o cambiar tu cita, llámanos:\n";
+    $cuerpoCliente .= "  +34 944 000 000\n";
+    $cuerpoCliente .= "  Gran Vía, 12 · Bilbao\n\n";
+    $cuerpoCliente .= "¡Hasta pronto!\n";
+    $cuerpoCliente .= "El equipo de Prado Barber Co.";
+
+    $headersCliente  = "From: reservas@pradopeluqueria.infinityfree.me\r\n";
+    $headersCliente .= "Content-Type: text/plain; charset=UTF-8\r\n";
+
+    mail($email, $asuntoCliente, $cuerpoCliente, $headersCliente);
+
     jsonOk([
-        'id'       => (int)$id,
-        'mensaje'  => '¡Reserva confirmada!',
-        'servicio' => $servicio,
-        'barbero'  => $barbero,
-        'fecha'    => $fecha,
-        'hora'     => $hora,
+        'id'      => (int)$id,
+        'mensaje' => '¡Reserva confirmada!',
+        'servicio'=> $servicio,
+        'barbero' => $barbero,
+        'fecha'   => $fecha,
+        'hora'    => $hora,
     ]);
 
 } catch (PDOException $e) {
-    // Clave duplicada → hueco ya ocupado
     if ($e->getCode() === '23000') {
         jsonError('Ese horario ya está reservado. Por favor elige otro.', 409);
     }
