@@ -26,4 +26,4 @@ jobs:
             **/node_modules/**
             .github/**
             database.sql
-            README.md
+            README.md 
