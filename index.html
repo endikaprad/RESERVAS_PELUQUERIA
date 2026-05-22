@@ -18,13 +18,14 @@
         <!-- NAVBAR -->
         <nav class="navbar">
             <div class="nav-left">
-            <a href="index.html" class="nav-logo">
-            <div class="nav-brand-name">
-                <span class="nbn-prado">PRADO</span>
-                <span class="nbn-separator"></span>
-                <span class="nbn-sub" style="transform: translateY(2px);">BARBER<br />CO.</span>
-            </div>
-            </a>
+                <a href="index.html" class="nav-logo">
+                    <div class="nav-brand-name">
+                        <span class="nbn-prado">PRADO</span>
+                        <span class="nbn-separator"></span>
+                        <span class="nbn-sub"
+                            style="transform: translateY(2px);">BARBER<br />CO.</span>
+                    </div>
+                </a>
             </div>
             <div class="nav-links">
                 <a href="index.html" class="active">Inicio</a>
@@ -52,24 +53,30 @@
                 <h1>El arte de<br />lucir <em>impecable.</em></h1>
                 <p class="hero-desc">
                     En Prado Barber Co. cada corte es una firma. Tradición,
-                    precisión y carácter en cada sesión. Porque los detalles son lo que te
+                    precisión y carácter en cada sesión. Porque los detalles son
+                    lo que te
                     distingue.
                 </p>
                 <div class="hero-actions">
-                    <a href="reservas.html" class="btn btn-primary">Reservar cita</a>
-                    <a href="servicios.html" class="btn btn-outline">Ver servicios</a>
+                    <a href="reservas.html" class="btn btn-primary">Reservar
+                        cita</a>
+                    <a href="servicios.html" class="btn btn-outline">Ver
+                        servicios</a>
                 </div>
                 <div class="hero-stat-row">
                     <div class="hero-stat">
-                        <div class="num" data-target="1200" data-suffix="+">0</div>
+                        <div class="num" data-target="1200"
+                            data-suffix="+">0</div>
                         <div class="label">Clientes satisfechos</div>
                     </div>
                     <div class="hero-stat">
-                        <div class="num" data-target="8" data-suffix=" años">0</div>
+                        <div class="num" data-target="8"
+                            data-suffix=" años">0</div>
                         <div class="label">De experiencia</div>
                     </div>
                     <div class="hero-stat">
-                        <div class="num" data-target="4.9" data-decimal="true" data-suffix="★">0</div>
+                        <div class="num" data-target="4.9" data-decimal="true"
+                            data-suffix="★">0</div>
                         <div class="label">Valoración media</div>
                     </div>
                 </div>
@@ -82,9 +89,12 @@
                     <!-- Tarjeta próxima cita -->
                     <div class="hv-card hv-card-booking">
                         <div class="hv-card-label">Próxima disponibilidad</div>
-                        <div class="hv-card-title">Hoy · 17:00</div>
-                        <div class="hv-card-sub">Endika Prado · Corte Clásico</div>
-                        <a href="reservas.html" class="hv-card-btn">Reservar →</a>
+                        <div class="hv-card-title" id="hv-next-title">Hoy ·
+                            17:00</div>
+                        <div class="hv-card-sub" id="hv-next-sub">Endika Prado ·
+                            Corte Clásico</div>
+                        <a href="reservas.html" class="hv-card-btn">Reservar
+                            →</a>
                     </div>
 
                     <!-- Tarjeta servicios destacados -->
@@ -107,7 +117,8 @@
                         <div class="hv-service-row hv-service-row-premium">
                             <span class="hv-service-dot hv-dot-gold"></span>
                             <span class="hv-service-name">Sesión Premium</span>
-                            <span class="hv-service-price hv-price-gold">45 €</span>
+                            <span class="hv-service-price hv-price-gold">45
+                                €</span>
                         </div>
                     </div>
 
@@ -348,7 +359,16 @@
             <div class="footer-bottom">
                 <span>© 2026 Prado Barber Co. Todos los derechos
                     reservados.</span>
-                <span>Hecho con precisión en Bilbao ✦</span>
+                <div style="display:flex; align-items:center; gap:1.5rem;">
+                    <span>Hecho con precisión en Bilbao ✦</span>
+                    <a href="backend/admin.php"
+                        style="font-size:.65rem; letter-spacing:.15em; text-transform:uppercase;
+                            color:var(--color-muted); opacity:0.45; transition:opacity .3s;"
+                        onmouseover="this.style.opacity='1'"
+                        onmouseout="this.style.opacity='0.45'">
+                        Acceso equipo
+                    </a>
+                </div>
             </div>
         </footer>
 
