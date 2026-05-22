@@ -21,4 +21,9 @@ jobs:
           FTP_USER: ${{ secrets.FTP_USER }}
           FTP_PASS: ${{ secrets.FTP_PASS }}
         run: |
-          curl -v --ftp-ssl ftp://$FTP_HOST/ -u "$FTP_USER:$FTP_PASS" 2>&1 | head -50
+          lftp -u "$FTP_USER","$FTP_PASS" "$FTP_HOST" <<EOF
+          set ftp:ssl-allow yes
+          set ftp:passive-mode yes
+          ls -la
+          bye
+          EOF
