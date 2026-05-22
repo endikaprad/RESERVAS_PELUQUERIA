@@ -19,7 +19,7 @@ jobs:
           username: ${{ secrets.FTP_USER }}
           password: ${{ secrets.FTP_PASS }}
           local-dir: ./
-          server-dir: /pradopeluqueria.infinityfree.me/htdocs/
+          server-dir: /htdocs/
           exclude: |
             **/.git*
             **/.git*/**
