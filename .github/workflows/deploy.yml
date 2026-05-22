@@ -18,6 +18,8 @@ jobs:
           server: ${{ secrets.FTP_HOST }}
           username: ${{ secrets.FTP_USER }}
           password: ${{ secrets.FTP_PASS }}
+          protocol: ftps
+          port: 21
           local-dir: ./
           server-dir: /htdocs/
           exclude: |
@@ -26,4 +28,4 @@ jobs:
             **/node_modules/**
             .github/**
             database.sql
-            README.md 
+            README.md
