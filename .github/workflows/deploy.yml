@@ -12,13 +12,23 @@ jobs:
       - name: Checkout código
         uses: actions/checkout@v4
 
-      - name: Instalar lftp
-        run: sudo apt-get install -y lftp
-
-      - name: Ver estructura del servidor
+      - name: Deploy via curl FTP
         env:
           FTP_HOST: ${{ secrets.FTP_HOST }}
           FTP_USER: ${{ secrets.FTP_USER }}
           FTP_PASS: ${{ secrets.FTP_PASS }}
         run: |
-          curl -v --ftp-ssl ftp://$FTP_HOST/ -u "$FTP_USER:$FTP_PASS" 2>&1
+          find . -type f \
+            ! -path './.git/*' \
+            ! -path './.github/*' \
+            ! -name 'database.sql' \
+            ! -name 'README.md' \
+          | while read file; do
+            remote_path="${file#./}"
+            echo "Subiendo $remote_path..."
+            curl --ssl-reqd \
+              --ftp-create-dirs \
+              -u "$FTP_USER:$FTP_PASS" \
+              -T "$file" \
+              "ftp://$FTP_HOST/htdocs/$remote_path"
+          done
