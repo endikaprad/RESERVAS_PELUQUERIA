@@ -1,9 +1,9 @@
 // ============================================================
 //  PRADO BARBER CO. — booking.js  (versión corregida)
-//  Fix: event delegation en lugar de onclick inline
 // ============================================================
 
-const API_BASE = './backend/api';
+// API_BASE ya declarado en main.js — no redeclarar
+// const API_BASE = './backend/api';  ← ELIMINADO
 
 // ===== DATA =====
 const SERVICES = [
@@ -56,7 +56,7 @@ function updateStepsBar() {
     document.querySelectorAll('.step-circle').forEach((el, i) => {
         const stepN = i + 1;
         el.classList.remove('active', 'done');
-        if (stepN < booking.step)       { el.classList.add('done');   el.textContent = '✓'; }
+        if (stepN < booking.step)        { el.classList.add('done');   el.textContent = '✓'; }
         else if (stepN === booking.step) { el.classList.add('active'); el.textContent = stepN; }
         else                             { el.textContent = stepN; }
     });
@@ -352,7 +352,6 @@ function formatDate(date) {
 // ===== INIT =====
 document.addEventListener('DOMContentLoaded', () => {
 
-    // Render inicial
     renderServices();
     renderBarbers();
     renderCalendar();
@@ -377,7 +376,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // ── Event delegation: calendario ───────────────────────
+    // ── Event delegation: calendario ────────────────────────
     const calGrid = document.getElementById('cal-grid');
     if (calGrid) {
         calGrid.addEventListener('click', (e) => {
@@ -392,7 +391,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // ── Event delegation: franjas horarias ─────────────────
+    // ── Event delegation: franjas horarias ──────────────────
     const timeSlots = document.getElementById('time-slots');
     if (timeSlots) {
         timeSlots.addEventListener('click', (e) => {
@@ -401,20 +400,20 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // ── Navegación del calendario ───────────────────────────
+    // ── Navegación del calendario ────────────────────────────
     const calPrev = document.querySelector('[data-cal-nav="-1"]');
     const calNext = document.querySelector('[data-cal-nav="1"]');
     if (calPrev) calPrev.addEventListener('click', () => calNav(-1));
     if (calNext) calNext.addEventListener('click', () => calNav(1));
 
-    // ── Botones siguiente / volver ──────────────────────────
-    const btn1      = document.getElementById('btn-next-1');
-    const btn2      = document.getElementById('btn-next-2');
-    const btn3      = document.getElementById('btn-next-3');
-    const btnBack2  = document.getElementById('btn-back-2');
-    const btnBack3  = document.getElementById('btn-back-3');
-    const btnBack4  = document.getElementById('btn-back-4');
-    const btnConfirm= document.getElementById('btn-confirm');
+    // ── Botones siguiente / volver ───────────────────────────
+    const btn1       = document.getElementById('btn-next-1');
+    const btn2       = document.getElementById('btn-next-2');
+    const btn3       = document.getElementById('btn-next-3');
+    const btnBack2   = document.getElementById('btn-back-2');
+    const btnBack3   = document.getElementById('btn-back-3');
+    const btnBack4   = document.getElementById('btn-back-4');
+    const btnConfirm = document.getElementById('btn-confirm');
 
     if (btn1) btn1.addEventListener('click', () => { if (booking.service) goToStep(2); });
     if (btn2) btn2.addEventListener('click', () => { if (booking.barber)  goToStep(3); });
