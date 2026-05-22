@@ -15,17 +15,10 @@ jobs:
       - name: Instalar lftp
         run: sudo apt-get install -y lftp
 
-      - name: Deploy por FTP
+      - name: Test conexión FTP
         env:
           FTP_HOST: ${{ secrets.FTP_HOST }}
           FTP_USER: ${{ secrets.FTP_USER }}
           FTP_PASS: ${{ secrets.FTP_PASS }}
         run: |
-          lftp -u "$FTP_USER","$FTP_PASS" "$FTP_HOST" <<EOF
-          set ftp:ssl-allow yes
-          set ftp:passive-mode yes
-          set net:timeout 30
-          set net:max-retries 3
-          mirror --reverse --delete --verbose --exclude .git --exclude .github --exclude database.sql --exclude README.md ./ /htdocs/
-          bye
-          EOF
+          curl -v --ftp-ssl ftp://$FTP_HOST/ -u "$FTP_USER:$FTP_PASS" 2>&1 | head -50
