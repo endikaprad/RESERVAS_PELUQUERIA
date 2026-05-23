@@ -52,7 +52,6 @@ try {
     $barberoRow = $b->fetch();
     if (!$barberoRow) jsonError('Barbero no encontrado');
 
-    // Token único para aceptar/denegar
     $token = bin2hex(random_bytes(32));
 
     $insert = $db->prepare(
@@ -68,7 +67,6 @@ try {
 
     $id = $db->lastInsertId();
 
-    // Formatear fecha en español
     $dias  = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
     $meses = ['enero','febrero','marzo','abril','mayo','junio',
               'julio','agosto','septiembre','octubre','noviembre','diciembre'];
@@ -82,7 +80,6 @@ try {
     $urlAceptar = $baseUrl . '/backend/api/reserva-action.php?token=' . $token . '&accion=aceptar';
     $urlDenegar = $baseUrl . '/backend/api/reserva-action.php?token=' . $token . '&accion=denegar';
 
-    // HTML email peluquero
     $notasHtml = $notas ? "<tr><td style='padding:10px 0;color:#7a7880;font-size:13px;'>Notas</td>
         <td style='padding:10px 0;color:#f0ece3;font-size:13px;'>" . htmlspecialchars($notas) . "</td></tr>" : '';
 
@@ -127,7 +124,6 @@ try {
   </div>
 </body></html>";
 
-    // HTML email cliente (pendiente)
     $htmlCliente = "<!DOCTYPE html><html lang='es'><head><meta charset='UTF-8'></head>
 <body style='margin:0;padding:0;background:#09080f;font-family:Arial,sans-serif;'>
   <div style='max-width:560px;margin:0 auto;background:#111119;border:1px solid #252530;border-radius:12px;overflow:hidden;'>
@@ -160,7 +156,6 @@ try {
   </div>
 </body></html>";
 
-    // Enviar con Resend
     sendResend('endikapradodev@gmail.com', "Nueva reserva - " . htmlspecialchars($nombre) . " - {$fechaFormateada} {$hora}", $htmlPeluquero);
     sendResend($email, 'Reserva recibida - Prado Barber Co.', $htmlCliente);
 
@@ -180,9 +175,8 @@ try {
     jsonError('Error de base de datos: ' . $e->getMessage(), 500);
 }
 
-// ── Función Resend ───────────────────────────────────────────
 function sendResend(string $to, string $subject, string $html): void {
-    $apiKey = 're_jYKmxTcm_MgqLEFgaSHZfuxn6T9XkcD7R';
+    $apiKey = RESEND_API_KEY;
 
     $payload = json_encode([
         'from'    => 'Prado Barber Co. <onboarding@resend.dev>',

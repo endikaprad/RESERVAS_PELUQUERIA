@@ -40,7 +40,6 @@ try {
     $upd = $db->prepare('UPDATE reservas SET estado = ? WHERE token = ?');
     $upd->execute([$nuevoEstado, $token]);
 
-    // Formatear fecha
     $dias  = ['Domingo','Lunes','Martes','Miercoles','Jueves','Viernes','Sabado'];
     $meses = ['enero','febrero','marzo','abril','mayo','junio',
               'julio','agosto','septiembre','octubre','noviembre','diciembre'];
@@ -53,7 +52,6 @@ try {
 
     $baseUrl = 'https://pradopeluqueria.infinityfree.me';
 
-    // HTML email al cliente según acción
     if ($accion === 'aceptar') {
         $asuntoCliente = 'Reserva confirmada - Prado Barber Co.';
         $colorHeader   = '#22c55e';
@@ -119,9 +117,8 @@ try {
     mostrarPagina('error', 'Error de base de datos', $e->getMessage(), $fromAdmin);
 }
 
-// ── Resend ───────────────────────────────────────────────────
 function sendResend(string $to, string $subject, string $html): void {
-    $apiKey = 're_jYKmxTcm_MgqLEFgaSHZfuxn6T9XkcD7R';
+    $apiKey = RESEND_API_KEY;
 
     $payload = json_encode([
         'from'    => 'Prado Barber Co. <onboarding@resend.dev>',
@@ -144,7 +141,6 @@ function sendResend(string $to, string $subject, string $html): void {
     curl_close($ch);
 }
 
-// ── Página de feedback ───────────────────────────────────────
 function mostrarPagina(string $tipo, string $titulo, string $mensaje, bool $fromAdmin = false): never {
     $baseUrl = 'https://pradopeluqueria.infinityfree.me';
     $colores = [
@@ -155,7 +151,6 @@ function mostrarPagina(string $tipo, string $titulo, string $mensaje, bool $from
     ];
     $c = $colores[$tipo] ?? $colores['error'];
 
-    // Si viene del admin, redirigir de vuelta después de 3 segundos
     $metaRefresh = $fromAdmin ? "<meta http-equiv='refresh' content='3;url={$baseUrl}/backend/admin.php'>" : '';
 
     echo "<!DOCTYPE html>

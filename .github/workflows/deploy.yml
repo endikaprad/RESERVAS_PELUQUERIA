@@ -12,6 +12,44 @@ jobs:
       - name: Checkout código
         uses: actions/checkout@v4
 
+      - name: Generar config.php desde secrets
+        env:
+          DB_HOST: ${{ secrets.DB_HOST }}
+          DB_NAME: ${{ secrets.DB_NAME }}
+          DB_USER: ${{ secrets.DB_USER }}
+          DB_PASS: ${{ secrets.DB_PASS }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+        run: |
+          cat > backend/config.php << EOF
+          <?php
+          define('DB_HOST',        '${DB_HOST}');
+          define('DB_NAME',        '${DB_NAME}');
+          define('DB_USER',        '${DB_USER}');
+          define('DB_PASS',        '${DB_PASS}');
+          define('DB_CHARSET',     'utf8mb4');
+          define('RESEND_API_KEY', '${RESEND_API_KEY}');
+
+          date_default_timezone_set('Europe/Madrid');
+
+          function getDB(): PDO {
+              static \$pdo = null;
+              if (\$pdo === null) {
+                  \$dsn = sprintf(
+                      'mysql:host=%s;dbname=%s;charset=%s',
+                      DB_HOST, DB_NAME, DB_CHARSET
+                  );
+                  \$options = [
+                      PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
+                      PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+                      PDO::ATTR_EMULATE_PREPARES   => false,
+                  ];
+                  \$pdo = new PDO(\$dsn, DB_USER, DB_PASS, \$options);
+                  \$pdo->exec("SET time_zone = '+02:00'");
+              }
+              return \$pdo;
+          }
+          EOF
+
       - name: Deploy via FTP
         uses: SamKirkland/FTP-Deploy-Action@4.3.2
         with:
