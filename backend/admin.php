@@ -29,7 +29,6 @@ if (!isset($_SESSION['admin'])) {
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <meta name="theme-color" content="#111119">
-
     <link rel="icon" type="image/png" href="../img/admin.png">
     <title>Admin · Prado Barber Co.</title>
     <style>
@@ -161,6 +160,16 @@ $mesesES = ['','ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov'
             letter-spacing:.1em;text-transform:uppercase;cursor:pointer;transition:all .3s;}
         .logout-btn:hover{border-color:#d42b2b;color:#d42b2b;}
 
+        /* ── SETTINGS BUTTON ── */
+        .header-actions{display:flex;align-items:center;gap:.6rem;}
+        .settings-btn{
+            width:36px;height:36px;border-radius:50%;
+            background:transparent;border:1px solid #252530;
+            color:#7a7880;display:flex;align-items:center;justify-content:center;
+            cursor:pointer;font-size:1rem;transition:all .3s;flex-shrink:0;
+        }
+        .settings-btn:hover{border-color:#d42b2b;color:#d42b2b;transform:rotate(45deg);background:rgba(212,43,43,.06);}
+
         /* ── BODY ── */
         .admin-body{padding:1rem;max-width:1300px;margin:0 auto;}
 
@@ -186,11 +195,8 @@ $mesesES = ['','ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov'
         .filters{background:#111119;border:1px solid #252530;border-radius:12px;padding:1rem;margin-bottom:1rem;}
         .filters-label{font-size:.62rem;letter-spacing:.2em;text-transform:uppercase;color:#7a7880;margin-bottom:.75rem;}
         .filters form{display:flex;flex-direction:column;gap:.6rem;}
-
-        /* cada fila de filtro: label arriba, select abajo */
         .frow{display:flex;flex-direction:column;gap:.25rem;}
         .flabel{font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;color:#7a7880;}
-
         select,input[type=date]{
             width:100%;background:#18181f;border:1px solid #252530;border-radius:6px;
             padding:.6rem .75rem;color:#f0ece3;font-family:'DM Sans',sans-serif;font-size:.9rem;
@@ -200,7 +206,6 @@ $mesesES = ['','ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov'
             padding-right:2rem;
         }
         select:focus,input[type=date]:focus{outline:none;border-color:#d42b2b;}
-
         .filter-submit{
             width:100%;background:#d42b2b;color:#fff;border:none;border-radius:6px;
             padding:.7rem 1rem;font-family:'DM Sans',sans-serif;font-size:.78rem;
@@ -210,10 +215,10 @@ $mesesES = ['','ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov'
         .filter-submit:hover{background:#a81e1e;}
 
         @media(min-width:900px){
-            .filters form  { flex-direction:row; align-items:flex-end; flex-wrap:wrap; gap:.75rem; }
-            .frow          { flex-direction:row; align-items:center; flex:1; min-width:120px; gap:.5rem; }
-            select,input[type=date] { width:100%; }
-            .filter-submit { width:auto; padding:.6rem 1.25rem; flex-shrink:0; margin-top:0; align-self:flex-end; }
+            .filters form{flex-direction:row;align-items:flex-end;flex-wrap:wrap;gap:.75rem;}
+            .frow{flex-direction:row;align-items:center;flex:1;min-width:120px;gap:.5rem;}
+            select,input[type=date]{width:100%;}
+            .filter-submit{width:auto;padding:.6rem 1.25rem;flex-shrink:0;margin-top:0;align-self:flex-end;}
         }
 
         /* ── SECTION HEADER ── */
@@ -221,86 +226,34 @@ $mesesES = ['','ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov'
         .section-title-admin{font-family:'Playfair Display',serif;font-size:1.1rem;}
         .section-count{font-size:.72rem;color:#7a7880;}
 
-        /* ════════════════════════════════════
-           MOBILE CARDS  (< 900px — default)
-           ════════════════════════════════════ */
+        /* ── MOBILE CARDS ── */
         .reservas-cards{display:flex;flex-direction:column;gap:1rem;}
-
-        .rc{
-            background:#111119;
-            border:1px solid #252530;
-            border-left-width:3px;
-            border-radius:12px;
-            overflow:hidden;
-        }
+        .rc{background:#111119;border:1px solid #252530;border-left-width:3px;border-radius:12px;overflow:hidden;}
         .rc.pendiente{border-left-color:#f59e0b;}
-        .rc.aceptada {border-left-color:#22c55e;}
-        .rc.denegada {border-left-color:#d42b2b;opacity:.65;}
-
-        /* top row */
-        .rc-top{
-            display:flex;align-items:flex-start;justify-content:space-between;
-            padding:1rem 1rem .6rem;gap:.5rem;
-        }
-        .rc-top-left{}
+        .rc.aceptada{border-left-color:#22c55e;}
+        .rc.denegada{border-left-color:#d42b2b;opacity:.65;}
+        .rc-top{display:flex;align-items:flex-start;justify-content:space-between;padding:1rem 1rem .6rem;gap:.5rem;}
         .rc-id{font-size:.65rem;color:#7a7880;margin-bottom:.15rem;}
         .rc-hora{font-family:'Playfair Display',serif;font-size:1.45rem;font-weight:700;color:#d42b2b;line-height:1;}
         .rc-fecha{font-size:.8rem;color:#a0a0b0;margin-top:.2rem;}
-
-        /* estado badge */
-        .ebadge{
-            display:inline-flex;align-items:center;gap:.3rem;
-            padding:.3rem .75rem;border-radius:100px;
-            font-size:.7rem;font-weight:600;letter-spacing:.04em;white-space:nowrap;
-            flex-shrink:0;
-        }
+        .ebadge{display:inline-flex;align-items:center;gap:.3rem;padding:.3rem .75rem;border-radius:100px;font-size:.7rem;font-weight:600;letter-spacing:.04em;white-space:nowrap;flex-shrink:0;}
         .ebadge-pendiente{background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.3);color:#f59e0b;}
-        .ebadge-aceptada {background:rgba(34,197,94,.12); border:1px solid rgba(34,197,94,.3); color:#22c55e;}
-        .ebadge-denegada {background:rgba(212,43,43,.12); border:1px solid rgba(212,43,43,.3); color:#d42b2b;}
-
-        /* divider */
+        .ebadge-aceptada{background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.3);color:#22c55e;}
+        .ebadge-denegada{background:rgba(212,43,43,.12);border:1px solid rgba(212,43,43,.3);color:#d42b2b;}
         .rc-divider{height:1px;background:#1c1c26;margin:0 1rem;}
-
-        /* body */
         .rc-body{padding:.85rem 1rem 1rem;display:flex;flex-direction:column;gap:.85rem;}
-
         .rc-cliente-name{font-size:1rem;font-weight:500;margin-bottom:.3rem;}
         .rc-cliente-meta{display:flex;flex-direction:column;gap:.2rem;}
         .rc-meta-item{font-size:.78rem;color:#7a7880;}
-
         .rc-details{display:grid;grid-template-columns:1fr 1fr;gap:.6rem 1rem;}
-        .rc-detail{}
         .rc-detail-label{font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;color:#7a7880;margin-bottom:.2rem;}
         .rc-detail-value{font-size:.88rem;color:#f0ece3;}
         .rc-detail-value.gold{color:#c9a84c;font-weight:500;}
         .rc-detail-sub{font-size:.72rem;color:#7a7880;}
-
-        .rc-barbero-pill{
-            display:inline-block;padding:.25rem .65rem;
-            background:rgba(212,43,43,.08);border:1px solid rgba(212,43,43,.2);
-            border-radius:100px;font-size:.75rem;color:#d42b2b;
-        }
-
-        .rc-notas{
-            font-size:.78rem;color:#7a7880;font-style:italic;
-            padding:.55rem .75rem;background:#0d0d14;
-            border-radius:6px;border-left:2px solid #2a2a38;
-        }
-
-        /* action buttons */
-        .rc-actions{
-            display:flex;gap:.6rem;
-            padding:.85rem 1rem;
-            border-top:1px solid #1c1c26;
-        }
-        .btn-accept,.btn-deny{
-            flex:1;display:flex;align-items:center;justify-content:center;gap:.4rem;
-            padding:.7rem .5rem;border-radius:7px;
-            font-family:'DM Sans',sans-serif;font-size:.78rem;font-weight:600;
-            letter-spacing:.06em;text-transform:uppercase;
-            cursor:pointer;text-decoration:none;transition:all .22s;
-            border:1px solid transparent;
-        }
+        .rc-barbero-pill{display:inline-block;padding:.25rem .65rem;background:rgba(212,43,43,.08);border:1px solid rgba(212,43,43,.2);border-radius:100px;font-size:.75rem;color:#d42b2b;}
+        .rc-notas{font-size:.78rem;color:#7a7880;font-style:italic;padding:.55rem .75rem;background:#0d0d14;border-radius:6px;border-left:2px solid #2a2a38;}
+        .rc-actions{display:flex;gap:.6rem;padding:.85rem 1rem;border-top:1px solid #1c1c26;}
+        .btn-accept,.btn-deny{flex:1;display:flex;align-items:center;justify-content:center;gap:.4rem;padding:.7rem .5rem;border-radius:7px;font-family:'DM Sans',sans-serif;font-size:.78rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;text-decoration:none;transition:all .22s;border:1px solid transparent;}
         .btn-accept{background:rgba(34,197,94,.12);border-color:rgba(34,197,94,.35);color:#22c55e;}
         .btn-accept:hover,.btn-accept:active{background:#22c55e;color:#000;}
         .btn-deny{background:rgba(212,43,43,.1);border-color:rgba(212,43,43,.3);color:#d42b2b;}
@@ -310,27 +263,21 @@ $mesesES = ['','ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov'
         .empty-state{background:#111119;border:1px solid #252530;border-radius:12px;padding:3.5rem 2rem;text-align:center;color:#7a7880;}
         .empty-icon{font-size:2.5rem;margin-bottom:.75rem;opacity:.3;}
 
-        /* ════════════════════════════════════
-           DESKTOP TABLE  (≥ 900px)
-           ════════════════════════════════════ */
-        .reservas-cards  { /* already flex column, stays as-is on mobile */ }
-        .table-desktop   { display:none; }   /* hidden on mobile */
+        .reservas-cards{display:flex;flex-direction:column;gap:1rem;}
+        .table-desktop{display:none;}
 
-        @media (min-width: 900px) {
-            .admin-header   { padding:1rem 2rem; }
-            .admin-body     { padding:2rem; }
-            .stats-row      { grid-template-columns:repeat(4,1fr); gap:1rem; margin-bottom:1.5rem; }
-            .stat-value     { font-size:2rem; }
-
-            .filters form   { flex-direction:row; align-items:center; flex-wrap:wrap; gap:.75rem; }
-            .frow           { flex-wrap:nowrap; }
-
-            /* swap visibility */
-            .reservas-cards { display:none !important; }
-            .table-desktop  { display:block !important; }
+        @media(min-width:900px){
+            .admin-header{padding:1rem 2rem;}
+            .admin-body{padding:2rem;}
+            .stats-row{grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:1.5rem;}
+            .stat-value{font-size:2rem;}
+            .filters form{flex-direction:row;align-items:center;flex-wrap:wrap;gap:.75rem;}
+            .frow{flex-wrap:nowrap;}
+            .reservas-cards{display:none !important;}
+            .table-desktop{display:block !important;}
         }
 
-        /* ── DESKTOP TABLE STYLES ── */
+        /* ── DESKTOP TABLE ── */
         .table-wrap-d{background:#111119;border:1px solid #252530;border-radius:12px;overflow:hidden;}
         .table-header-d{padding:1.1rem 1.5rem;border-bottom:1px solid #252530;display:flex;align-items:center;justify-content:space-between;}
         .table-title-d{font-family:'Playfair Display',serif;font-size:1.1rem;}
@@ -346,28 +293,193 @@ $mesesES = ['','ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov'
         .td-barbero .b-badge{display:inline-block;padding:.2rem .6rem;background:rgba(212,43,43,.08);border:1px solid rgba(212,43,43,.2);border-radius:100px;font-size:.7rem;color:#d42b2b;}
         .td-notas{font-size:.75rem;color:#7a7880;max-width:140px;}
         .action-btns{display:flex;gap:.4rem;}
-        .tb-accept,.tb-deny{
-            padding:.32rem .65rem;border-radius:4px;font-family:'DM Sans',sans-serif;
-            font-size:.67rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;
-            cursor:pointer;text-decoration:none;transition:all .2s;border:1px solid transparent;white-space:nowrap;
-        }
+        .tb-accept,.tb-deny{padding:.32rem .65rem;border-radius:4px;font-family:'DM Sans',sans-serif;font-size:.67rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;text-decoration:none;transition:all .2s;border:1px solid transparent;white-space:nowrap;}
         .tb-accept{background:rgba(34,197,94,.12);border-color:rgba(34,197,94,.3);color:#22c55e;}
         .tb-accept:hover{background:#22c55e;color:#000;}
         .tb-deny{background:rgba(212,43,43,.1);border-color:rgba(212,43,43,.25);color:#d42b2b;}
         .tb-deny:hover{background:#d42b2b;color:#fff;}
         .estado-badge{display:inline-flex;align-items:center;gap:.3rem;padding:.22rem .65rem;border-radius:100px;font-size:.68rem;font-weight:600;letter-spacing:.04em;white-space:nowrap;}
         .badge-pendiente{background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.3);color:#f59e0b;}
-        .badge-aceptada {background:rgba(34,197,94,.12); border:1px solid rgba(34,197,94,.3); color:#22c55e;}
-        .badge-denegada {background:rgba(212,43,43,.12); border:1px solid rgba(212,43,43,.3); color:#d42b2b;}
+        .badge-aceptada{background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.3);color:#22c55e;}
+        .badge-denegada{background:rgba(212,43,43,.12);border:1px solid rgba(212,43,43,.3);color:#d42b2b;}
+
+        /* ================================================================
+           CONFIG PANEL — estilos integrados
+           ================================================================ */
+
+        /* ── MODAL OVERLAY ── */
+        .cfg-overlay{
+            position:fixed;inset:0;
+            background:rgba(0,0,0,.75);
+            backdrop-filter:blur(6px);
+            z-index:999;
+            opacity:0;pointer-events:none;
+            transition:opacity .3s ease;
+        }
+        .cfg-overlay.open{opacity:1;pointer-events:all;}
+
+        /* ── PANEL DESLIZANTE ── */
+        .cfg-panel{
+            position:fixed;top:0;right:0;bottom:0;
+            width:min(480px,100vw);
+            background:#111119;
+            border-left:1px solid #252530;
+            z-index:1000;
+            display:flex;flex-direction:column;
+            transform:translateX(100%);
+            transition:transform .38s cubic-bezier(.16,1,.3,1);
+            overflow:hidden;
+        }
+        .cfg-panel.open{transform:translateX(0);}
+
+        .cfg-header{
+            display:flex;align-items:center;justify-content:space-between;
+            padding:1.25rem 1.5rem;
+            border-bottom:1px solid #252530;
+            flex-shrink:0;
+        }
+        .cfg-title{font-family:'Playfair Display',serif;font-size:1.15rem;font-weight:700;}
+        .cfg-close{
+            width:32px;height:32px;border-radius:50%;
+            background:transparent;border:1px solid #252530;
+            color:#7a7880;cursor:pointer;font-size:.9rem;
+            display:flex;align-items:center;justify-content:center;
+            transition:all .2s;
+        }
+        .cfg-close:hover{border-color:#d42b2b;color:#d42b2b;}
+
+        /* Tabs */
+        .cfg-tabs{display:flex;border-bottom:1px solid #252530;flex-shrink:0;}
+        .cfg-tab{
+            flex:1;padding:.85rem 1rem;
+            background:transparent;border:none;
+            font-family:'DM Sans',sans-serif;
+            font-size:.75rem;font-weight:600;
+            letter-spacing:.1em;text-transform:uppercase;
+            color:#7a7880;cursor:pointer;
+            border-bottom:2px solid transparent;
+            transition:all .2s;
+        }
+        .cfg-tab:hover{color:#f0ece3;}
+        .cfg-tab.active{color:#d42b2b;border-bottom-color:#d42b2b;background:rgba(212,43,43,.04);}
+
+        /* Body scrollable */
+        .cfg-body{flex:1;overflow-y:auto;padding:1.5rem;}
+        .cfg-body::-webkit-scrollbar{width:4px;}
+        .cfg-body::-webkit-scrollbar-thumb{background:#252530;border-radius:2px;}
+
+        .cfg-pane{display:none;}
+        .cfg-pane.active{display:block;}
+
+        /* Section label */
+        .cfg-section-label{font-size:.6rem;letter-spacing:.2em;text-transform:uppercase;color:#7a7880;margin-bottom:.75rem;margin-top:1.5rem;}
+        .cfg-section-label:first-child{margin-top:0;}
+
+        /* Estado chip */
+        .auto-estado-chip{display:inline-flex;align-items:center;gap:.4rem;padding:.3rem .75rem;border-radius:100px;font-size:.7rem;font-weight:600;margin-bottom:1rem;}
+        .auto-estado-chip.off{background:rgba(122,120,128,.1);border:1px solid rgba(122,120,128,.2);color:#7a7880;}
+        .auto-estado-chip.on{background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.3);color:#22c55e;}
+
+        /* Toggle row */
+        .auto-toggle-row{
+            display:flex;align-items:center;justify-content:space-between;
+            background:#18181f;border:1px solid #252530;border-radius:10px;
+            padding:1rem 1.25rem;margin-bottom:1rem;
+        }
+        .auto-toggle-info h4{font-size:.9rem;font-weight:600;margin-bottom:.2rem;}
+        .auto-toggle-info p{font-size:.75rem;color:#7a7880;line-height:1.5;}
+
+        /* Toggle switch */
+        .toggle-switch{position:relative;width:44px;height:24px;flex-shrink:0;}
+        .toggle-switch input{opacity:0;width:0;height:0;position:absolute;}
+        .toggle-slider{position:absolute;inset:0;background:#252530;border-radius:24px;cursor:pointer;transition:background .3s;}
+        .toggle-slider::before{content:'';position:absolute;left:3px;top:3px;width:18px;height:18px;border-radius:50%;background:#f0ece3;transition:transform .3s;}
+        .toggle-switch input:checked + .toggle-slider{background:#d42b2b;}
+        .toggle-switch input:checked + .toggle-slider::before{transform:translateX(20px);}
+
+        /* Alcance */
+        .alcance-grid{display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-bottom:1.25rem;}
+        .alcance-btn{
+            padding:.7rem .5rem;background:#18181f;border:1px solid #252530;
+            border-radius:8px;text-align:center;font-family:'DM Sans',sans-serif;
+            font-size:.78rem;font-weight:500;color:#7a7880;cursor:pointer;transition:all .2s;
+        }
+        .alcance-btn:hover{border-color:#7a7880;color:#f0ece3;}
+        .alcance-btn.selected{background:rgba(212,43,43,.1);border-color:rgba(212,43,43,.5);color:#d42b2b;}
+        .alcance-desc{font-size:.72rem;color:#7a7880;padding:.6rem .75rem;background:#0d0d14;border-radius:6px;border-left:2px solid #d42b2b;margin-bottom:1.25rem;min-height:32px;}
+
+        .cfg-save-btn{
+            width:100%;background:linear-gradient(135deg,#d42b2b 0%,#a81e1e 100%);
+            color:#fff;border:none;border-radius:6px;padding:.85rem 1rem;
+            font-family:'DM Sans',sans-serif;font-size:.78rem;font-weight:600;
+            letter-spacing:.12em;text-transform:uppercase;cursor:pointer;transition:all .25s;
+            box-shadow:0 4px 16px rgba(212,43,43,.25);
+        }
+        .cfg-save-btn:hover{transform:translateY(-1px);box-shadow:0 8px 24px rgba(212,43,43,.4);}
+        .cfg-save-btn:disabled{opacity:.5;cursor:not-allowed;transform:none;}
+
+        /* Vacaciones — mini calendario */
+        .mini-cal-wrap{background:#18181f;border:1px solid #252530;border-radius:10px;padding:1.1rem;margin-bottom:1rem;}
+        .mini-cal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;}
+        .mini-cal-title{font-size:.9rem;font-weight:600;}
+        .mini-cal-nav{display:flex;gap:.3rem;}
+        .mini-cal-nav button{width:26px;height:26px;border:1px solid #252530;border-radius:4px;background:transparent;color:#7a7880;font-size:.8rem;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .2s;}
+        .mini-cal-nav button:hover{border-color:#d42b2b;color:#d42b2b;}
+        .mini-cal-days{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:.3rem;}
+        .mini-cal-day-label{text-align:center;font-size:.55rem;letter-spacing:.08em;text-transform:uppercase;color:#7a7880;padding:.2rem 0;}
+        .mini-cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;}
+        .mini-cell{aspect-ratio:1;display:flex;align-items:center;justify-content:center;border-radius:6px;font-size:.72rem;cursor:pointer;transition:all .15s;border:1px solid transparent;position:relative;}
+        .mini-cell:hover:not(.mc-disabled):not(.mc-empty){border-color:rgba(212,43,43,.4);color:#d42b2b;}
+        .mini-cell.mc-today:not(.mc-selected):not(.mc-blocked){border-color:rgba(212,43,43,.3);color:#d42b2b;}
+        .mini-cell.mc-disabled{color:#2a2a38;cursor:not-allowed;}
+        .mini-cell.mc-empty{cursor:default;}
+        .mini-cell.mc-selected{background:rgba(212,43,43,.15);border-color:rgba(212,43,43,.5);color:#d42b2b;}
+        .mini-cell.mc-blocked{background:rgba(212,43,43,.25);border-color:#d42b2b;color:#fff;}
+        .mini-cell.mc-blocked::after{content:'';position:absolute;inset:0;background:repeating-linear-gradient(-45deg,rgba(212,43,43,.15) 0,rgba(212,43,43,.15) 2px,transparent 2px,transparent 6px);border-radius:5px;pointer-events:none;}
+
+        /* Motivo + acciones */
+        .vac-motivo-row{display:flex;gap:.5rem;margin-bottom:.75rem;}
+        .vac-motivo-input{flex:1;background:#18181f;border:1px solid #252530;border-radius:6px;padding:.55rem .75rem;color:#f0ece3;font-family:'DM Sans',sans-serif;font-size:.82rem;}
+        .vac-motivo-input:focus{outline:none;border-color:#d42b2b;}
+        .vac-action-row{display:flex;gap:.5rem;margin-bottom:1rem;}
+        .vac-btn{flex:1;padding:.6rem .5rem;border-radius:6px;font-family:'DM Sans',sans-serif;font-size:.72rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;transition:all .2s;}
+        .vac-btn-block{background:rgba(212,43,43,.1);border:1px solid rgba(212,43,43,.35);color:#d42b2b;}
+        .vac-btn-block:hover{background:#d42b2b;color:#fff;}
+        .vac-btn-range{background:rgba(201,168,76,.1);border:1px solid rgba(201,168,76,.3);color:#c9a84c;}
+        .vac-btn-range:hover{background:#c9a84c;color:#000;}
+        .range-hint{font-size:.72rem;color:#c9a84c;padding:.5rem .7rem;background:rgba(201,168,76,.06);border:1px solid rgba(201,168,76,.2);border-radius:6px;margin-bottom:.75rem;display:none;}
+        .range-hint.visible{display:block;}
+
+        /* Lista bloqueados */
+        .blocked-list{display:flex;flex-direction:column;gap:.4rem;max-height:220px;overflow-y:auto;}
+        .blocked-list::-webkit-scrollbar{width:3px;}
+        .blocked-list::-webkit-scrollbar-thumb{background:#252530;}
+        .blocked-item{display:flex;align-items:center;justify-content:space-between;background:#18181f;border:1px solid #252530;border-radius:7px;padding:.55rem .85rem;font-size:.8rem;}
+        .blocked-item-info{display:flex;flex-direction:column;gap:.1rem;}
+        .blocked-fecha{color:#f0ece3;font-weight:500;}
+        .blocked-motivo{font-size:.7rem;color:#7a7880;}
+        .blocked-del{width:24px;height:24px;border-radius:50%;background:transparent;border:1px solid #252530;color:#7a7880;cursor:pointer;font-size:.75rem;display:flex;align-items:center;justify-content:center;transition:all .2s;flex-shrink:0;}
+        .blocked-del:hover{border-color:#d42b2b;color:#d42b2b;background:rgba(212,43,43,.08);}
+        .empty-blocked{text-align:center;color:#7a7880;font-size:.78rem;padding:1.5rem;border:1px dashed #252530;border-radius:8px;}
+
+        /* Status */
+        .cfg-status{display:flex;align-items:center;gap:.5rem;padding:.65rem 1rem;border-radius:8px;font-size:.78rem;margin-top:1rem;opacity:0;transition:opacity .3s;}
+        .cfg-status.visible{opacity:1;}
+        .cfg-status.ok{background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.25);color:#22c55e;}
+        .cfg-status.err{background:rgba(212,43,43,.1);border:1px solid rgba(212,43,43,.25);color:#d42b2b;}
     </style>
 </head>
 <body>
 
+<!-- ── HEADER con rueda de configuración ── -->
 <div class="admin-header">
     <div class="admin-brand">Prado <span>Barber</span> · Admin</div>
-    <form method="POST" style="margin:0;">
-        <button class="logout-btn" name="logout" value="1">Cerrar sesión</button>
-    </form>
+    <div class="header-actions">
+        <button class="settings-btn" onclick="openCfg()" title="Configuración">⚙</button>
+        <form method="POST" style="margin:0;">
+            <button class="logout-btn" name="logout" value="1">Cerrar sesión</button>
+        </form>
+    </div>
 </div>
 
 <div class="admin-body">
@@ -484,11 +596,8 @@ $mesesES = ['','ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov'
                     <span class="ebadge ebadge-denegada">✕ Denegada</span>
                 <?php endif; ?>
             </div>
-
             <div class="rc-divider"></div>
-
             <div class="rc-body">
-                <!-- Cliente -->
                 <div>
                     <div class="rc-cliente-name"><?= htmlspecialchars($r['cliente_nombre']) ?></div>
                     <div class="rc-cliente-meta">
@@ -496,8 +605,6 @@ $mesesES = ['','ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov'
                         <span class="rc-meta-item">📞 <?= htmlspecialchars($r['cliente_telefono']) ?></span>
                     </div>
                 </div>
-
-                <!-- Details grid -->
                 <div class="rc-details">
                     <div class="rc-detail">
                         <div class="rc-detail-label">Servicio</div>
@@ -513,12 +620,10 @@ $mesesES = ['','ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov'
                         <div class="rc-detail-value"><span class="rc-barbero-pill"><?= htmlspecialchars($r['barbero']) ?></span></div>
                     </div>
                 </div>
-
                 <?php if ($r['notas']): ?>
                 <div class="rc-notas">"<?= htmlspecialchars($r['notas']) ?>"</div>
                 <?php endif; ?>
             </div>
-
             <?php if ($est === 'pendiente'): ?>
             <div class="rc-actions">
                 <a href="?accion=aceptar&token=<?= urlencode($r['token']) ?>&<?= http_build_query(['barbero'=>$filtroBarbero,'fecha'=>$filtroFecha,'estado'=>$filtroEstado,'fecha_custom'=>$fechaCustom]) ?>"
@@ -604,6 +709,431 @@ $mesesES = ['','ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov'
 
     <?php endif; ?>
 
+</div><!-- /admin-body -->
+
+
+<!-- ================================================================
+     CONFIG PANEL — HTML (overlay + panel deslizante)
+     ================================================================ -->
+
+<!-- Overlay -->
+<div class="cfg-overlay" id="cfg-overlay" onclick="closeCfg()"></div>
+
+<!-- Panel -->
+<div class="cfg-panel" id="cfg-panel">
+
+    <div class="cfg-header">
+        <div class="cfg-title">⚙ Configuración</div>
+        <button class="cfg-close" onclick="closeCfg()">✕</button>
+    </div>
+
+    <div class="cfg-tabs">
+        <button class="cfg-tab active" onclick="switchTab('auto')">Auto-aceptar</button>
+        <button class="cfg-tab"        onclick="switchTab('vac')">Vacaciones</button>
+    </div>
+
+    <div class="cfg-body">
+
+        <!-- ── TAB: AUTO-ACEPTAR ── -->
+        <div class="cfg-pane active" id="pane-auto">
+
+            <div class="cfg-section-label">Estado actual</div>
+            <div class="auto-estado-chip off" id="auto-chip">
+                <span id="auto-chip-dot">●</span>
+                <span id="auto-chip-text">Desactivado</span>
+            </div>
+
+            <div class="auto-toggle-row">
+                <div class="auto-toggle-info">
+                    <h4>Auto-aceptar reservas</h4>
+                    <p>Las reservas se confirman automáticamente sin necesitar tu aprobación manual.</p>
+                </div>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="auto-toggle" onchange="onAutoToggle()">
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+
+            <div id="alcance-section" style="display:none;">
+                <div class="cfg-section-label">Periodo de auto-aceptación</div>
+                <div class="alcance-grid">
+                    <button class="alcance-btn" data-val="hoy"    onclick="selectAlcance(this)">Hoy</button>
+                    <button class="alcance-btn" data-val="semana" onclick="selectAlcance(this)">Esta semana</button>
+                    <button class="alcance-btn" data-val="mes"    onclick="selectAlcance(this)">Este mes</button>
+                    <button class="alcance-btn selected" data-val="siempre" onclick="selectAlcance(this)">Siempre</button>
+                </div>
+                <div class="alcance-desc" id="alcance-desc">
+                    Las reservas se aceptarán automáticamente sin límite de tiempo.
+                </div>
+            </div>
+
+            <button class="cfg-save-btn" id="btn-save-auto" onclick="saveAutoAceptar()">
+                Guardar configuración
+            </button>
+            <div class="cfg-status" id="auto-status"></div>
+
+        </div>
+
+        <!-- ── TAB: VACACIONES ── -->
+        <div class="cfg-pane" id="pane-vac">
+
+            <div class="cfg-section-label">Seleccionar días no disponibles</div>
+
+            <div class="mini-cal-wrap">
+                <div class="mini-cal-header">
+                    <span class="mini-cal-title" id="mc-title"></span>
+                    <div class="mini-cal-nav">
+                        <button onclick="mcNav(-1)">‹</button>
+                        <button onclick="mcNav(1)">›</button>
+                    </div>
+                </div>
+                <div class="mini-cal-days">
+                    <div class="mini-cal-day-label">L</div>
+                    <div class="mini-cal-day-label">M</div>
+                    <div class="mini-cal-day-label">X</div>
+                    <div class="mini-cal-day-label">J</div>
+                    <div class="mini-cal-day-label">V</div>
+                    <div class="mini-cal-day-label">S</div>
+                    <div class="mini-cal-day-label">D</div>
+                </div>
+                <div class="mini-cal-grid" id="mc-grid"></div>
+            </div>
+
+            <div class="range-hint" id="range-hint">
+                📅 Modo rango: selecciona el <strong>primer día</strong> y luego el <strong>último</strong>.
+            </div>
+
+            <div class="vac-motivo-row">
+                <input class="vac-motivo-input" id="vac-motivo"
+                       type="text" placeholder="Motivo (ej: Vacaciones, Formación…)" maxlength="100">
+            </div>
+
+            <div class="vac-action-row">
+                <button class="vac-btn vac-btn-block" onclick="bloquearDia()">
+                    ✕ Bloquear día
+                </button>
+                <button class="vac-btn vac-btn-range" id="btn-rango" onclick="toggleRangeMode()">
+                    ⇔ Bloquear rango
+                </button>
+            </div>
+
+            <div class="cfg-section-label">Días bloqueados</div>
+            <div class="blocked-list" id="blocked-list"></div>
+            <div class="cfg-status" id="vac-status"></div>
+
+        </div>
+    </div>
 </div>
+
+
+<!-- ================================================================
+     CONFIG PANEL — JavaScript integrado
+     ================================================================ -->
+<script>
+const CFG_API = './api/settings.php';
+
+let cfgState = {
+    autoAceptar:      'no',
+    autoAceptarHasta: '',
+    diasBloqueados:   [],
+};
+
+let mcDate     = new Date();
+let mcSelected = null;
+let rangeMode  = false;
+let rangeStart = null;
+
+// ── Abrir / Cerrar ────────────────────────────────────────────
+function openCfg() {
+    document.getElementById('cfg-overlay').classList.add('open');
+    document.getElementById('cfg-panel').classList.add('open');
+    loadSettings();
+}
+function closeCfg() {
+    document.getElementById('cfg-overlay').classList.remove('open');
+    document.getElementById('cfg-panel').classList.remove('open');
+}
+document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && document.getElementById('cfg-panel').classList.contains('open'))
+        closeCfg();
+});
+
+// ── Tabs ──────────────────────────────────────────────────────
+function switchTab(tab) {
+    document.querySelectorAll('.cfg-tab').forEach((t, i) => {
+        t.classList.toggle('active', (i === 0 && tab === 'auto') || (i === 1 && tab === 'vac'));
+    });
+    document.getElementById('pane-auto').classList.toggle('active', tab === 'auto');
+    document.getElementById('pane-vac').classList.toggle('active',  tab === 'vac');
+}
+
+// ── Cargar configuración ──────────────────────────────────────
+async function loadSettings() {
+    try {
+        const r = await fetch(CFG_API);
+        const j = await r.json();
+        if (!j.ok) return;
+        cfgState.autoAceptar      = j.data.auto_aceptar;
+        cfgState.autoAceptarHasta = j.data.auto_aceptar_hasta;
+        cfgState.diasBloqueados   = j.data.dias_bloqueados || [];
+        applyAutoState();
+        renderBlockedList();
+        renderMiniCal();
+    } catch (e) { console.warn('No se pudo cargar configuración:', e); }
+}
+
+// ── Auto-aceptar ──────────────────────────────────────────────
+function applyAutoState() {
+    const v       = cfgState.autoAceptar;
+    const toggle  = document.getElementById('auto-toggle');
+    const chip    = document.getElementById('auto-chip');
+    const chipTxt = document.getElementById('auto-chip-text');
+    const section = document.getElementById('alcance-section');
+    const isOn    = v !== 'no';
+
+    toggle.checked            = isOn;
+    section.style.display     = isOn ? 'block' : 'none';
+
+    if (isOn) {
+        chip.className = 'auto-estado-chip on';
+        const labels   = { hoy:'Activo — solo hoy', semana:'Activo — esta semana',
+                           mes:'Activo — este mes',  siempre:'Activo — siempre' };
+        chipTxt.textContent = labels[v] || 'Activo';
+        document.querySelectorAll('.alcance-btn').forEach(b =>
+            b.classList.toggle('selected', b.dataset.val === v));
+        updateAlcanceDesc(v);
+    } else {
+        chip.className      = 'auto-estado-chip off';
+        chipTxt.textContent = 'Desactivado';
+    }
+}
+
+function onAutoToggle() {
+    const isOn = document.getElementById('auto-toggle').checked;
+    document.getElementById('alcance-section').style.display = isOn ? 'block' : 'none';
+    if (!isOn) {
+        document.getElementById('auto-chip').className        = 'auto-estado-chip off';
+        document.getElementById('auto-chip-text').textContent = 'Desactivado';
+    } else {
+        const sel = document.querySelector('.alcance-btn.selected');
+        updateAlcanceDesc(sel ? sel.dataset.val : 'siempre');
+    }
+}
+
+function selectAlcance(btn) {
+    document.querySelectorAll('.alcance-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    updateAlcanceDesc(btn.dataset.val);
+}
+
+function updateAlcanceDesc(v) {
+    const descs = {
+        hoy:     'Las reservas de <strong>hoy</strong> se aceptarán automáticamente.',
+        semana:  'Las reservas de <strong>los próximos 7 días</strong> se aceptarán automáticamente.',
+        mes:     'Las reservas del <strong>próximo mes</strong> se aceptarán automáticamente.',
+        siempre: 'Las reservas se aceptarán automáticamente <strong>sin límite de tiempo</strong>.',
+    };
+    document.getElementById('alcance-desc').innerHTML = descs[v] || '';
+}
+
+async function saveAutoAceptar() {
+    const isOn = document.getElementById('auto-toggle').checked;
+    const sel  = document.querySelector('.alcance-btn.selected');
+    const val  = isOn ? (sel ? sel.dataset.val : 'siempre') : 'no';
+
+    const btn       = document.getElementById('btn-save-auto');
+    btn.disabled    = true;
+    btn.textContent = 'Guardando…';
+
+    try {
+        const r = await fetch(CFG_API, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ accion: 'auto_aceptar', valor: val }),
+        });
+        const j = await r.json();
+        if (j.ok) {
+            cfgState.autoAceptar = val;
+            applyAutoState();
+            showCfgStatus('auto-status', 'ok', '✓ Configuración guardada correctamente.');
+        } else {
+            showCfgStatus('auto-status', 'err', '✕ ' + (j.error || 'Error al guardar.'));
+        }
+    } catch (e) {
+        showCfgStatus('auto-status', 'err', '✕ Sin conexión con el servidor.');
+    }
+
+    btn.disabled    = false;
+    btn.textContent = 'Guardar configuración';
+}
+
+// ── Mini calendario ───────────────────────────────────────────
+function renderMiniCal() {
+    const grid  = document.getElementById('mc-grid');
+    const title = document.getElementById('mc-title');
+    if (!grid) return;
+
+    const MONTHS = ['Enero','Febrero','Marzo','Abril','Mayo','Junio',
+                    'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+    const y = mcDate.getFullYear();
+    const m = mcDate.getMonth();
+    title.textContent = `${MONTHS[m]} ${y}`;
+
+    const today   = new Date(); today.setHours(0, 0, 0, 0);
+    const first   = new Date(y, m, 1).getDay();
+    const offset  = (first + 6) % 7;
+    const daysInM = new Date(y, m + 1, 0).getDate();
+    const blocked = cfgState.diasBloqueados.map(d => d.fecha);
+
+    let html = '';
+    for (let i = 0; i < offset; i++) html += `<div class="mini-cell mc-empty"></div>`;
+
+    for (let d = 1; d <= daysInM; d++) {
+        const dt        = new Date(y, m, d);
+        const iso       = fmtDate(dt);
+        const isPast    = dt < today;
+        const isToday   = dt.getTime() === today.getTime();
+        const isBlocked = blocked.includes(iso);
+        const isSel     = mcSelected === iso;
+
+        let cls = 'mini-cell';
+        if (isPast)              cls += ' mc-disabled';
+        if (isToday)             cls += ' mc-today';
+        if (isBlocked)           cls += ' mc-blocked';
+        if (isSel && !isBlocked) cls += ' mc-selected';
+
+        const onclick = isPast ? '' : `onclick="mcSelectDay('${iso}')"`;
+        html += `<div class="${cls}" ${onclick} title="${iso}">${d}</div>`;
+    }
+    grid.innerHTML = html;
+}
+
+function mcNav(dir) {
+    mcDate.setMonth(mcDate.getMonth() + dir);
+    renderMiniCal();
+}
+
+function mcSelectDay(iso) {
+    if (rangeMode) {
+        if (!rangeStart) {
+            rangeStart = iso;
+            mcSelected = iso;
+            document.getElementById('range-hint').innerHTML =
+                `📅 Rango: <strong>${iso}</strong> → selecciona el día final.`;
+        } else {
+            bloquearRango(rangeStart, iso);
+            rangeStart = null;
+            mcSelected = null;
+            toggleRangeMode();
+        }
+    } else {
+        mcSelected = (mcSelected === iso) ? null : iso;
+    }
+    renderMiniCal();
+}
+
+function toggleRangeMode() {
+    rangeMode  = !rangeMode;
+    rangeStart = null;
+    mcSelected = null;
+    const hint = document.getElementById('range-hint');
+    const btn  = document.getElementById('btn-rango');
+    hint.classList.toggle('visible', rangeMode);
+    btn.style.background = rangeMode ? 'rgba(201,168,76,.25)' : '';
+    if (rangeMode) {
+        hint.innerHTML = '📅 Modo rango: selecciona el <strong>primer día</strong> y luego el <strong>último</strong>.';
+    }
+    renderMiniCal();
+}
+
+async function bloquearDia() {
+    if (!mcSelected) {
+        showCfgStatus('vac-status', 'err', '⚠ Selecciona un día en el calendario.');
+        return;
+    }
+    const motivo = document.getElementById('vac-motivo').value.trim() || 'Vacaciones';
+    await cfgPost(
+        { accion: 'bloquear_dia', fecha: mcSelected, motivo },
+        'vac-status',
+        `✓ Día ${mcSelected} bloqueado.`
+    );
+    mcSelected = null;
+}
+
+async function bloquearRango(desde, hasta) {
+    const [d, h] = desde <= hasta ? [desde, hasta] : [hasta, desde];
+    const motivo = document.getElementById('vac-motivo').value.trim() || 'Vacaciones';
+    await cfgPost(
+        { accion: 'bloquear_rango', desde: d, hasta: h, motivo },
+        'vac-status',
+        `✓ Rango ${d} → ${h} bloqueado.`
+    );
+}
+
+async function desbloquearDia(fecha) {
+    await cfgPost(
+        { accion: 'desbloquear_dia', fecha },
+        'vac-status',
+        `✓ Día ${fecha} desbloqueado.`
+    );
+}
+
+async function cfgPost(body, statusId, okMsg) {
+    try {
+        const r = await fetch(CFG_API, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body),
+        });
+        const j = await r.json();
+        if (j.ok) {
+            showCfgStatus(statusId, 'ok', okMsg);
+            await loadSettings();
+        } else {
+            showCfgStatus(statusId, 'err', '✕ ' + (j.error || 'Error.'));
+        }
+    } catch (e) {
+        showCfgStatus(statusId, 'err', '✕ Sin conexión con el servidor.');
+    }
+}
+
+function renderBlockedList() {
+    const list = document.getElementById('blocked-list');
+    if (!list) return;
+    if (!cfgState.diasBloqueados.length) {
+        list.innerHTML = `<div class="empty-blocked">No hay días bloqueados</div>`;
+        return;
+    }
+    const DIAS = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+    list.innerHTML = cfgState.diasBloqueados.map(d => {
+        const dt  = new Date(d.fecha + 'T00:00:00');
+        const dia = DIAS[dt.getDay()];
+        const fmt = `${dia} ${dt.getDate()}/${String(dt.getMonth()+1).padStart(2,'0')}/${dt.getFullYear()}`;
+        return `
+        <div class="blocked-item">
+            <div class="blocked-item-info">
+                <span class="blocked-fecha">📅 ${fmt}</span>
+                <span class="blocked-motivo">${escHtml(d.motivo)}</span>
+            </div>
+            <button class="blocked-del" onclick="desbloquearDia('${d.fecha}')" title="Desbloquear">✕</button>
+        </div>`;
+    }).join('');
+}
+
+function fmtDate(d) {
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+function escHtml(s) {
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function showCfgStatus(id, type, msg) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.className   = `cfg-status ${type} visible`;
+    el.textContent = msg;
+    setTimeout(() => el.classList.remove('visible'), 4000);
+}
+</script>
+
 </body>
 </html>
