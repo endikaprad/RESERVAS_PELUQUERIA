@@ -77,7 +77,7 @@ let dayBlockedMotivo = '';
 
 // Mapa de días bloqueados del mes visible: { "2026-06-01": "Vacaciones", ... }
 let blockedDaysMap   = {};
-// Clave del último mes cargado para no repetir fetch
+// Clave del último mes cargado — se actualiza SOLO tras fetch exitoso
 let blockedDaysKey   = '';
 
 // ===== CSS para días bloqueados inyectado una sola vez =====
@@ -112,16 +112,25 @@ let blockedDaysKey   = '';
 })();
 
 // ===== CARGAR DÍAS BLOQUEADOS DEL MES =====
+// FIX: blockedDaysKey solo se actualiza si la petición tuvo éxito.
+// Así, si falla (red caída, tabla no existe aún), se reintentará en el próximo render.
 async function loadBlockedDays(year, month) {
     const key = year + '-' + month;
-    if (key === blockedDaysKey) return; // ya cargado
-    blockedDaysKey = key;
+    if (key === blockedDaysKey) return; // ya cargado y exitoso
+
     try {
         const res  = await fetch(`${API_BASE}/blocked-days.php?year=${year}&month=${month}`);
         const json = await res.json();
-        blockedDaysMap = json.ok ? json.data : {};
+        if (json.ok) {
+            blockedDaysMap = json.data;
+            blockedDaysKey = key; // solo marcar como cargado si fue OK
+        } else {
+            blockedDaysMap = {};
+            // NO actualizamos blockedDaysKey → reintentará la próxima vez
+        }
     } catch (e) {
         blockedDaysMap = {};
+        // NO actualizamos blockedDaysKey → reintentará la próxima vez
     }
 }
 
@@ -334,6 +343,12 @@ function goToStep(n) {
     document.querySelectorAll('.step-panel').forEach((p, i) => p.classList.toggle('active', i + 1 === n));
     updateStepsBar();
     window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    // FIX: al volver al step 3, forzar re-render del calendario con días bloqueados actualizados
+    if (n === 3) {
+        blockedDaysKey = ''; // invalidar caché para forzar recarga
+        renderCalendar();
+    }
 }
 
 function updateStepsBar() {
@@ -400,7 +415,7 @@ async function renderCalendar() {
                     'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
     title.textContent = `${MONTHS[month]} ${year}`;
 
-    // Cargar días bloqueados del mes (cacheado por mes)
+    // Cargar días bloqueados del mes (cacheado por mes, solo si fue exitoso)
     await loadBlockedDays(year, month + 1);
 
     const firstDay    = new Date(year, month, 1).getDay();
@@ -415,7 +430,7 @@ async function renderCalendar() {
         const isToday  = date.getTime() === today.getTime();
         const isPast   = date < today;
         const isSunday = date.getDay() === 0;
-        const isBlocked = isDateBlocked(year, month, d); // ← comprobación clave
+        const isBlocked = isDateBlocked(year, month, d);
 
         const selDate    = booking.date;
         const isSelected = selDate &&
@@ -423,19 +438,18 @@ async function renderCalendar() {
             selDate.getMonth()    === month &&
             selDate.getFullYear() === year;
 
-        // Días bloqueados o pasados o domingo: no se puede hacer clic
         const disabled = isPast || isSunday || isBlocked;
 
         let cls = 'cal-cell';
         if (isPast || isSunday) cls += ' disabled';
-        if (isBlocked)          cls += ' blocked';   // estilo tachado rojo
+        if (isBlocked)          cls += ' blocked';
         if (isToday && !isBlocked) cls += ' today';
         if (isSelected && !isBlocked) cls += ' selected';
 
-        const iso      = formatISO(year, month, d);
-        const motivo   = isBlocked ? (blockedDaysMap[iso] || 'No disponible') : '';
+        const iso       = formatISO(year, month, d);
+        const motivo    = isBlocked ? (blockedDaysMap[iso] || 'No disponible') : '';
         const titleAttr = isBlocked ? `title="${motivo}"` : '';
-        const onclick  = disabled ? '' : `onclick="selectDate(${year},${month},${d})"`;
+        const onclick   = disabled ? '' : `onclick="selectDate(${year},${month},${d})"`;
 
         html += `<div class="${cls}" ${onclick} ${titleAttr}>${d}</div>`;
     }
