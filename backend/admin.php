@@ -28,9 +28,9 @@ if (!isset($_SESSION['admin'])) {
 <head>
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <meta name="theme-color" content="##111119">
+    <meta name="theme-color" content="#111119">
 
-    <link rel="shortcut icon" href="img/admin.png" />
+    <link rel="icon" type="image/png" href="img/admin.png">
     <title>Admin · Prado Barber Co.</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,700&family=DM+Sans:wght@300;400;500&display=swap');
