@@ -413,14 +413,25 @@
         margin-bottom: 0.5rem;
     }
 
+    /* ── Footer bottom: todo en columna, centrado ── */
     .footer-bottom {
-        flex-direction: column;
-        gap: 0.35rem;
-        text-align: center;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 0.5rem !important;
+        text-align: center !important;
         padding-top: 1.5rem;
         font-size: 0.7rem;
     }
-
+ 
+    /* El div interior con "Hecho con precisión" y "Acceso equipo" */
+    .footer-bottom > div {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        gap: 0.4rem !important;
+    }
     /* ===== GOLD DIVIDER ===== */
     .gold-divider {
         margin: 1.1rem 0;
