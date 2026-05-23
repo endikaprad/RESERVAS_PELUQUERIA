@@ -40,7 +40,6 @@
         .form-group input.input-error {
             animation: shakeField 0.4s ease;
         }
-        /* Ensure each form-group in the client section is self-contained */
         .client-fields {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -61,12 +60,12 @@
         }
         </style>
 
-        <script src="backend/main.js" defer></script>
+        <script src="backend/main.js?v=2" defer></script>
+        <!-- booking.js movido a /js/ para evitar el bloqueo 403 de InfinityFree en /backend/ -->
         <script src="backend/booking.js" defer></script>
     </head>
     <body>
 
-        <!-- NAVBAR -->
         <nav class="navbar">
             <div class="nav-left">
             <a href="index.html" class="nav-logo">
@@ -90,7 +89,6 @@
             </button>
         </nav>
 
-        <!-- HERO -->
         <div class="booking-hero">
             <span class="section-label">Sistema de reservas</span>
             <h1 class="section-title">Reserva tu <em>cita</em></h1>
@@ -99,10 +97,8 @@
             </p>
         </div>
 
-        <!-- WIZARD -->
         <div class="booking-wrapper">
 
-            <!-- STEPS BAR -->
             <div class="steps-bar">
                 <div class="step-item">
                     <div class="step-wrapper">
@@ -133,32 +129,22 @@
                 </div>
             </div>
 
-            <!-- STEP 1: SERVICIO -->
+            <!-- STEP 1 -->
             <div class="step-panel active" id="step-1">
                 <span class="section-label">Paso 1</span>
-                <h2 class="section-title" style="font-size:1.75rem; margin-bottom:0.5rem;">
-                    ¿Qué servicio buscas?
-                </h2>
-                <p style="color:var(--color-muted); font-size:.875rem; margin-bottom:2rem;">
-                    Selecciona el servicio que quieres reservar.
-                </p>
+                <h2 class="section-title" style="font-size:1.75rem; margin-bottom:0.5rem;">¿Qué servicio buscas?</h2>
+                <p style="color:var(--color-muted); font-size:.875rem; margin-bottom:2rem;">Selecciona el servicio que quieres reservar.</p>
                 <div class="service-select-grid" id="service-grid"></div>
                 <div class="booking-nav" style="justify-content:flex-end;">
-                    <button class="btn btn-primary" id="btn-next-1" disabled>
-                        Continuar →
-                    </button>
+                    <button class="btn btn-primary" id="btn-next-1" disabled>Continuar →</button>
                 </div>
             </div>
 
-            <!-- STEP 2: BARBERO -->
+            <!-- STEP 2 -->
             <div class="step-panel" id="step-2">
                 <span class="section-label">Paso 2</span>
-                <h2 class="section-title" style="font-size:1.75rem; margin-bottom:0.5rem;">
-                    Elige tu barbero
-                </h2>
-                <p style="color:var(--color-muted); font-size:.875rem; margin-bottom:2rem;">
-                    ¿Con quién prefieres trabajar hoy?
-                </p>
+                <h2 class="section-title" style="font-size:1.75rem; margin-bottom:0.5rem;">Elige tu barbero</h2>
+                <p style="color:var(--color-muted); font-size:.875rem; margin-bottom:2rem;">¿Con quién prefieres trabajar hoy?</p>
                 <div class="barber-select-grid" id="barber-grid"></div>
                 <div class="booking-nav">
                     <button class="btn btn-ghost" id="btn-back-2">← Volver</button>
@@ -166,22 +152,17 @@
                 </div>
             </div>
 
-            <!-- STEP 3: FECHA & HORA -->
+            <!-- STEP 3 -->
             <div class="step-panel" id="step-3">
                 <span class="section-label">Paso 3</span>
-                <h2 class="section-title" style="font-size:1.75rem; margin-bottom:0.5rem;">
-                    Fecha y hora
-                </h2>
-                <p style="color:var(--color-muted); font-size:.875rem; margin-bottom:2rem;">
-                    Los domingos permanecemos cerrados.
-                </p>
-
+                <h2 class="section-title" style="font-size:1.75rem; margin-bottom:0.5rem;">Fecha y hora</h2>
+                <p style="color:var(--color-muted); font-size:.875rem; margin-bottom:2rem;">Los domingos permanecemos cerrados.</p>
                 <div class="calendar-wrapper">
                     <div class="cal-header">
                         <span class="cal-title" id="cal-title"></span>
                         <div class="cal-nav">
                             <button onclick="calNav(-1)" aria-label="Mes anterior">‹</button>
-                            <button onclick="calNav(1)"  aria-label="Mes siguiente">›</button>
+                            <button onclick="calNav(1)" aria-label="Mes siguiente">›</button>
                         </div>
                     </div>
                     <div class="cal-days-header">
@@ -195,101 +176,58 @@
                     </div>
                     <div class="cal-grid" id="cal-grid"></div>
                 </div>
-
-                <h3 style="font-size:.875rem; letter-spacing:.1em; text-transform:uppercase;
-                     color:var(--color-muted); margin-bottom:1rem;">
-                    Horarios disponibles
-                </h3>
+                <h3 style="font-size:.875rem; letter-spacing:.1em; text-transform:uppercase; color:var(--color-muted); margin-bottom:1rem;">Horarios disponibles</h3>
                 <div class="time-slots" id="time-slots"></div>
-
                 <div class="booking-nav">
                     <button class="btn btn-ghost" id="btn-back-3">← Volver</button>
                     <button class="btn btn-primary" id="btn-next-3" disabled>Continuar →</button>
                 </div>
             </div>
 
-            <!-- STEP 4: CONFIRMAR -->
+            <!-- STEP 4 -->
             <div class="step-panel" id="step-4">
                 <span class="section-label">Paso 4</span>
-                <h2 class="section-title" style="font-size:1.75rem; margin-bottom:0.5rem;">
-                    Confirma tu reserva
-                </h2>
-                <p style="color:var(--color-muted); font-size:.875rem; margin-bottom:2rem;">
-                    Revisa el resumen y rellena tus datos.
-                </p>
+                <h2 class="section-title" style="font-size:1.75rem; margin-bottom:0.5rem;">Confirma tu reserva</h2>
+                <p style="color:var(--color-muted); font-size:.875rem; margin-bottom:2rem;">Revisa el resumen y rellena tus datos.</p>
 
-                <!-- Resumen -->
                 <div class="booking-summary">
-                    <div class="summary-row">
-                        <span class="summary-label">Servicio</span>
-                        <span id="sum-service">—</span>
-                    </div>
-                    <div class="summary-row">
-                        <span class="summary-label">Barbero</span>
-                        <span id="sum-barber">—</span>
-                    </div>
-                    <div class="summary-row">
-                        <span class="summary-label">Fecha</span>
-                        <span id="sum-date">—</span>
-                    </div>
-                    <div class="summary-row">
-                        <span class="summary-label">Hora</span>
-                        <span id="sum-time">—</span>
-                    </div>
-                    <div class="summary-row">
-                        <span class="summary-label">Duración</span>
-                        <span id="sum-duration">—</span>
-                    </div>
+                    <div class="summary-row"><span class="summary-label">Servicio</span><span id="sum-service">—</span></div>
+                    <div class="summary-row"><span class="summary-label">Barbero</span><span id="sum-barber">—</span></div>
+                    <div class="summary-row"><span class="summary-label">Fecha</span><span id="sum-date">—</span></div>
+                    <div class="summary-row"><span class="summary-label">Hora</span><span id="sum-time">—</span></div>
+                    <div class="summary-row"><span class="summary-label">Duración</span><span id="sum-duration">—</span></div>
                     <div class="summary-row summary-total">
                         <span class="summary-label">Total</span>
                         <span class="summary-value" id="sum-price">—</span>
                     </div>
                 </div>
 
-                <!-- Datos del cliente — cada campo en su propio form-group -->
                 <div class="client-fields">
-
                     <div class="form-group">
                         <label for="client-name">Nombre completo *</label>
-                        <input type="text" id="client-name"
-                               placeholder="Ej. Jon Ibáñez"
-                               autocomplete="name" />
-                        <!-- .field-error se inserta aquí por JS dentro de este form-group -->
+                        <input type="text" id="client-name" placeholder="Ej. Jon Ibáñez" autocomplete="name" />
                     </div>
-
                     <div class="form-group">
                         <label for="client-phone">Teléfono *</label>
-                        <input type="tel" id="client-phone"
-                               placeholder="+34 600 000 000"
-                               autocomplete="tel" />
-                        <!-- .field-error se inserta aquí por JS dentro de este form-group -->
+                        <input type="tel" id="client-phone" placeholder="+34 600 000 000" autocomplete="tel" />
                     </div>
-
                     <div class="form-group span-full">
                         <label for="client-email">Email *</label>
-                        <input type="email" id="client-email"
-                               placeholder="tu@email.com"
-                               autocomplete="email" />
-                        <!-- .field-error se inserta aquí por JS dentro de este form-group -->
+                        <input type="email" id="client-email" placeholder="tu@email.com" autocomplete="email" />
                     </div>
-
                     <div class="form-group span-full">
                         <label for="client-notes">Notas adicionales</label>
-                        <textarea id="client-notes" rows="3"
-                                  placeholder="¿Algo que debamos saber? (opcional)"></textarea>
+                        <textarea id="client-notes" rows="3" placeholder="¿Algo que debamos saber? (opcional)"></textarea>
                     </div>
-
                 </div>
 
                 <div class="booking-nav">
                     <button class="btn btn-ghost" id="btn-back-4">← Volver</button>
-                    <button class="btn btn-primary" id="btn-confirm" disabled>
-                        Confirmar reserva ✦
-                    </button>
+                    <button class="btn btn-primary" id="btn-confirm">Confirmar reserva ✦</button>
                 </div>
             </div>
 
-            <!-- STEP 5: CONFIRMACIÓN -->
+            <!-- STEP 5 -->
             <div class="step-panel" id="step-5">
                 <div class="confirmation-box">
                     <div class="confirmation-icon">✦</div>
@@ -298,21 +236,16 @@
                     <div id="confirmation-detail"
                          style="background:var(--color-surface); border:1px solid var(--color-border);
                          border-radius:var(--radius-lg); padding:1.5rem; margin:2rem auto;
-                         max-width:400px; font-size:.9rem; line-height:1.8;">
-                    </div>
+                         max-width:400px; font-size:.9rem; line-height:1.8;"></div>
                     <div style="display:flex; gap:1rem; justify-content:center; flex-wrap:wrap;">
                         <a href="index.html" class="btn btn-outline">Volver al inicio</a>
-                        <a href="reservas.html" class="btn btn-primary"
-                           onclick="location.reload();return false;">
-                            Nueva reserva
-                        </a>
+                        <a href="reservas.html" class="btn btn-primary" onclick="location.reload();return false;">Nueva reserva</a>
                     </div>
                 </div>
             </div>
 
-        </div><!-- /booking-wrapper -->
+        </div>
 
-        <!-- FOOTER -->
         <footer>
             <div class="footer-grid">
                 <div class="footer-brand">

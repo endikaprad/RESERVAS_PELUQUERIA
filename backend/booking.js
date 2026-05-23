@@ -376,7 +376,7 @@ function syncClientForm() {
     }
 }
 
-function validateClientForm(showErrors = false) {
+function validateClientForm() {
     const nameEl  = document.getElementById('client-name');
     const phoneEl = document.getElementById('client-phone');
     const emailEl = document.getElementById('client-email');
@@ -384,13 +384,14 @@ function validateClientForm(showErrors = false) {
     if (phoneEl) booking.client.phone = phoneEl.value;
     if (emailEl) booking.client.email = emailEl.value;
 
-    const nameOk  = isValidName(booking.client.name);
-    const phoneOk = isValidPhone(booking.client.phone);
-    const emailOk = isValidEmail(booking.client.email);
+    const allOk = isValidName(booking.client.name)
+               && isValidPhone(booking.client.phone)
+               && isValidEmail(booking.client.email);
 
+    // Visual hint only — button is never truly disabled so click always fires
     const btn = document.getElementById('btn-confirm');
-    if (btn) btn.disabled = !(nameOk && phoneOk && emailOk);
-    return nameOk && phoneOk && emailOk;
+
+    return allOk;
 }
 
 function validateAllFields() {
@@ -446,8 +447,8 @@ async function confirmBooking() {
             renderConfirmation();
         } else {
             if (window.showToast) showToast(json.error || 'Error al reservar', '⚠');
-            btn.disabled    = false;
-            btn.textContent = 'Confirmar reserva ✦';
+            btn.disabled     = false;
+            btn.textContent  = 'Confirmar reserva ✦';
             if (res.status === 409) {
                 booking.time = null;
                 await loadTakenSlots();
@@ -455,8 +456,8 @@ async function confirmBooking() {
         }
     } catch (e) {
         if (window.showToast) showToast('Sin conexión al servidor', '⚠');
-        btn.disabled    = false;
-        btn.textContent = 'Confirmar reserva ✦';
+        btn.disabled     = false;
+        btn.textContent  = 'Confirmar reserva ✦';
     }
 }
 
@@ -501,15 +502,22 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnBack4  = document.getElementById('btn-back-4');
     const btnConfirm= document.getElementById('btn-confirm');
 
+    // btn-confirm NUNCA debe tener disabled: los botones disabled no disparan click,
+    // por lo que la validación con errores nunca se mostraría.
+    // Usamos opacidad como indicador visual en su lugar.
+    if (btnConfirm) {
+        btnConfirm.disabled      = false;
+btnConfirm.addEventListener('click', confirmBooking);
+    }
+
     if (btn1) btn1.addEventListener('click', () => { if (booking.service) goToStep(2); });
     if (btn2) btn2.addEventListener('click', () => { if (booking.barber)  goToStep(3); });
     if (btn3) btn3.addEventListener('click', () => {
         if (booking.date && booking.time) { renderSummary(); goToStep(4); syncClientForm(); }
     });
-    if (btnBack2)   btnBack2.addEventListener('click',  () => goToStep(1));
-    if (btnBack3)   btnBack3.addEventListener('click',  () => goToStep(2));
-    if (btnBack4)   btnBack4.addEventListener('click',  () => goToStep(3));
-    if (btnConfirm) btnConfirm.addEventListener('click', confirmBooking);
+    if (btnBack2) btnBack2.addEventListener('click', () => goToStep(1));
+    if (btnBack3) btnBack3.addEventListener('click', () => goToStep(2));
+    if (btnBack4) btnBack4.addEventListener('click', () => goToStep(3));
 });
 
 window.selectService = selectService;
