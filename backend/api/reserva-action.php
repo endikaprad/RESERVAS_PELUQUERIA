@@ -3,6 +3,8 @@
 //  GET /api/reserva-action.php?token=XXX&accion=aceptar|denegar
 // ============================================================
 
+header('Content-Type: text/html; charset=utf-8');
+
 require_once __DIR__ . '/helpers.php';
 
 $token  = trim($_GET['token']  ?? '');
@@ -76,7 +78,8 @@ try {
     <div style='padding:32px;'>
       <p style='color:#f0ece3;font-size:15px;margin-bottom:24px;'>
         Hola <strong>" . htmlspecialchars($reserva['cliente_nombre']) . "</strong>,<br>
-        {$mensajeCliente}
+        {$mensajeCliente}<br><br>
+        <span style='color:#7a7880;font-size:13px;'>Email registrado: " . htmlspecialchars($reserva['cliente_email']) . "</span>
       </p>
       <table style='width:100%;border-collapse:collapse;margin-bottom:28px;'>
         <tr><td style='padding:10px 0;border-bottom:1px solid #252530;color:#7a7880;font-size:13px;width:120px;'>Servicio</td>
@@ -96,7 +99,7 @@ try {
   </div>
 </body></html>";
 
-    sendResend($reserva['cliente_email'], $asuntoCliente, $htmlCliente);
+    sendResend('endikapradodev@gmail.com', $asuntoCliente . ' - ' . htmlspecialchars($reserva['cliente_nombre']), $htmlCliente);
 
     if ($accion === 'aceptar') {
         mostrarPagina('ok', 'Reserva aceptada!',

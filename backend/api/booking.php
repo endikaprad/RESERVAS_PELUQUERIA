@@ -134,7 +134,8 @@ try {
     <div style='padding:32px;'>
       <p style='color:#f0ece3;font-size:15px;margin-bottom:24px;'>
         Hola <strong>" . htmlspecialchars($nombre) . "</strong>, hemos recibido tu solicitud.<br>
-        En breve te confirmaremos por email si esta disponible.
+        En breve te confirmaremos por email si esta disponible.<br><br>
+        <span style='color:#7a7880;font-size:13px;'>Email de contacto registrado: " . htmlspecialchars($email) . "</span>
       </p>
       <table style='width:100%;border-collapse:collapse;margin-bottom:28px;'>
         <tr><td style='padding:10px 0;border-bottom:1px solid #252530;color:#7a7880;font-size:13px;width:120px;'>Servicio</td>
@@ -157,7 +158,7 @@ try {
 </body></html>";
 
     sendResend('endikapradodev@gmail.com', "Nueva reserva - " . htmlspecialchars($nombre) . " - {$fechaFormateada} {$hora}", $htmlPeluquero);
-    sendResend($email, 'Reserva recibida - Prado Barber Co.', $htmlCliente);
+    sendResend('endikapradodev@gmail.com', "Confirmación pendiente - " . htmlspecialchars($nombre) . " - " . htmlspecialchars($email), $htmlCliente);
 
     jsonOk([
         'id'      => (int)$id,
