@@ -297,8 +297,8 @@
 }
 
 .cal-cell.today:not(.selected) {
-    border-color: var(--color-gold-dim);
-    color: var(--color-gold);
+    border-color: var(--red-dark);
+    color: var(--red);
 }
 
 .cal-cell.disabled {
