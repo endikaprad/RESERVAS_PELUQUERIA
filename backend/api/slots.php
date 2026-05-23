@@ -3,7 +3,7 @@
 //  GET /api/slots.php?fecha=YYYY-MM-DD&barbero=endika
 //
 //  Devuelve las horas ya reservadas para ese barbero+día,
-//  Y si el día está bloqueado por vacaciones.
+//  y si el día está bloqueado por vacaciones.
 // ============================================================
 
 require_once __DIR__ . '/../config.php';
@@ -27,7 +27,7 @@ try {
 
     // ── ¿Está el día bloqueado por vacaciones? ────────────────
     $bloqStmt = $db->prepare(
-        'SELECT motivo FROM dias_bloqueados WHERE fecha = ?'
+        'SELECT motivo FROM dias_bloqueados WHERE fecha = ? LIMIT 1'
     );
     $bloqStmt->execute([$fecha]);
     $bloqueado = $bloqStmt->fetch();

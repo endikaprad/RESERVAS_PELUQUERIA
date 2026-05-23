@@ -1,5 +1,5 @@
 // ============================================================
-//  PRADO BARBER CO. — booking.js  (días bloqueados aplicados)
+//  PRADO BARBER CO. — booking.js
 // ============================================================
 
 const API_BASE = './backend/api';
@@ -28,31 +28,31 @@ const TIME_SLOTS = [
 
 // ===== PHONE PREFIX DATA =====
 const PHONE_COUNTRIES = [
-    { code: 'ES', flag: '🇪🇸', name: 'España',          dial: '+34',  digits: 9,  pattern: /^[6-9]\d{8}$/,    hint: '6XX XXX XXX' },
-    { code: 'US', flag: '🇺🇸', name: 'Estados Unidos',  dial: '+1',   digits: 10, pattern: /^[2-9]\d{9}$/,    hint: '6XX XXX XXXX' },
-    { code: 'GB', flag: '🇬🇧', name: 'Reino Unido',     dial: '+44',  digits: 10, pattern: /^[1-9]\d{9}$/,    hint: '07XXX XXXXXX' },
-    { code: 'FR', flag: '🇫🇷', name: 'Francia',         dial: '+33',  digits: 9,  pattern: /^[1-9]\d{8}$/,    hint: '06 XX XX XX XX' },
-    { code: 'DE', flag: '🇩🇪', name: 'Alemania',        dial: '+49',  digits: 11, pattern: /^\d{10,11}$/,     hint: '015X XXXXXXX' },
-    { code: 'IT', flag: '🇮🇹', name: 'Italia',          dial: '+39',  digits: 10, pattern: /^3\d{9}$/,        hint: '3XX XXX XXXX' },
-    { code: 'PT', flag: '🇵🇹', name: 'Portugal',        dial: '+351', digits: 9,  pattern: /^[29]\d{8}$/,     hint: '9XX XXX XXX' },
-    { code: 'MX', flag: '🇲🇽', name: 'México',          dial: '+52',  digits: 10, pattern: /^\d{10}$/,        hint: 'XX XXXX XXXX' },
-    { code: 'AR', flag: '🇦🇷', name: 'Argentina',       dial: '+54',  digits: 10, pattern: /^\d{10}$/,        hint: 'XX XXXX XXXX' },
-    { code: 'CO', flag: '🇨🇴', name: 'Colombia',        dial: '+57',  digits: 10, pattern: /^3\d{9}$/,        hint: '3XX XXX XXXX' },
-    { code: 'CL', flag: '🇨🇱', name: 'Chile',           dial: '+56',  digits: 9,  pattern: /^9\d{8}$/,        hint: '9XXXX XXXX' },
-    { code: 'BR', flag: '🇧🇷', name: 'Brasil',          dial: '+55',  digits: 11, pattern: /^[1-9]\d{10}$/,   hint: '11 9XXXX XXXX' },
-    { code: 'NL', flag: '🇳🇱', name: 'Países Bajos',   dial: '+31',  digits: 9,  pattern: /^[1-9]\d{8}$/,    hint: '06 XXXXXXXX' },
-    { code: 'BE', flag: '🇧🇪', name: 'Bélgica',         dial: '+32',  digits: 9,  pattern: /^[1-9]\d{8}$/,    hint: '04XX XX XX XX' },
-    { code: 'CH', flag: '🇨🇭', name: 'Suiza',           dial: '+41',  digits: 9,  pattern: /^[1-9]\d{8}$/,    hint: '076 XXX XX XX' },
-    { code: 'PL', flag: '🇵🇱', name: 'Polonia',         dial: '+48',  digits: 9,  pattern: /^\d{9}$/,         hint: 'XXX XXX XXX' },
-    { code: 'SE', flag: '🇸🇪', name: 'Suecia',          dial: '+46',  digits: 10, pattern: /^[1-9]\d{8,9}$/,  hint: '070 XXX XXXX' },
-    { code: 'NO', flag: '🇳🇴', name: 'Noruega',         dial: '+47',  digits: 8,  pattern: /^\d{8}$/,         hint: '4XX XX XXX' },
-    { code: 'DK', flag: '🇩🇰', name: 'Dinamarca',       dial: '+45',  digits: 8,  pattern: /^\d{8}$/,         hint: 'XX XX XX XX' },
-    { code: 'RO', flag: '🇷🇴', name: 'Rumanía',         dial: '+40',  digits: 9,  pattern: /^[67]\d{8}$/,     hint: '07XX XXX XXX' },
-    { code: 'MA', flag: '🇲🇦', name: 'Marruecos',       dial: '+212', digits: 9,  pattern: /^[67]\d{8}$/,     hint: '06X XXX XXX' },
-    { code: 'AU', flag: '🇦🇺', name: 'Australia',       dial: '+61',  digits: 9,  pattern: /^[24-9]\d{8}$/,   hint: '04XX XXX XXX' },
-    { code: 'JP', flag: '🇯🇵', name: 'Japón',           dial: '+81',  digits: 10, pattern: /^[7-9]0\d{8}$/,   hint: '070 XXXX XXXX' },
-    { code: 'CN', flag: '🇨🇳', name: 'China',           dial: '+86',  digits: 11, pattern: /^1[3-9]\d{9}$/,   hint: '1XX XXXX XXXX' },
-    { code: 'IN', flag: '🇮🇳', name: 'India',           dial: '+91',  digits: 10, pattern: /^[6-9]\d{9}$/,    hint: 'XXXXX XXXXX' },
+    { code: 'ES', flag: '🇪🇸', name: 'España',         dial: '+34',  digits: 9,  pattern: /^[6-9]\d{8}$/,   hint: '6XX XXX XXX' },
+    { code: 'US', flag: '🇺🇸', name: 'Estados Unidos', dial: '+1',   digits: 10, pattern: /^[2-9]\d{9}$/,   hint: '6XX XXX XXXX' },
+    { code: 'GB', flag: '🇬🇧', name: 'Reino Unido',    dial: '+44',  digits: 10, pattern: /^[1-9]\d{9}$/,   hint: '07XXX XXXXXX' },
+    { code: 'FR', flag: '🇫🇷', name: 'Francia',        dial: '+33',  digits: 9,  pattern: /^[1-9]\d{8}$/,   hint: '06 XX XX XX XX' },
+    { code: 'DE', flag: '🇩🇪', name: 'Alemania',       dial: '+49',  digits: 11, pattern: /^\d{10,11}$/,    hint: '015X XXXXXXX' },
+    { code: 'IT', flag: '🇮🇹', name: 'Italia',         dial: '+39',  digits: 10, pattern: /^3\d{9}$/,       hint: '3XX XXX XXXX' },
+    { code: 'PT', flag: '🇵🇹', name: 'Portugal',       dial: '+351', digits: 9,  pattern: /^[29]\d{8}$/,    hint: '9XX XXX XXX' },
+    { code: 'MX', flag: '🇲🇽', name: 'México',         dial: '+52',  digits: 10, pattern: /^\d{10}$/,       hint: 'XX XXXX XXXX' },
+    { code: 'AR', flag: '🇦🇷', name: 'Argentina',      dial: '+54',  digits: 10, pattern: /^\d{10}$/,       hint: 'XX XXXX XXXX' },
+    { code: 'CO', flag: '🇨🇴', name: 'Colombia',       dial: '+57',  digits: 10, pattern: /^3\d{9}$/,       hint: '3XX XXX XXXX' },
+    { code: 'CL', flag: '🇨🇱', name: 'Chile',          dial: '+56',  digits: 9,  pattern: /^9\d{8}$/,       hint: '9XXXX XXXX' },
+    { code: 'BR', flag: '🇧🇷', name: 'Brasil',         dial: '+55',  digits: 11, pattern: /^[1-9]\d{10}$/,  hint: '11 9XXXX XXXX' },
+    { code: 'NL', flag: '🇳🇱', name: 'Países Bajos',  dial: '+31',  digits: 9,  pattern: /^[1-9]\d{8}$/,   hint: '06 XXXXXXXX' },
+    { code: 'BE', flag: '🇧🇪', name: 'Bélgica',        dial: '+32',  digits: 9,  pattern: /^[1-9]\d{8}$/,   hint: '04XX XX XX XX' },
+    { code: 'CH', flag: '🇨🇭', name: 'Suiza',          dial: '+41',  digits: 9,  pattern: /^[1-9]\d{8}$/,   hint: '076 XXX XX XX' },
+    { code: 'PL', flag: '🇵🇱', name: 'Polonia',        dial: '+48',  digits: 9,  pattern: /^\d{9}$/,        hint: 'XXX XXX XXX' },
+    { code: 'SE', flag: '🇸🇪', name: 'Suecia',         dial: '+46',  digits: 10, pattern: /^[1-9]\d{8,9}$/, hint: '070 XXX XXXX' },
+    { code: 'NO', flag: '🇳🇴', name: 'Noruega',        dial: '+47',  digits: 8,  pattern: /^\d{8}$/,        hint: '4XX XX XXX' },
+    { code: 'DK', flag: '🇩🇰', name: 'Dinamarca',      dial: '+45',  digits: 8,  pattern: /^\d{8}$/,        hint: 'XX XX XX XX' },
+    { code: 'RO', flag: '🇷🇴', name: 'Rumanía',        dial: '+40',  digits: 9,  pattern: /^[67]\d{8}$/,    hint: '07XX XXX XXX' },
+    { code: 'MA', flag: '🇲🇦', name: 'Marruecos',      dial: '+212', digits: 9,  pattern: /^[67]\d{8}$/,    hint: '06X XXX XXX' },
+    { code: 'AU', flag: '🇦🇺', name: 'Australia',      dial: '+61',  digits: 9,  pattern: /^[24-9]\d{8}$/,  hint: '04XX XXX XXX' },
+    { code: 'JP', flag: '🇯🇵', name: 'Japón',          dial: '+81',  digits: 10, pattern: /^[7-9]0\d{8}$/,  hint: '070 XXXX XXXX' },
+    { code: 'CN', flag: '🇨🇳', name: 'China',          dial: '+86',  digits: 11, pattern: /^1[3-9]\d{9}$/,  hint: '1XX XXXX XXXX' },
+    { code: 'IN', flag: '🇮🇳', name: 'India',          dial: '+91',  digits: 10, pattern: /^[6-9]\d{9}$/,   hint: 'XXXXX XXXXX' },
 ];
 
 // ===== PREFIX STATE =====
@@ -75,6 +75,65 @@ let loadingSlots     = false;
 let dayBlocked       = false;
 let dayBlockedMotivo = '';
 
+// Mapa de días bloqueados del mes visible: { "2026-06-01": "Vacaciones", ... }
+let blockedDaysMap   = {};
+// Clave del último mes cargado para no repetir fetch
+let blockedDaysKey   = '';
+
+// ===== CSS para días bloqueados inyectado una sola vez =====
+(function injectStyles() {
+    const style = document.createElement('style');
+    style.textContent = `
+        .cal-cell.blocked {
+            background: rgba(212,43,43,0.13) !important;
+            color: rgba(240,236,227,0.25) !important;
+            cursor: not-allowed !important;
+            position: relative;
+            text-decoration: line-through;
+        }
+        .cal-cell.blocked:hover {
+            border-color: transparent !important;
+            color: rgba(240,236,227,0.25) !important;
+        }
+        .cal-cell.blocked::after {
+            content: '';
+            position: absolute;
+            inset: 4px;
+            border-radius: 50%;
+            background: repeating-linear-gradient(
+                -45deg,
+                rgba(212,43,43,0.3) 0px, rgba(212,43,43,0.3) 1px,
+                transparent 1px, transparent 4px
+            );
+            pointer-events: none;
+        }
+    `;
+    document.head.appendChild(style);
+})();
+
+// ===== CARGAR DÍAS BLOQUEADOS DEL MES =====
+async function loadBlockedDays(year, month) {
+    const key = year + '-' + month;
+    if (key === blockedDaysKey) return; // ya cargado
+    blockedDaysKey = key;
+    try {
+        const res  = await fetch(`${API_BASE}/blocked-days.php?year=${year}&month=${month}`);
+        const json = await res.json();
+        blockedDaysMap = json.ok ? json.data : {};
+    } catch (e) {
+        blockedDaysMap = {};
+    }
+}
+
+function isDateBlocked(year, month, day) {
+    const iso = `${year}-${String(month + 1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+    return Object.prototype.hasOwnProperty.call(blockedDaysMap, iso);
+}
+
+function formatISO(year, month, day) {
+    return `${year}-${String(month + 1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+}
+
 // ===== VALIDATION HELPERS =====
 
 function isValidName(v) {
@@ -85,18 +144,11 @@ function isValidEmail(v) {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
 }
 
-function isValidPhone() {
-    const raw    = document.getElementById('client-phone').value.replace(/\s/g, '');
-    const digits = raw.replace(/\D/g, '');
-    return selectedCountry.pattern.test(digits);
-}
-
 function setFieldError(fieldId, message) {
     const el = document.getElementById(fieldId);
     if (!el) return;
     const wrap = el.closest('.form-group');
     if (!wrap) return;
-
     let errEl = wrap.querySelector('.field-error');
     if (!errEl) {
         errEl = document.createElement('div');
@@ -110,15 +162,12 @@ function setFieldError(fieldId, message) {
     el.classList.toggle('input-error', !!message);
 }
 
-function clearFieldError(fieldId) {
-    setFieldError(fieldId, '');
-}
+function clearFieldError(fieldId) { setFieldError(fieldId, ''); }
 
 function setPhoneError(message) {
-    const wrap = document.getElementById('phone-field-wrap');
+    const wrap  = document.getElementById('phone-field-wrap');
     const group = document.getElementById('phone-form-group');
     if (!wrap || !group) return;
-
     let errEl = group.querySelector('.field-error');
     if (!errEl) {
         errEl = document.createElement('div');
@@ -132,9 +181,7 @@ function setPhoneError(message) {
     wrap.classList.toggle('input-error', !!message);
 }
 
-function clearPhoneError() {
-    setPhoneError('');
-}
+function clearPhoneError() { setPhoneError(''); }
 
 function enforceNameInput(e) {
     const el = e.target;
@@ -150,47 +197,27 @@ function validateField(fieldId) {
     const val = el.value;
 
     if (fieldId === 'client-name') {
-        if (!val.trim()) {
-            setFieldError(fieldId, '⚠ El nombre no puede estar vacío.');
-            return false;
-        }
-        if (!isValidName(val)) {
-            setFieldError(fieldId, '⚠ Solo se permiten letras y espacios.');
-            return false;
-        }
-        clearFieldError(fieldId);
-        return true;
+        if (!val.trim()) { setFieldError(fieldId, '⚠ El nombre no puede estar vacío.'); return false; }
+        if (!isValidName(val)) { setFieldError(fieldId, '⚠ Solo se permiten letras y espacios.'); return false; }
+        clearFieldError(fieldId); return true;
     }
-
     if (fieldId === 'client-email') {
-        if (!val.trim()) {
-            setFieldError(fieldId, '⚠ El email no puede estar vacío.');
-            return false;
-        }
-        if (!isValidEmail(val)) {
-            setFieldError(fieldId, '⚠ Introduce un email válido (ej: tu@email.com).');
-            return false;
-        }
-        clearFieldError(fieldId);
-        return true;
+        if (!val.trim()) { setFieldError(fieldId, '⚠ El email no puede estar vacío.'); return false; }
+        if (!isValidEmail(val)) { setFieldError(fieldId, '⚠ Introduce un email válido (ej: tu@email.com).'); return false; }
+        clearFieldError(fieldId); return true;
     }
-
     return true;
 }
 
 function validatePhoneField() {
     const raw    = document.getElementById('client-phone').value.replace(/\s/g, '');
     const digits = raw.replace(/\D/g, '');
-    if (!digits) {
-        setPhoneError('⚠ El teléfono no puede estar vacío.');
-        return false;
-    }
+    if (!digits) { setPhoneError('⚠ El teléfono no puede estar vacío.'); return false; }
     if (!selectedCountry.pattern.test(digits)) {
         setPhoneError(`⚠ Número inválido para ${selectedCountry.name} (${selectedCountry.dial}). Formato: ${selectedCountry.hint}`);
         return false;
     }
-    clearPhoneError();
-    return true;
+    clearPhoneError(); return true;
 }
 
 // ===== PHONE PREFIX LOGIC =====
@@ -211,36 +238,26 @@ function renderPrefixList(list) {
 function filterPrefixList() {
     const q = (document.getElementById('prefix-search').value || '').toLowerCase();
     const filtered = q
-        ? PHONE_COUNTRIES.filter(c =>
-            c.name.toLowerCase().includes(q) ||
-            c.dial.includes(q) ||
-            c.code.toLowerCase().includes(q))
+        ? PHONE_COUNTRIES.filter(c => c.name.toLowerCase().includes(q) || c.dial.includes(q) || c.code.toLowerCase().includes(q))
         : [...PHONE_COUNTRIES];
     renderPrefixList(filtered);
 }
 
 function openPrefixDropdown() {
     prefixDropdownOpen = true;
-    const dd      = document.getElementById('prefix-dropdown');
-    const btn     = document.getElementById('prefix-btn');
-    const chevron = document.getElementById('prefix-chevron');
-    if (dd)      dd.classList.add('open');
-    if (chevron) chevron.classList.add('open');
-    if (btn)     btn.setAttribute('aria-expanded', 'true');
-
-    const searchEl = document.getElementById('prefix-search');
-    if (searchEl) { searchEl.value = ''; searchEl.focus(); }
+    document.getElementById('prefix-dropdown')?.classList.add('open');
+    document.getElementById('prefix-chevron')?.classList.add('open');
+    document.getElementById('prefix-btn')?.setAttribute('aria-expanded', 'true');
+    const s = document.getElementById('prefix-search');
+    if (s) { s.value = ''; s.focus(); }
     renderPrefixList(PHONE_COUNTRIES);
 }
 
 function closePrefixDropdown() {
     prefixDropdownOpen = false;
-    const dd      = document.getElementById('prefix-dropdown');
-    const btn     = document.getElementById('prefix-btn');
-    const chevron = document.getElementById('prefix-chevron');
-    if (dd)      dd.classList.remove('open');
-    if (chevron) chevron.classList.remove('open');
-    if (btn)     btn.setAttribute('aria-expanded', 'false');
+    document.getElementById('prefix-dropdown')?.classList.remove('open');
+    document.getElementById('prefix-chevron')?.classList.remove('open');
+    document.getElementById('prefix-btn')?.setAttribute('aria-expanded', 'false');
 }
 
 function togglePrefixDropdown() {
@@ -249,48 +266,29 @@ function togglePrefixDropdown() {
 
 function selectCountry(code) {
     selectedCountry = PHONE_COUNTRIES.find(c => c.code === code) || PHONE_COUNTRIES[0];
-
     const flagEl = document.getElementById('prefix-flag');
     const codeEl = document.getElementById('prefix-code');
     const input  = document.getElementById('client-phone');
-
     if (flagEl) flagEl.textContent = selectedCountry.flag;
     if (codeEl) codeEl.textContent = selectedCountry.dial;
-    if (input)  {
-        input.placeholder = selectedCountry.hint;
-        input.maxLength   = selectedCountry.digits + 4;
-        input.value       = '';
-    }
-
+    if (input)  { input.placeholder = selectedCountry.hint; input.maxLength = selectedCountry.digits + 4; input.value = ''; }
     updatePhoneHint();
     clearPhoneError();
     closePrefixDropdown();
-
     if (input) input.focus();
 }
 
 function updatePhoneHint() {
-    const hint   = document.getElementById('phone-hint');
-    const input  = document.getElementById('client-phone');
+    const hint  = document.getElementById('phone-hint');
+    const input = document.getElementById('client-phone');
     if (!hint || !input) return;
-
-    const raw    = input.value.replace(/\s/g, '');
-    const digits = raw.replace(/\D/g, '');
-
-    if (!digits) {
-        hint.textContent  = '';
-        hint.className    = 'phone-hint';
-        updatePhoneFull('');
-        return;
-    }
-
+    const digits = input.value.replace(/\s/g, '').replace(/\D/g, '');
+    if (!digits) { hint.textContent = ''; hint.className = 'phone-hint'; updatePhoneFull(''); return; }
     if (digits.length < selectedCountry.digits) {
         hint.textContent = `${digits.length} / ${selectedCountry.digits} dígitos`;
         hint.className   = 'phone-hint typing';
-        updatePhoneFull('');
-        return;
+        updatePhoneFull(''); return;
     }
-
     if (selectedCountry.pattern.test(digits)) {
         hint.textContent = `✓ Válido · ${selectedCountry.name}`;
         hint.className   = 'phone-hint valid';
@@ -313,30 +311,19 @@ function initPrefixSelector() {
     const btn    = document.getElementById('prefix-btn');
     const search = document.getElementById('prefix-search');
     const input  = document.getElementById('client-phone');
-
-    if (btn) btn.addEventListener('click', togglePrefixDropdown);
-
-    if (search) {
-        search.addEventListener('input', filterPrefixList);
-        search.addEventListener('keydown', e => e.stopPropagation());
-    }
-
-    if (input) {
+    if (btn)    btn.addEventListener('click', togglePrefixDropdown);
+    if (search) { search.addEventListener('input', filterPrefixList); search.addEventListener('keydown', e => e.stopPropagation()); }
+    if (input)  {
         input.placeholder = selectedCountry.hint;
         input.maxLength   = selectedCountry.digits + 4;
-        input.addEventListener('input', () => {
-            updatePhoneHint();
-            clearPhoneError();
-        });
+        input.addEventListener('input', () => { updatePhoneHint(); clearPhoneError(); });
         input.addEventListener('blur', validatePhoneField);
     }
-
     document.addEventListener('click', e => {
         if (!prefixDropdownOpen) return;
         const wrap = document.getElementById('phone-field-wrap');
         if (wrap && !wrap.contains(e.target)) closePrefixDropdown();
     });
-
     renderPrefixList(PHONE_COUNTRIES);
 }
 
@@ -344,24 +331,20 @@ function initPrefixSelector() {
 function goToStep(n) {
     if (n < 1 || n > 5) return;
     booking.step = n;
-    document.querySelectorAll('.step-panel').forEach((p, i) => {
-        p.classList.toggle('active', i + 1 === n);
-    });
+    document.querySelectorAll('.step-panel').forEach((p, i) => p.classList.toggle('active', i + 1 === n));
     updateStepsBar();
     window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 function updateStepsBar() {
     document.querySelectorAll('.step-circle').forEach((el, i) => {
-        const stepN = i + 1;
+        const s = i + 1;
         el.classList.remove('active', 'done');
-        if (stepN < booking.step)        { el.classList.add('done');   el.textContent = '✓'; }
-        else if (stepN === booking.step) { el.classList.add('active'); el.textContent = stepN; }
-        else                              { el.textContent = stepN; }
+        if (s < booking.step)       { el.classList.add('done');   el.textContent = '✓'; }
+        else if (s === booking.step){ el.classList.add('active'); el.textContent = s; }
+        else                          el.textContent = s;
     });
-    document.querySelectorAll('.step-line').forEach((el, i) => {
-        el.classList.toggle('done', i + 1 < booking.step);
-    });
+    document.querySelectorAll('.step-line').forEach((el, i) => el.classList.toggle('done', i + 1 < booking.step));
 }
 
 // ===== STEP 1: SERVICE =====
@@ -369,8 +352,7 @@ function renderServices() {
     const grid = document.getElementById('service-grid');
     if (!grid) return;
     grid.innerHTML = SERVICES.map(s => `
-        <div class="service-option ${booking.service?.id === s.id ? 'selected' : ''}"
-             onclick="selectService('${s.id}')">
+        <div class="service-option ${booking.service?.id === s.id ? 'selected' : ''}" onclick="selectService('${s.id}')">
           <div class="svc-name">${s.name}</div>
           <div class="svc-meta">${s.duration}</div>
           <div class="svc-price">${s.price} €</div>
@@ -388,8 +370,7 @@ function renderBarbers() {
     const grid = document.getElementById('barber-grid');
     if (!grid) return;
     grid.innerHTML = BARBERS.map(b => `
-        <div class="barber-option ${booking.barber?.id === b.id ? 'selected' : ''}"
-             onclick="selectBarber('${b.id}')">
+        <div class="barber-option ${booking.barber?.id === b.id ? 'selected' : ''}" onclick="selectBarber('${b.id}')">
           <div class="barber-avatar-book">${b.initials}</div>
           <div class="b-name">${b.name}</div>
           <div class="b-spec">${b.spec}</div>
@@ -404,13 +385,14 @@ function selectBarber(id) {
 }
 
 // ===== STEP 3: DATE & TIME =====
-function renderCalendar() {
+
+async function renderCalendar() {
     const grid  = document.getElementById('cal-grid');
     const title = document.getElementById('cal-title');
     if (!grid) return;
 
     const year  = calendarDate.getFullYear();
-    const month = calendarDate.getMonth();
+    const month = calendarDate.getMonth(); // 0-based
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
@@ -418,8 +400,11 @@ function renderCalendar() {
                     'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
     title.textContent = `${MONTHS[month]} ${year}`;
 
+    // Cargar días bloqueados del mes (cacheado por mes)
+    await loadBlockedDays(year, month + 1);
+
     const firstDay    = new Date(year, month, 1).getDay();
-    const offset      = (firstDay + 6) % 7;
+    const offset      = (firstDay + 6) % 7; // lunes = 0
     const daysInMonth = new Date(year, month + 1, 0).getDate();
 
     let html = '';
@@ -430,54 +415,37 @@ function renderCalendar() {
         const isToday  = date.getTime() === today.getTime();
         const isPast   = date < today;
         const isSunday = date.getDay() === 0;
-        const disabled = isPast || isSunday;
+        const isBlocked = isDateBlocked(year, month, d); // ← comprobación clave
 
         const selDate    = booking.date;
         const isSelected = selDate &&
-            selDate.getDate()     === d     &&
+            selDate.getDate()     === d &&
             selDate.getMonth()    === month &&
             selDate.getFullYear() === year;
 
-        // Si este día está seleccionado y además bloqueado, marcarlo diferente
-        const isBlockedSelected = isSelected && dayBlocked;
+        // Días bloqueados o pasados o domingo: no se puede hacer clic
+        const disabled = isPast || isSunday || isBlocked;
 
         let cls = 'cal-cell';
-        if (disabled)        cls += ' disabled';
-        if (isToday)         cls += ' today';
-        if (isSelected && !isBlockedSelected) cls += ' selected';
-        if (isBlockedSelected) cls += ' blocked-day';
+        if (isPast || isSunday) cls += ' disabled';
+        if (isBlocked)          cls += ' blocked';   // estilo tachado rojo
+        if (isToday && !isBlocked) cls += ' today';
+        if (isSelected && !isBlocked) cls += ' selected';
 
-        const onclick = disabled ? '' : `onclick="selectDate(${year},${month},${d})"`;
-        const titleAttr = isBlockedSelected ? 'title="Día no disponible"' : '';
+        const iso      = formatISO(year, month, d);
+        const motivo   = isBlocked ? (blockedDaysMap[iso] || 'No disponible') : '';
+        const titleAttr = isBlocked ? `title="${motivo}"` : '';
+        const onclick  = disabled ? '' : `onclick="selectDate(${year},${month},${d})"`;
+
         html += `<div class="${cls}" ${onclick} ${titleAttr}>${d}</div>`;
     }
     grid.innerHTML = html;
 }
 
-// Añadir estilo para .blocked-day dinámicamente si no está en el CSS
-(function injectBlockedDayStyle() {
-    const style = document.createElement('style');
-    style.textContent = `
-        .cal-cell.blocked-day {
-            background: rgba(212,43,43,0.15) !important;
-            border-color: rgba(212,43,43,0.5) !important;
-            color: var(--red) !important;
-            cursor: pointer;
-            position: relative;
-        }
-        .cal-cell.blocked-day::after {
-            content: '✕';
-            position: absolute;
-            top: -4px;
-            right: -2px;
-            font-size: 8px;
-            color: var(--red);
-        }
-    `;
-    document.head.appendChild(style);
-})();
-
 function selectDate(y, m, d) {
+    // Doble comprobación: no permitir clic en días bloqueados
+    if (isDateBlocked(y, m, d)) return;
+
     booking.date     = new Date(y, m, d);
     booking.time     = null;
     dayBlocked       = false;
@@ -488,14 +456,12 @@ function selectDate(y, m, d) {
 
 async function loadTakenSlots() {
     if (!booking.date || !booking.barber) {
-        takenSlots       = [];
-        dayBlocked       = false;
-        dayBlockedMotivo = '';
-        renderTimeSlots();
-        return;
+        takenSlots = []; dayBlocked = false; dayBlockedMotivo = '';
+        renderTimeSlots(); return;
     }
     loadingSlots = true;
     renderTimeSlotsLoading();
+
     const fecha   = formatDate(booking.date);
     const barbero = booking.barber.id;
     try {
@@ -506,48 +472,39 @@ async function loadTakenSlots() {
             dayBlocked       = json.data.bloqueado === true;
             dayBlockedMotivo = json.data.motivo    || '';
         } else {
-            takenSlots       = [];
-            dayBlocked       = false;
-            dayBlockedMotivo = '';
+            takenSlots = []; dayBlocked = false; dayBlockedMotivo = '';
         }
     } catch (e) {
-        console.warn('No se pudo conectar a la API:', e);
-        takenSlots       = [];
-        dayBlocked       = false;
-        dayBlockedMotivo = '';
+        console.warn('Error cargando slots:', e);
+        takenSlots = []; dayBlocked = false; dayBlockedMotivo = '';
     } finally {
         loadingSlots = false;
         renderTimeSlots();
-        renderCalendar(); // redibujar para mostrar el marcador de día bloqueado
     }
 }
 
 function renderTimeSlotsLoading() {
     const wrap = document.getElementById('time-slots');
     if (!wrap) return;
-    wrap.innerHTML = `<div style="grid-column:1/-1;text-align:center;color:var(--color-muted);
-        font-size:.82rem;padding:1.5rem 0;">Cargando horarios…</div>`;
+    wrap.innerHTML = `<div style="grid-column:1/-1;text-align:center;color:var(--color-muted);font-size:.82rem;padding:1.5rem 0;">Cargando horarios…</div>`;
 }
 
 function renderTimeSlots() {
     const wrap = document.getElementById('time-slots');
     if (!wrap) return;
 
-    // Día bloqueado: mostrar aviso, bloquear botón siguiente
     if (dayBlocked) {
         booking.time = null;
         const motivo = dayBlockedMotivo ? ` — ${dayBlockedMotivo}` : '';
         wrap.innerHTML = `
-            <div style="grid-column:1/-1; text-align:center; padding:2rem 1rem;
-                        background:rgba(212,43,43,0.06); border:1px solid rgba(212,43,43,0.2);
-                        border-radius:var(--radius-md); color:var(--color-muted);">
-                <div style="font-size:1.5rem; margin-bottom:.5rem;">🔒</div>
-                <div style="font-size:.9rem; color:var(--color-text); font-weight:500; margin-bottom:.25rem;">
+            <div style="grid-column:1/-1;text-align:center;padding:2rem 1rem;
+                        background:rgba(212,43,43,0.06);border:1px solid rgba(212,43,43,0.2);
+                        border-radius:var(--radius-md);color:var(--color-muted);">
+                <div style="font-size:1.5rem;margin-bottom:.5rem;">🔒</div>
+                <div style="font-size:.9rem;color:var(--color-text);font-weight:500;margin-bottom:.25rem;">
                     Día no disponible${motivo}
                 </div>
-                <div style="font-size:.78rem;">
-                    Por favor selecciona otro día en el calendario.
-                </div>
+                <div style="font-size:.78rem;">Por favor selecciona otro día en el calendario.</div>
             </div>`;
         const next = document.getElementById('btn-next-3');
         if (next) next.disabled = true;
@@ -573,7 +530,7 @@ function renderTimeSlots() {
 
             let label = t;
             if (taken)    label += ' <small>●</small>';
-            if (pastTime) label = `<s>${t}</s>`;
+            if (pastTime) label  = `<s>${t}</s>`;
 
             const onclick = disabled ? '' : `onclick="selectTime('${t}')"`;
             return `<div class="${cls}" ${onclick}>${label}</div>`;
@@ -590,9 +547,15 @@ function selectTime(t) {
     if (next) next.disabled = !(booking.date && booking.time);
 }
 
-function calNav(dir) {
+async function calNav(dir) {
     calendarDate.setMonth(calendarDate.getMonth() + dir);
-    renderCalendar();
+    // Limpiar selección si el mes cambia
+    if (booking.date) {
+        const sameMonth = booking.date.getMonth()    === calendarDate.getMonth() &&
+                          booking.date.getFullYear() === calendarDate.getFullYear();
+        if (!sameMonth) { booking.date = null; booking.time = null; renderTimeSlots(); }
+    }
+    await renderCalendar();
 }
 
 // ===== STEP 4: SUMMARY =====
@@ -602,11 +565,10 @@ function renderSummary() {
     const dateStr = booking.date
         ? `${DAYS[booking.date.getDay()]}, ${booking.date.getDate()} ${MONTHS[booking.date.getMonth()]}`
         : '—';
-
-    document.getElementById('sum-service').textContent  = booking.service?.name || '—';
-    document.getElementById('sum-barber').textContent   = booking.barber?.name  || '—';
+    document.getElementById('sum-service').textContent  = booking.service?.name     || '—';
+    document.getElementById('sum-barber').textContent   = booking.barber?.name      || '—';
     document.getElementById('sum-date').textContent     = dateStr;
-    document.getElementById('sum-time').textContent     = booking.time           || '—';
+    document.getElementById('sum-time').textContent     = booking.time              || '—';
     document.getElementById('sum-duration').textContent = booking.service?.duration || '—';
     document.getElementById('sum-price').textContent    = booking.service ? `${booking.service.price} €` : '—';
 }
@@ -616,7 +578,6 @@ function syncClientForm() {
     const nameEl  = document.getElementById('client-name');
     const emailEl = document.getElementById('client-email');
     const notesEl = document.getElementById('client-notes');
-
     if (nameEl) {
         nameEl.value = booking.client.name;
         nameEl.addEventListener('input', enforceNameInput);
@@ -631,7 +592,6 @@ function syncClientForm() {
         notesEl.value = booking.client.notes;
         notesEl.addEventListener('input', () => { booking.client.notes = notesEl.value; });
     }
-
     initPrefixSelector();
 }
 
@@ -640,30 +600,25 @@ function validateAllFields() {
     const emailEl = document.getElementById('client-email');
     if (nameEl)  booking.client.name  = nameEl.value;
     if (emailEl) booking.client.email = emailEl.value;
-
     const nameOk  = validateField('client-name');
     const phoneOk = validatePhoneField();
     const emailOk = validateField('client-email');
-
     if (!nameOk || !phoneOk || !emailOk) {
         const firstErr = document.querySelector('.input-error, .phone-field-wrap.input-error');
         if (firstErr) firstErr.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
-
     return nameOk && phoneOk && emailOk;
 }
 
 // ===== CONFIRM =====
 async function confirmBooking() {
-    const valid = validateAllFields();
-    if (!valid) return;
+    if (!validateAllFields()) return;
 
     const phoneFullEl = document.getElementById('client-phone-full');
     const phoneValue  = phoneFullEl ? phoneFullEl.value : booking.client.phone;
 
     const btn = document.getElementById('btn-confirm');
-    btn.disabled    = true;
-    btn.textContent = 'Procesando…';
+    btn.disabled = true; btn.textContent = 'Procesando…';
 
     const payload = {
         servicio: booking.service.id,
@@ -678,28 +633,20 @@ async function confirmBooking() {
 
     try {
         const res  = await fetch(`${API_BASE}/booking.php`, {
-            method:  'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body:    JSON.stringify(payload),
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
         });
         const json = await res.json();
-
         if (json.ok) {
-            goToStep(5);
-            renderConfirmation();
+            goToStep(5); renderConfirmation();
         } else {
             if (window.showToast) showToast(json.error || 'Error al reservar', '⚠');
-            btn.disabled     = false;
-            btn.textContent  = 'Confirmar reserva ✦';
-            if (res.status === 409) {
-                booking.time = null;
-                await loadTakenSlots();
-            }
+            btn.disabled = false; btn.textContent = 'Confirmar reserva ✦';
+            if (res.status === 409) { booking.time = null; await loadTakenSlots(); }
         }
     } catch (e) {
         if (window.showToast) showToast('Sin conexión al servidor', '⚠');
-        btn.disabled     = false;
-        btn.textContent  = 'Confirmar reserva ✦';
+        btn.disabled = false; btn.textContent = 'Confirmar reserva ✦';
     }
 }
 
@@ -732,30 +679,27 @@ function formatDate(date) {
 document.addEventListener('DOMContentLoaded', () => {
     renderServices();
     renderBarbers();
-    renderCalendar();
+    renderCalendar(); // async, carga días bloqueados del mes actual
     renderTimeSlots();
     syncClientForm();
 
-    const btn1      = document.getElementById('btn-next-1');
-    const btn2      = document.getElementById('btn-next-2');
-    const btn3      = document.getElementById('btn-next-3');
-    const btnBack2  = document.getElementById('btn-back-2');
-    const btnBack3  = document.getElementById('btn-back-3');
-    const btnBack4  = document.getElementById('btn-back-4');
-    const btnConfirm= document.getElementById('btn-confirm');
+    const btn1       = document.getElementById('btn-next-1');
+    const btn2       = document.getElementById('btn-next-2');
+    const btn3       = document.getElementById('btn-next-3');
+    const btnBack2   = document.getElementById('btn-back-2');
+    const btnBack3   = document.getElementById('btn-back-3');
+    const btnBack4   = document.getElementById('btn-back-4');
+    const btnConfirm = document.getElementById('btn-confirm');
 
     if (btnConfirm) {
         btnConfirm.disabled = false;
         btnConfirm.addEventListener('click', confirmBooking);
     }
-
     if (btn1) btn1.addEventListener('click', () => { if (booking.service) goToStep(2); });
     if (btn2) btn2.addEventListener('click', () => { if (booking.barber)  goToStep(3); });
     if (btn3) btn3.addEventListener('click', () => {
         if (booking.date && booking.time && !dayBlocked) {
-            renderSummary();
-            goToStep(4);
-            syncClientForm();
+            renderSummary(); goToStep(4); syncClientForm();
         }
     });
     if (btnBack2) btnBack2.addEventListener('click', () => goToStep(1));
