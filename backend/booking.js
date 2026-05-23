@@ -26,6 +26,39 @@ const TIME_SLOTS = [
     '16:00','16:30','17:00','17:30','18:00','18:30','19:00','19:30',
 ];
 
+// ===== PHONE PREFIX DATA =====
+const PHONE_COUNTRIES = [
+    { code: 'ES', flag: '🇪🇸', name: 'España',          dial: '+34',  digits: 9,  pattern: /^[6-9]\d{8}$/,    hint: '6XX XXX XXX' },
+    { code: 'US', flag: '🇺🇸', name: 'Estados Unidos',  dial: '+1',   digits: 10, pattern: /^[2-9]\d{9}$/,    hint: '6XX XXX XXXX' },
+    { code: 'GB', flag: '🇬🇧', name: 'Reino Unido',     dial: '+44',  digits: 10, pattern: /^[1-9]\d{9}$/,    hint: '07XXX XXXXXX' },
+    { code: 'FR', flag: '🇫🇷', name: 'Francia',         dial: '+33',  digits: 9,  pattern: /^[1-9]\d{8}$/,    hint: '06 XX XX XX XX' },
+    { code: 'DE', flag: '🇩🇪', name: 'Alemania',        dial: '+49',  digits: 11, pattern: /^\d{10,11}$/,     hint: '015X XXXXXXX' },
+    { code: 'IT', flag: '🇮🇹', name: 'Italia',          dial: '+39',  digits: 10, pattern: /^3\d{9}$/,        hint: '3XX XXX XXXX' },
+    { code: 'PT', flag: '🇵🇹', name: 'Portugal',        dial: '+351', digits: 9,  pattern: /^[29]\d{8}$/,     hint: '9XX XXX XXX' },
+    { code: 'MX', flag: '🇲🇽', name: 'México',          dial: '+52',  digits: 10, pattern: /^\d{10}$/,        hint: 'XX XXXX XXXX' },
+    { code: 'AR', flag: '🇦🇷', name: 'Argentina',       dial: '+54',  digits: 10, pattern: /^\d{10}$/,        hint: 'XX XXXX XXXX' },
+    { code: 'CO', flag: '🇨🇴', name: 'Colombia',        dial: '+57',  digits: 10, pattern: /^3\d{9}$/,        hint: '3XX XXX XXXX' },
+    { code: 'CL', flag: '🇨🇱', name: 'Chile',           dial: '+56',  digits: 9,  pattern: /^9\d{8}$/,        hint: '9XXXX XXXX' },
+    { code: 'BR', flag: '🇧🇷', name: 'Brasil',          dial: '+55',  digits: 11, pattern: /^[1-9]\d{10}$/,   hint: '11 9XXXX XXXX' },
+    { code: 'NL', flag: '🇳🇱', name: 'Países Bajos',   dial: '+31',  digits: 9,  pattern: /^[1-9]\d{8}$/,    hint: '06 XXXXXXXX' },
+    { code: 'BE', flag: '🇧🇪', name: 'Bélgica',         dial: '+32',  digits: 9,  pattern: /^[1-9]\d{8}$/,    hint: '04XX XX XX XX' },
+    { code: 'CH', flag: '🇨🇭', name: 'Suiza',           dial: '+41',  digits: 9,  pattern: /^[1-9]\d{8}$/,    hint: '076 XXX XX XX' },
+    { code: 'PL', flag: '🇵🇱', name: 'Polonia',         dial: '+48',  digits: 9,  pattern: /^\d{9}$/,         hint: 'XXX XXX XXX' },
+    { code: 'SE', flag: '🇸🇪', name: 'Suecia',          dial: '+46',  digits: 10, pattern: /^[1-9]\d{8,9}$/,  hint: '070 XXX XXXX' },
+    { code: 'NO', flag: '🇳🇴', name: 'Noruega',         dial: '+47',  digits: 8,  pattern: /^\d{8}$/,         hint: '4XX XX XXX' },
+    { code: 'DK', flag: '🇩🇰', name: 'Dinamarca',       dial: '+45',  digits: 8,  pattern: /^\d{8}$/,         hint: 'XX XX XX XX' },
+    { code: 'RO', flag: '🇷🇴', name: 'Rumanía',         dial: '+40',  digits: 9,  pattern: /^[67]\d{8}$/,     hint: '07XX XXX XXX' },
+    { code: 'MA', flag: '🇲🇦', name: 'Marruecos',       dial: '+212', digits: 9,  pattern: /^[67]\d{8}$/,     hint: '06X XXX XXX' },
+    { code: 'AU', flag: '🇦🇺', name: 'Australia',       dial: '+61',  digits: 9,  pattern: /^[24-9]\d{8}$/,   hint: '04XX XXX XXX' },
+    { code: 'JP', flag: '🇯🇵', name: 'Japón',           dial: '+81',  digits: 10, pattern: /^[7-9]0\d{8}$/,   hint: '070 XXXX XXXX' },
+    { code: 'CN', flag: '🇨🇳', name: 'China',           dial: '+86',  digits: 11, pattern: /^1[3-9]\d{9}$/,   hint: '1XX XXXX XXXX' },
+    { code: 'IN', flag: '🇮🇳', name: 'India',           dial: '+91',  digits: 10, pattern: /^[6-9]\d{9}$/,    hint: 'XXXXX XXXXX' },
+];
+
+// ===== PREFIX STATE =====
+let selectedCountry = PHONE_COUNTRIES[0]; // España por defecto
+let prefixDropdownOpen = false;
+
 // ===== STATE =====
 const booking = {
     step: 1,
@@ -46,13 +79,14 @@ function isValidName(v) {
     return /^[a-zA-ZÀ-ÿ\u00f1\u00d1\s'\-]{2,}$/.test(v.trim());
 }
 
-function isValidPhone(v) {
-    const digits = v.replace(/[\s\-().+]/g, '');
-    return /^\d{9}$/.test(digits);
-}
-
 function isValidEmail(v) {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
+}
+
+function isValidPhone() {
+    const raw    = document.getElementById('client-phone').value.replace(/\s/g, '');
+    const digits = raw.replace(/\D/g, '');
+    return selectedCountry.pattern.test(digits);
 }
 
 function setFieldError(fieldId, message) {
@@ -65,7 +99,10 @@ function setFieldError(fieldId, message) {
     if (!errEl) {
         errEl = document.createElement('div');
         errEl.className = 'field-error';
-        wrap.appendChild(errEl);
+        // Para el campo teléfono, insertar después del phone-hint
+        const hint = wrap.querySelector('.phone-hint');
+        if (hint) hint.after(errEl);
+        else wrap.appendChild(errEl);
     }
     errEl.textContent = message;
     errEl.style.display = message ? 'flex' : 'none';
@@ -76,20 +113,35 @@ function clearFieldError(fieldId) {
     setFieldError(fieldId, '');
 }
 
+// Error especial para el wrap del teléfono
+function setPhoneError(message) {
+    const wrap = document.getElementById('phone-field-wrap');
+    const group = document.getElementById('phone-form-group');
+    if (!wrap || !group) return;
+
+    let errEl = group.querySelector('.field-error');
+    if (!errEl) {
+        errEl = document.createElement('div');
+        errEl.className = 'field-error';
+        const hint = group.querySelector('.phone-hint');
+        if (hint) hint.after(errEl);
+        else group.appendChild(errEl);
+    }
+    errEl.textContent = message;
+    errEl.style.display = message ? 'flex' : 'none';
+    wrap.classList.toggle('input-error', !!message);
+}
+
+function clearPhoneError() {
+    setPhoneError('');
+}
+
 function enforceNameInput(e) {
     const el = e.target;
     const clean = el.value.replace(/[^a-zA-ZÀ-ÿ\u00f1\u00d1\s'\-]/g, '');
     if (clean !== el.value) el.value = clean;
     booking.client.name = el.value;
-    validateClientForm(false);
-}
-
-function enforcePhoneInput(e) {
-    const el = e.target;
-    const clean = el.value.replace(/[^0-9+\s\-().]/g, '');
-    if (clean !== el.value) el.value = clean;
-    booking.client.phone = el.value;
-    validateClientForm(false);
+    validateField('client-name');
 }
 
 function validateField(fieldId) {
@@ -104,19 +156,6 @@ function validateField(fieldId) {
         }
         if (!isValidName(val)) {
             setFieldError(fieldId, '⚠ Solo se permiten letras y espacios.');
-            return false;
-        }
-        clearFieldError(fieldId);
-        return true;
-    }
-
-    if (fieldId === 'client-phone') {
-        if (!val.trim()) {
-            setFieldError(fieldId, '⚠ El teléfono no puede estar vacío.');
-            return false;
-        }
-        if (!isValidPhone(val)) {
-            setFieldError(fieldId, '⚠ El teléfono debe tener exactamente 9 dígitos.');
             return false;
         }
         clearFieldError(fieldId);
@@ -139,6 +178,170 @@ function validateField(fieldId) {
     return true;
 }
 
+function validatePhoneField() {
+    const raw    = document.getElementById('client-phone').value.replace(/\s/g, '');
+    const digits = raw.replace(/\D/g, '');
+    if (!digits) {
+        setPhoneError('⚠ El teléfono no puede estar vacío.');
+        return false;
+    }
+    if (!selectedCountry.pattern.test(digits)) {
+        setPhoneError(`⚠ Número inválido para ${selectedCountry.name} (${selectedCountry.dial}). Formato: ${selectedCountry.hint}`);
+        return false;
+    }
+    clearPhoneError();
+    return true;
+}
+
+// ===== PHONE PREFIX LOGIC =====
+
+function renderPrefixList(list) {
+    const el = document.getElementById('prefix-country-list');
+    if (!el) return;
+    el.innerHTML = list.map(c => `
+        <div class="prefix-country-item${c.code === selectedCountry.code ? ' active' : ''}"
+             onclick="selectCountry('${c.code}')" role="option"
+             aria-selected="${c.code === selectedCountry.code}">
+            <span class="ci-flag">${c.flag}</span>
+            <span class="ci-name">${c.name}</span>
+            <span class="ci-dial">${c.dial}</span>
+        </div>`).join('');
+}
+
+function filterPrefixList() {
+    const q = (document.getElementById('prefix-search').value || '').toLowerCase();
+    const filtered = q
+        ? PHONE_COUNTRIES.filter(c =>
+            c.name.toLowerCase().includes(q) ||
+            c.dial.includes(q) ||
+            c.code.toLowerCase().includes(q))
+        : [...PHONE_COUNTRIES];
+    renderPrefixList(filtered);
+}
+
+function openPrefixDropdown() {
+    prefixDropdownOpen = true;
+    const dd      = document.getElementById('prefix-dropdown');
+    const btn     = document.getElementById('prefix-btn');
+    const chevron = document.getElementById('prefix-chevron');
+    if (dd)      dd.classList.add('open');
+    if (chevron) chevron.classList.add('open');
+    if (btn)     btn.setAttribute('aria-expanded', 'true');
+
+    const searchEl = document.getElementById('prefix-search');
+    if (searchEl) { searchEl.value = ''; searchEl.focus(); }
+    renderPrefixList(PHONE_COUNTRIES);
+}
+
+function closePrefixDropdown() {
+    prefixDropdownOpen = false;
+    const dd      = document.getElementById('prefix-dropdown');
+    const btn     = document.getElementById('prefix-btn');
+    const chevron = document.getElementById('prefix-chevron');
+    if (dd)      dd.classList.remove('open');
+    if (chevron) chevron.classList.remove('open');
+    if (btn)     btn.setAttribute('aria-expanded', 'false');
+}
+
+function togglePrefixDropdown() {
+    prefixDropdownOpen ? closePrefixDropdown() : openPrefixDropdown();
+}
+
+function selectCountry(code) {
+    selectedCountry = PHONE_COUNTRIES.find(c => c.code === code) || PHONE_COUNTRIES[0];
+
+    const flagEl = document.getElementById('prefix-flag');
+    const codeEl = document.getElementById('prefix-code');
+    const input  = document.getElementById('client-phone');
+
+    if (flagEl) flagEl.textContent = selectedCountry.flag;
+    if (codeEl) codeEl.textContent = selectedCountry.dial;
+    if (input)  {
+        input.placeholder = selectedCountry.hint;
+        input.maxLength   = selectedCountry.digits + 4; // espacio para espacios/guiones
+        input.value       = '';
+    }
+
+    updatePhoneHint();
+    clearPhoneError();
+    closePrefixDropdown();
+
+    if (input) input.focus();
+}
+
+function updatePhoneHint() {
+    const hint   = document.getElementById('phone-hint');
+    const input  = document.getElementById('client-phone');
+    if (!hint || !input) return;
+
+    const raw    = input.value.replace(/\s/g, '');
+    const digits = raw.replace(/\D/g, '');
+
+    if (!digits) {
+        hint.textContent  = '';
+        hint.className    = 'phone-hint';
+        updatePhoneFull('');
+        return;
+    }
+
+    if (digits.length < selectedCountry.digits) {
+        hint.textContent = `${digits.length} / ${selectedCountry.digits} dígitos`;
+        hint.className   = 'phone-hint typing';
+        updatePhoneFull('');
+        return;
+    }
+
+    if (selectedCountry.pattern.test(digits)) {
+        hint.textContent = `✓ Válido · ${selectedCountry.name}`;
+        hint.className   = 'phone-hint valid';
+        updatePhoneFull(selectedCountry.dial + digits);
+        clearPhoneError();
+    } else {
+        hint.textContent = `✕ Formato incorrecto para ${selectedCountry.name}`;
+        hint.className   = 'phone-hint invalid';
+        updatePhoneFull('');
+    }
+}
+
+function updatePhoneFull(val) {
+    const el = document.getElementById('client-phone-full');
+    if (el) el.value = val;
+    booking.client.phone = val;
+}
+
+function initPrefixSelector() {
+    const btn    = document.getElementById('prefix-btn');
+    const search = document.getElementById('prefix-search');
+    const input  = document.getElementById('client-phone');
+
+    if (btn) btn.addEventListener('click', togglePrefixDropdown);
+
+    if (search) {
+        search.addEventListener('input', filterPrefixList);
+        // Evitar que el keydown cierre el dropdown
+        search.addEventListener('keydown', e => e.stopPropagation());
+    }
+
+    if (input) {
+        input.placeholder = selectedCountry.hint;
+        input.maxLength   = selectedCountry.digits + 4;
+        input.addEventListener('input', () => {
+            updatePhoneHint();
+            clearPhoneError();
+        });
+        input.addEventListener('blur', validatePhoneField);
+    }
+
+    // Cerrar dropdown al clicar fuera
+    document.addEventListener('click', e => {
+        if (!prefixDropdownOpen) return;
+        const wrap = document.getElementById('phone-field-wrap');
+        if (wrap && !wrap.contains(e.target)) closePrefixDropdown();
+    });
+
+    renderPrefixList(PHONE_COUNTRIES);
+}
+
 // ===== STEP NAV =====
 function goToStep(n) {
     if (n < 1 || n > 5) return;
@@ -154,9 +357,9 @@ function updateStepsBar() {
     document.querySelectorAll('.step-circle').forEach((el, i) => {
         const stepN = i + 1;
         el.classList.remove('active', 'done');
-        if (stepN < booking.step)       { el.classList.add('done');   el.textContent = '✓'; }
+        if (stepN < booking.step)        { el.classList.add('done');   el.textContent = '✓'; }
         else if (stepN === booking.step) { el.classList.add('active'); el.textContent = stepN; }
-        else                             { el.textContent = stepN; }
+        else                              { el.textContent = stepN; }
     });
     document.querySelectorAll('.step-line').forEach((el, i) => {
         el.classList.toggle('done', i + 1 < booking.step);
@@ -349,7 +552,6 @@ function renderSummary() {
 // ===== CLIENT FORM =====
 function syncClientForm() {
     const nameEl  = document.getElementById('client-name');
-    const phoneEl = document.getElementById('client-phone');
     const emailEl = document.getElementById('client-email');
     const notesEl = document.getElementById('client-notes');
 
@@ -358,56 +560,31 @@ function syncClientForm() {
         nameEl.addEventListener('input', enforceNameInput);
         nameEl.addEventListener('blur',  () => validateField('client-name'));
     }
-    if (phoneEl) {
-        phoneEl.value = booking.client.phone;
-        phoneEl.addEventListener('input', enforcePhoneInput);
-        phoneEl.addEventListener('blur',  () => validateField('client-phone'));
-    }
     if (emailEl) {
         emailEl.value = booking.client.email;
-        emailEl.addEventListener('input', () => {
-            booking.client.email = emailEl.value;
-        });
-        emailEl.addEventListener('blur', () => validateField('client-email'));
+        emailEl.addEventListener('input', () => { booking.client.email = emailEl.value; });
+        emailEl.addEventListener('blur',  () => validateField('client-email'));
     }
     if (notesEl) {
         notesEl.value = booking.client.notes;
         notesEl.addEventListener('input', () => { booking.client.notes = notesEl.value; });
     }
-}
 
-function validateClientForm() {
-    const nameEl  = document.getElementById('client-name');
-    const phoneEl = document.getElementById('client-phone');
-    const emailEl = document.getElementById('client-email');
-    if (nameEl)  booking.client.name  = nameEl.value;
-    if (phoneEl) booking.client.phone = phoneEl.value;
-    if (emailEl) booking.client.email = emailEl.value;
-
-    const allOk = isValidName(booking.client.name)
-               && isValidPhone(booking.client.phone)
-               && isValidEmail(booking.client.email);
-
-    // Visual hint only — button is never truly disabled so click always fires
-    const btn = document.getElementById('btn-confirm');
-
-    return allOk;
+    initPrefixSelector();
 }
 
 function validateAllFields() {
     const nameEl  = document.getElementById('client-name');
-    const phoneEl = document.getElementById('client-phone');
     const emailEl = document.getElementById('client-email');
     if (nameEl)  booking.client.name  = nameEl.value;
-    if (phoneEl) booking.client.phone = phoneEl.value;
     if (emailEl) booking.client.email = emailEl.value;
 
     const nameOk  = validateField('client-name');
-    const phoneOk = validateField('client-phone');
+    const phoneOk = validatePhoneField();
     const emailOk = validateField('client-email');
 
     if (!nameOk || !phoneOk || !emailOk) {
-        const firstErr = document.querySelector('.input-error');
+        const firstErr = document.querySelector('.input-error, .phone-field-wrap.input-error');
         if (firstErr) firstErr.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
 
@@ -419,6 +596,9 @@ async function confirmBooking() {
     const valid = validateAllFields();
     if (!valid) return;
 
+    const phoneFullEl = document.getElementById('client-phone-full');
+    const phoneValue  = phoneFullEl ? phoneFullEl.value : booking.client.phone;
+
     const btn = document.getElementById('btn-confirm');
     btn.disabled    = true;
     btn.textContent = 'Procesando…';
@@ -429,7 +609,7 @@ async function confirmBooking() {
         fecha:    formatDate(booking.date),
         hora:     booking.time,
         nombre:   booking.client.name,
-        telefono: booking.client.phone,
+        telefono: phoneValue,
         email:    booking.client.email,
         notas:    booking.client.notes,
     };
@@ -502,12 +682,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnBack4  = document.getElementById('btn-back-4');
     const btnConfirm= document.getElementById('btn-confirm');
 
-    // btn-confirm NUNCA debe tener disabled: los botones disabled no disparan click,
-    // por lo que la validación con errores nunca se mostraría.
-    // Usamos opacidad como indicador visual en su lugar.
     if (btnConfirm) {
-        btnConfirm.disabled      = false;
-btnConfirm.addEventListener('click', confirmBooking);
+        btnConfirm.disabled = false;
+        btnConfirm.addEventListener('click', confirmBooking);
     }
 
     if (btn1) btn1.addEventListener('click', () => { if (booking.service) goToStep(2); });
@@ -525,3 +702,4 @@ window.selectBarber  = selectBarber;
 window.selectDate    = selectDate;
 window.selectTime    = selectTime;
 window.calNav        = calNav;
+window.selectCountry = selectCountry;
