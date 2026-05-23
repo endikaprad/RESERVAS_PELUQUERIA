@@ -94,6 +94,8 @@ if ($filtroEstado  !== 'todos') { $where .= ' AND r.estado = ?';     $params[] =
 
 if ($filtroFecha === 'hoy') {
     $where .= ' AND r.fecha = ?'; $params[] = $hoy;
+} elseif ($filtroFecha === 'manana') {
+    $where .= ' AND r.fecha = ?'; $params[] = date('Y-m-d', strtotime('+1 day'));
 } elseif ($filtroFecha === 'semana') {
     $where .= ' AND r.fecha BETWEEN ? AND ?'; $params[] = $hoy; $params[] = date('Y-m-d', strtotime('+7 days'));
 } elseif ($filtroFecha === 'custom' && $fechaCustom) {
@@ -176,23 +178,38 @@ $mesesES = ['','ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov'
         .stat-sub{font-size:.65rem;color:#7a7880;margin-top:.2rem;}
 
         /* ── FILTERS ── */
-        .filters{background:#111119;border:1px solid #252530;border-radius:12px;padding:1rem 1.1rem;margin-bottom:1rem;}
+        .filters{background:#111119;border:1px solid #252530;border-radius:12px;padding:1rem;margin-bottom:1rem;}
         .filters-label{font-size:.62rem;letter-spacing:.2em;text-transform:uppercase;color:#7a7880;margin-bottom:.75rem;}
-        .filters form{display:flex;flex-direction:column;gap:.55rem;}
-        .frow{display:flex;align-items:center;gap:.5rem;}
-        .flabel{font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:#7a7880;white-space:nowrap;min-width:52px;}
+        .filters form{display:flex;flex-direction:column;gap:.6rem;}
+
+        /* cada fila de filtro: label arriba, select abajo */
+        .frow{display:flex;flex-direction:column;gap:.25rem;}
+        .flabel{font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;color:#7a7880;}
+
         select,input[type=date]{
-            flex:1;background:#18181f;border:1px solid #252530;border-radius:6px;
-            padding:.5rem .65rem;color:#f0ece3;font-family:'DM Sans',sans-serif;font-size:.82rem;
+            width:100%;background:#18181f;border:1px solid #252530;border-radius:6px;
+            padding:.6rem .75rem;color:#f0ece3;font-family:'DM Sans',sans-serif;font-size:.9rem;
+            -webkit-appearance:none;appearance:none;
+            background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%237a7880' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+            background-repeat:no-repeat;background-position:right .75rem center;
+            padding-right:2rem;
         }
         select:focus,input[type=date]:focus{outline:none;border-color:#d42b2b;}
+
         .filter-submit{
-            background:#d42b2b;color:#fff;border:none;border-radius:4px;
-            padding:.55rem 1.1rem;font-family:'DM Sans',sans-serif;font-size:.7rem;
-            letter-spacing:.12em;text-transform:uppercase;cursor:pointer;transition:background .3s;
-            white-space:nowrap;flex-shrink:0;
+            width:100%;background:#d42b2b;color:#fff;border:none;border-radius:6px;
+            padding:.7rem 1rem;font-family:'DM Sans',sans-serif;font-size:.78rem;
+            font-weight:600;letter-spacing:.15em;text-transform:uppercase;
+            cursor:pointer;transition:background .3s;margin-top:.2rem;
         }
         .filter-submit:hover{background:#a81e1e;}
+
+        @media(min-width:900px){
+            .filters form  { flex-direction:row; align-items:flex-end; flex-wrap:wrap; gap:.75rem; }
+            .frow          { flex-direction:row; align-items:center; flex:1; min-width:120px; gap:.5rem; }
+            select,input[type=date] { width:100%; }
+            .filter-submit { width:auto; padding:.6rem 1.25rem; flex-shrink:0; margin-top:0; align-self:flex-end; }
+        }
 
         /* ── SECTION HEADER ── */
         .section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem;}
@@ -394,6 +411,8 @@ $mesesES = ['','ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov'
                         <option value="<?= $b['id'] ?>" <?= $filtroBarbero===$b['id']?'selected':'' ?>><?= htmlspecialchars($b['nombre']) ?></option>
                     <?php endforeach; ?>
                 </select>
+            </div>
+            <div class="frow">
                 <span class="flabel">Estado</span>
                 <select name="estado">
                     <option value="todos"     <?= $filtroEstado==='todos'    ?'selected':'' ?>>Todos</option>
@@ -405,16 +424,20 @@ $mesesES = ['','ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov'
             <div class="frow">
                 <span class="flabel">Fecha</span>
                 <select name="fecha" onchange="this.form.submit()">
-                    <option value="hoy"    <?= $filtroFecha==='hoy'   ?'selected':'' ?>>Hoy</option>
-                    <option value="semana" <?= $filtroFecha==='semana'?'selected':'' ?>>Próximos 7 días</option>
-                    <option value="todas"  <?= $filtroFecha==='todas' ?'selected':'' ?>>Todas</option>
-                    <option value="custom" <?= $filtroFecha==='custom'?'selected':'' ?>>Fecha específica</option>
+                    <option value="hoy"    <?= $filtroFecha==='hoy'    ?'selected':'' ?>>Hoy</option>
+                    <option value="manana" <?= $filtroFecha==='manana' ?'selected':'' ?>>Mañana</option>
+                    <option value="semana" <?= $filtroFecha==='semana' ?'selected':'' ?>>Próximos 7 días</option>
+                    <option value="todas"  <?= $filtroFecha==='todas'  ?'selected':'' ?>>Todas</option>
+                    <option value="custom" <?= $filtroFecha==='custom' ?'selected':'' ?>>Fecha específica</option>
                 </select>
-                <?php if ($filtroFecha === 'custom'): ?>
-                    <input type="date" name="fecha_custom" value="<?= htmlspecialchars($fechaCustom) ?>"/>
-                <?php endif; ?>
-                <button type="submit" class="filter-submit">Filtrar</button>
             </div>
+            <?php if ($filtroFecha === 'custom'): ?>
+            <div class="frow">
+                <span class="flabel">Día</span>
+                <input type="date" name="fecha_custom" value="<?= htmlspecialchars($fechaCustom) ?>"/>
+            </div>
+            <?php endif; ?>
+            <button type="submit" class="filter-submit">Filtrar</button>
         </form>
     </div>
 
