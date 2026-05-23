@@ -329,7 +329,7 @@
     transition: var(--transition);
 }
 
-.time-slot:hover:not(.taken) {
+.time-slot:hover:not(.taken):not(.past) {
     border-color: var(--color-gold-dim);
     color: var(--color-gold);
 }
@@ -342,9 +342,17 @@
 }
 
 .time-slot.taken {
-    opacity: 0.3;
+    opacity: 0.35;
     cursor: not-allowed;
     text-decoration: line-through;
+    pointer-events: none;
+}
+
+.time-slot.past {
+    opacity: 0.25;
+    cursor: not-allowed;
+    text-decoration: line-through;
+    pointer-events: none;
 }
 
 /* ===== BOOKING SUMMARY ===== */
@@ -426,7 +434,75 @@
     border-top: 1px solid var(--color-border);
 }
 
-/* ===== RESPONSIVE ===== */
+/* ===== DESKTOP — Calendario y horarios a ancho completo ===== */
+@media (min-width: 769px) {
+
+    .booking-hero {
+        padding: 6rem 3rem 2rem;
+    }
+
+    /* Calendario: ancho completo, más aire y celdas más grandes */
+    .calendar-wrapper {
+        max-width: 100%;
+        margin-left: 0;
+        margin-right: 0;
+        padding: 2rem 2.25rem;
+    }
+
+    .cal-header {
+        margin-bottom: 1.5rem;
+    }
+
+    .cal-title {
+        font-size: 1.2rem;
+        letter-spacing: 0.02em;
+    }
+
+    .cal-nav button {
+        width: 34px;
+        height: 34px;
+        font-size: 1rem;
+    }
+
+    .cal-days-header {
+        gap: 6px;
+        margin-bottom: 0.6rem;
+    }
+
+    .cal-day-label {
+        font-size: 0.68rem;
+        letter-spacing: 0.12em;
+        padding: 0.3rem 0;
+    }
+
+    .cal-grid {
+        gap: 18px;
+    }
+
+    .cal-cell {
+        font-size: 0.95rem;
+        border-radius: 10px;
+        aspect-ratio: unset;
+        height: 52px;
+    }
+
+    /* Time slots — ancho completo */
+    .time-slots {
+        max-width: 100%;
+        margin-left: 0;
+        margin-right: 0;
+        grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+        gap: 0.5rem;
+    }
+
+    .time-slot {
+        padding: 0.65rem 0.5rem;
+        font-size: 0.825rem;
+        border-radius: 6px;
+    }
+}
+
+/* ===== RESPONSIVE MÓVIL ===== */
 @media (max-width: 600px) {
     .booking-hero {
         padding: 7rem 1.5rem 2rem;
@@ -448,4 +524,3 @@
         grid-template-columns: repeat(3, 1fr);
     }
 }
-
