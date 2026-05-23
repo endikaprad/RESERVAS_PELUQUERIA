@@ -18,16 +18,16 @@ jobs:
           DB_NAME: ${{ secrets.DB_NAME }}
           DB_USER: ${{ secrets.DB_USER }}
           DB_PASS: ${{ secrets.DB_PASS }}
-          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          BREVO_API_KEY: ${{ secrets.BREVO_API_KEY }}
         run: |
-          cat > backend/config.php << EOF
+          cat > backend/config.php << PHPEOF
           <?php
           define('DB_HOST',        '${DB_HOST}');
           define('DB_NAME',        '${DB_NAME}');
           define('DB_USER',        '${DB_USER}');
           define('DB_PASS',        '${DB_PASS}');
           define('DB_CHARSET',     'utf8mb4');
-          define('RESEND_API_KEY', '${RESEND_API_KEY}');
+          define('BREVO_API_KEY',  '${BREVO_API_KEY}');
 
           date_default_timezone_set('Europe/Madrid');
 
@@ -48,7 +48,7 @@ jobs:
               }
               return \$pdo;
           }
-          EOF
+          PHPEOF
 
       - name: Deploy via FTP
         uses: SamKirkland/FTP-Deploy-Action@4.3.2

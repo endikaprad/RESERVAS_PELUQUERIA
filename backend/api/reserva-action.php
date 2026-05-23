@@ -1,15 +1,12 @@
 <?php
 // ============================================================
 //  GET /api/reserva-action.php?token=XXX&accion=aceptar|denegar
-//  NO incluye helpers.php para evitar conflicto de headers JSON
 // ============================================================
 
-// 1. Headers HTML PRIMERO, antes de cualquier require
 header('Content-Type: text/html; charset=utf-8');
 header('X-Content-Type-Options: nosniff');
 header('Access-Control-Allow-Origin: *');
 
-// 2. Ahora cargamos solo config (sin helpers que fuerza JSON)
 require_once __DIR__ . '/../config.php';
 
 $token     = trim($_GET['token']  ?? '');
@@ -17,7 +14,7 @@ $accion    = trim($_GET['accion'] ?? '');
 $fromAdmin = isset($_GET['from']) && $_GET['from'] === 'admin';
 
 if (!$token || !in_array($accion, ['aceptar', 'denegar'], true)) {
-    mostrarPagina('error', 'Enlace inválido', 'El enlace no es válido o está incompleto.', $fromAdmin);
+    mostrarPagina('error', 'Enlace invalido', 'El enlace no es valido o esta incompleto.', $fromAdmin);
 }
 
 try {
@@ -47,7 +44,7 @@ try {
     $upd = $db->prepare('UPDATE reservas SET estado = ? WHERE token = ?');
     $upd->execute([$nuevoEstado, $token]);
 
-    $dias  = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+    $dias  = ['Domingo','Lunes','Martes','Miercoles','Jueves','Viernes','Sabado'];
     $meses = ['enero','febrero','marzo','abril','mayo','junio',
               'julio','agosto','septiembre','octubre','noviembre','diciembre'];
     $dt    = new DateTime($reserva['fecha']);
@@ -60,132 +57,105 @@ try {
     $baseUrl = 'https://pradopeluqueria.infinityfree.me';
 
     if ($accion === 'aceptar') {
-        $asuntoCliente  = '✅ Reserva confirmada - Prado Barber Co.';
-        $colorHeader    = '#22c55e';
-        $tituloHeader   = '¡Reserva confirmada!';
-        $mensajeCliente = 'Tu cita ha sido <strong>confirmada</strong>. ¡Te esperamos!';
-        $pieCliente     = 'Si necesitas cancelar, llámanos al <a href="tel:+34944000000" style="color:#d42b2b;">+34 944 000 000</a>';
+        $asuntoCliente = 'Reserva confirmada - Prado Barber Co.';
+        $colorHeader   = '#22c55e';
+        $tituloHeader  = 'Reserva confirmada!';
+        $mensajeCliente= 'Tu cita ha sido <strong>confirmada</strong>. Te esperamos!';
+        $pieCliente    = 'Si necesitas cancelar, llamanos al <a href="tel:+34944000000" style="color:#d42b2b;">+34 944 000 000</a>';
     } else {
-        $asuntoCliente  = '❌ Reserva no disponible - Prado Barber Co.';
-        $colorHeader    = '#d42b2b';
-        $tituloHeader   = 'Reserva no disponible';
-        $mensajeCliente = 'Lo sentimos, <strong>' . htmlspecialchars($reserva['barbero_nombre']) . '</strong> no está disponible para ese horario. Por favor, reserva otra fecha u hora.';
-        $pieCliente     = 'Puedes hacer una nueva reserva en <a href="' . $baseUrl . '/reservas.html" style="color:#d42b2b;">nuestra web</a> o llamarnos al <a href="tel:+34944000000" style="color:#d42b2b;">+34 944 000 000</a>';
+        $asuntoCliente = 'Reserva no disponible - Prado Barber Co.';
+        $colorHeader   = '#d42b2b';
+        $tituloHeader  = 'Reserva no disponible';
+        $mensajeCliente= 'Lo sentimos, <strong>' . htmlspecialchars($reserva['barbero_nombre']) . '</strong> no esta disponible para ese horario.';
+        $pieCliente    = 'Puedes hacer una nueva reserva en <a href="' . $baseUrl . '/reservas.html" style="color:#d42b2b;">nuestra web</a> o llamarnos al <a href="tel:+34944000000" style="color:#d42b2b;">+34 944 000 000</a>';
     }
 
-    $htmlCliente = generarEmailCliente(
-        $reserva['cliente_nombre'],
-        $colorHeader,
-        $tituloHeader,
-        $mensajeCliente,
-        $reserva['servicio_nombre'],
-        $reserva['barbero_nombre'],
-        $fechaFormateada,
-        $hora,
-        $pieCliente
-    );
+    $htmlCliente = "<!DOCTYPE html><html lang='es'><head><meta charset='UTF-8'></head>
+<body style='margin:0;padding:0;background:#09080f;font-family:Arial,sans-serif;'>
+  <div style='max-width:560px;margin:0 auto;background:#111119;border:1px solid #252530;border-radius:12px;overflow:hidden;'>
+    <div style='background:{$colorHeader};padding:24px 32px;'>
+      <h1 style='margin:0;color:#fff;font-size:20px;font-weight:700;'>{$tituloHeader}</h1>
+      <p style='margin:6px 0 0;color:rgba(255,255,255,0.8);font-size:14px;'>Prado Barber Co. - Bilbao</p>
+    </div>
+    <div style='padding:32px;'>
+      <p style='color:#f0ece3;font-size:15px;margin-bottom:24px;'>
+        Hola <strong>" . htmlspecialchars($reserva['cliente_nombre']) . "</strong>,<br>
+        {$mensajeCliente}
+      </p>
+      <table style='width:100%;border-collapse:collapse;margin-bottom:28px;'>
+        <tr><td style='padding:10px 0;border-bottom:1px solid #252530;color:#7a7880;font-size:13px;width:120px;'>Servicio</td>
+            <td style='padding:10px 0;border-bottom:1px solid #252530;color:#f0ece3;font-size:13px;font-weight:600;'>" . htmlspecialchars($reserva['servicio_nombre']) . "</td></tr>
+        <tr><td style='padding:10px 0;border-bottom:1px solid #252530;color:#7a7880;font-size:13px;'>Barbero</td>
+            <td style='padding:10px 0;border-bottom:1px solid #252530;color:#f0ece3;font-size:13px;'>" . htmlspecialchars($reserva['barbero_nombre']) . "</td></tr>
+        <tr><td style='padding:10px 0;border-bottom:1px solid #252530;color:#7a7880;font-size:13px;'>Fecha</td>
+            <td style='padding:10px 0;border-bottom:1px solid #252530;color:#f0ece3;font-size:13px;'>{$fechaFormateada}</td></tr>
+        <tr><td style='padding:10px 0;color:#7a7880;font-size:13px;'>Hora</td>
+            <td style='padding:10px 0;color:{$colorHeader};font-size:16px;font-weight:700;'>{$hora}</td></tr>
+      </table>
+      <p style='color:#7a7880;font-size:13px;text-align:center;'>{$pieCliente}</p>
+    </div>
+    <div style='background:#18181f;padding:16px 32px;text-align:center;'>
+      <p style='margin:0;color:#7a7880;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;'>2026 Prado Barber Co. - Hecho con precision en Bilbao</p>
+    </div>
+  </div>
+</body></html>";
 
-    $resultado = sendResend($reserva['cliente_email'], $asuntoCliente, $htmlCliente);
+    sendBrevo($reserva['cliente_email'], $reserva['cliente_nombre'], $asuntoCliente, $htmlCliente);
 
     if ($accion === 'aceptar') {
-        mostrarPagina('ok', '¡Reserva aceptada!',
+        mostrarPagina('ok', 'Reserva aceptada!',
             'Has confirmado la cita de <strong>' . htmlspecialchars($reserva['cliente_nombre']) . '</strong><br>' .
             'para el <strong>' . $fechaFormateada . '</strong> a las <strong>' . $hora . '</strong>.<br><br>' .
-            'Se ha notificado al cliente por email.' .
-            ($resultado ? '' : '<br><small style="color:#f59e0b;">⚠ El email tardó en enviarse, verifica Resend.</small>'),
-            $fromAdmin
-        );
+            'Se ha notificado al cliente por email.',
+            $fromAdmin);
     } else {
         mostrarPagina('denied', 'Reserva denegada',
             'Has rechazado la cita de <strong>' . htmlspecialchars($reserva['cliente_nombre']) . '</strong>.<br>' .
-            'Se ha notificado al cliente para que elija otro horario.' .
-            ($resultado ? '' : '<br><small style="color:#f59e0b;">⚠ El email tardó en enviarse, verifica Resend.</small>'),
-            $fromAdmin
-        );
+            'Se ha notificado al cliente para que elija otro horario.',
+            $fromAdmin);
     }
 
 } catch (PDOException $e) {
     mostrarPagina('error', 'Error de base de datos', htmlspecialchars($e->getMessage()), $fromAdmin);
 }
 
-// ── Genera HTML del email para el cliente ──────────────────
-function generarEmailCliente(
-    string $nombre, string $colorHeader, string $titulo,
-    string $mensaje, string $servicio, string $barbero,
-    string $fecha, string $hora, string $pie
-): string {
-    return "<!DOCTYPE html><html lang='es'><head><meta charset='UTF-8'></head>
-<body style='margin:0;padding:0;background:#09080f;font-family:Arial,sans-serif;'>
-  <div style='max-width:560px;margin:0 auto;background:#111119;border:1px solid #252530;border-radius:12px;overflow:hidden;'>
-    <div style='background:{$colorHeader};padding:24px 32px;'>
-      <h1 style='margin:0;color:#fff;font-size:20px;font-weight:700;'>{$titulo}</h1>
-      <p style='margin:6px 0 0;color:rgba(255,255,255,0.8);font-size:14px;'>Prado Barber Co. &mdash; Bilbao</p>
-    </div>
-    <div style='padding:32px;'>
-      <p style='color:#f0ece3;font-size:15px;margin-bottom:24px;'>
-        Hola <strong>" . htmlspecialchars($nombre) . "</strong>,<br>
-        {$mensaje}
-      </p>
-      <table style='width:100%;border-collapse:collapse;margin-bottom:28px;'>
-        <tr>
-          <td style='padding:10px 0;border-bottom:1px solid #252530;color:#7a7880;font-size:13px;width:120px;'>Servicio</td>
-          <td style='padding:10px 0;border-bottom:1px solid #252530;color:#f0ece3;font-size:13px;font-weight:600;'>" . htmlspecialchars($servicio) . "</td>
-        </tr>
-        <tr>
-          <td style='padding:10px 0;border-bottom:1px solid #252530;color:#7a7880;font-size:13px;'>Barbero</td>
-          <td style='padding:10px 0;border-bottom:1px solid #252530;color:#f0ece3;font-size:13px;'>" . htmlspecialchars($barbero) . "</td>
-        </tr>
-        <tr>
-          <td style='padding:10px 0;border-bottom:1px solid #252530;color:#7a7880;font-size:13px;'>Fecha</td>
-          <td style='padding:10px 0;border-bottom:1px solid #252530;color:#f0ece3;font-size:13px;'>{$fecha}</td>
-        </tr>
-        <tr>
-          <td style='padding:10px 0;color:#7a7880;font-size:13px;'>Hora</td>
-          <td style='padding:10px 0;color:{$colorHeader};font-size:16px;font-weight:700;'>{$hora}</td>
-        </tr>
-      </table>
-      <p style='color:#7a7880;font-size:13px;text-align:center;'>{$pie}</p>
-    </div>
-    <div style='background:#18181f;padding:16px 32px;text-align:center;'>
-      <p style='margin:0;color:#7a7880;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;'>
-        &copy; 2026 Prado Barber Co. &mdash; Hecho con precisión en Bilbao
-      </p>
-    </div>
-  </div>
-</body></html>";
-}
-
-// ── Envío via Resend ────────────────────────────────────────
-function sendResend(string $to, string $subject, string $html): bool {
-    $apiKey = defined('RESEND_API_KEY') ? RESEND_API_KEY : '';
+// ── Envío via Brevo API ──────────────────────────────────────
+function sendBrevo(string $toEmail, string $toName, string $subject, string $html): bool {
+    $apiKey = defined('BREVO_API_KEY') ? BREVO_API_KEY : '';
     if (!$apiKey) return false;
 
     $payload = json_encode([
-        'from'    => 'Prado Barber Co. <onboarding@resend.dev>',
-        'to'      => [$to],
-        'subject' => $subject,
-        'html'    => $html,
+        'sender'      => ['name' => 'Prado Barber Co.', 'email' => 'endikapradodev@gmail.com'],
+        'to'          => [['email' => $toEmail, 'name'  => $toName]],
+        'subject'     => $subject,
+        'htmlContent' => $html,
     ]);
 
-    $ch = curl_init('https://api.resend.com/emails');
+    $ch = curl_init('https://api.brevo.com/v3/smtp/email');
     curl_setopt_array($ch, [
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_POST           => true,
         CURLOPT_POSTFIELDS     => $payload,
         CURLOPT_TIMEOUT        => 15,
         CURLOPT_HTTPHEADER     => [
-            'Authorization: Bearer ' . $apiKey,
+            'api-key: ' . $apiKey,
             'Content-Type: application/json',
+            'Accept: application/json',
         ],
     ]);
-    $resp = curl_exec($ch);
+    $resp     = curl_exec($ch);
     $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $error    = curl_error($ch);
     curl_close($ch);
 
-    return $httpCode === 200 || $httpCode === 201;
+    if ($httpCode !== 201) {
+        error_log("Brevo error [{$httpCode}] to:{$toEmail} curl:{$error} resp:{$resp}");
+    }
+
+    return $httpCode === 201;
 }
 
-// ── Página de resultado ─────────────────────────────────────
+// ── Página de resultado HTML ─────────────────────────────────
 function mostrarPagina(string $tipo, string $titulo, string $mensaje, bool $fromAdmin = false): never {
     $baseUrl = 'https://pradopeluqueria.infinityfree.me';
     $colores = [
@@ -195,10 +165,7 @@ function mostrarPagina(string $tipo, string $titulo, string $mensaje, bool $from
         'error'  => ['bg' => '#6b7280', 'icon' => '!', 'text' => '#fff'],
     ];
     $c = $colores[$tipo] ?? $colores['error'];
-
-    $metaRefresh = $fromAdmin
-        ? "<meta http-equiv='refresh' content='3;url={$baseUrl}/backend/admin.php'>"
-        : '';
+    $metaRefresh = $fromAdmin ? "<meta http-equiv='refresh' content='3;url={$baseUrl}/backend/admin.php'>" : '';
 
     echo "<!DOCTYPE html>
 <html lang='es'>
@@ -220,7 +187,6 @@ function mostrarPagina(string $tipo, string $titulo, string $mensaje, bool $from
     .card-body{padding:2rem;}
     .card-body p{color:#c0bcc9;font-size:.95rem;line-height:1.75;margin-bottom:1.5rem;}
     .card-body strong{color:#f0ece3;}
-    .card-body small{display:block;margin-top:.5rem;}
     .btn{display:inline-block;background:#d42b2b;color:#fff;text-decoration:none;padding:.75rem 2rem;
          border-radius:4px;font-size:.75rem;font-weight:600;letter-spacing:.15em;text-transform:uppercase;}
     .brand{font-family:'Playfair Display',serif;font-style:italic;font-size:.9rem;color:#7a7880;margin-top:1.5rem;}
