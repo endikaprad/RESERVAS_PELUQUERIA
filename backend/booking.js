@@ -80,7 +80,14 @@ let blockedDaysMap   = {};
 // Clave del último mes cargado — se actualiza SOLO tras fetch exitoso
 let blockedDaysKey   = '';
 
-// ===== CSS para días bloqueados inyectado una sola vez =====
+// ===== NORMALIZAR HORA — evita fallos si MySQL devuelve "9:00" en vez de "09:00" =====
+function normalizeTime(t) {
+    if (!t) return '';
+    const parts = t.split(':');
+    return parts[0].padStart(2, '0') + ':' + (parts[1] || '00').padStart(2, '0');
+}
+
+// ===== CSS para días bloqueados y slots ocupados inyectado una sola vez =====
 (function injectStyles() {
     const style = document.createElement('style');
     style.textContent = `
@@ -107,30 +114,62 @@ let blockedDaysKey   = '';
             );
             pointer-events: none;
         }
+
+        /* Horario ocupado — visualmente claro y no clicable */
+        .time-slot.taken {
+            opacity: 1 !important;
+            background: rgba(212,43,43,0.06) !important;
+            border-color: rgba(212,43,43,0.2) !important;
+            color: rgba(240,236,227,0.3) !important;
+            cursor: not-allowed !important;
+            position: relative;
+            text-decoration: line-through !important;
+        }
+        .time-slot.taken::after {
+            content: '●';
+            position: absolute;
+            top: 3px;
+            right: 5px;
+            font-size: 5px;
+            color: rgba(212,43,43,0.5);
+            line-height: 1;
+        }
+        .time-slot.taken:hover {
+            border-color: rgba(212,43,43,0.2) !important;
+            color: rgba(240,236,227,0.3) !important;
+            transform: none !important;
+        }
+
+        /* Horario pasado (hoy) */
+        .time-slot.past {
+            opacity: 0.3 !important;
+            cursor: not-allowed !important;
+            text-decoration: line-through !important;
+        }
+        .time-slot.past:hover {
+            border-color: var(--color-border) !important;
+            color: var(--color-muted) !important;
+        }
     `;
     document.head.appendChild(style);
 })();
 
 // ===== CARGAR DÍAS BLOQUEADOS DEL MES =====
-// FIX: blockedDaysKey solo se actualiza si la petición tuvo éxito.
-// Así, si falla (red caída, tabla no existe aún), se reintentará en el próximo render.
 async function loadBlockedDays(year, month) {
     const key = year + '-' + month;
-    if (key === blockedDaysKey) return; // ya cargado y exitoso
+    if (key === blockedDaysKey) return;
 
     try {
         const res  = await fetch(`${API_BASE}/blocked-days.php?year=${year}&month=${month}`);
         const json = await res.json();
         if (json.ok) {
             blockedDaysMap = json.data;
-            blockedDaysKey = key; // solo marcar como cargado si fue OK
+            blockedDaysKey = key;
         } else {
             blockedDaysMap = {};
-            // NO actualizamos blockedDaysKey → reintentará la próxima vez
         }
     } catch (e) {
         blockedDaysMap = {};
-        // NO actualizamos blockedDaysKey → reintentará la próxima vez
     }
 }
 
@@ -344,9 +383,8 @@ function goToStep(n) {
     updateStepsBar();
     window.scrollTo({ top: 0, behavior: 'smooth' });
 
-    // FIX: al volver al step 3, forzar re-render del calendario con días bloqueados actualizados
     if (n === 3) {
-        blockedDaysKey = ''; // invalidar caché para forzar recarga
+        blockedDaysKey = '';
         renderCalendar();
     }
 }
@@ -407,7 +445,7 @@ async function renderCalendar() {
     if (!grid) return;
 
     const year  = calendarDate.getFullYear();
-    const month = calendarDate.getMonth(); // 0-based
+    const month = calendarDate.getMonth();
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
@@ -415,11 +453,10 @@ async function renderCalendar() {
                     'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
     title.textContent = `${MONTHS[month]} ${year}`;
 
-    // Cargar días bloqueados del mes (cacheado por mes, solo si fue exitoso)
     await loadBlockedDays(year, month + 1);
 
     const firstDay    = new Date(year, month, 1).getDay();
-    const offset      = (firstDay + 6) % 7; // lunes = 0
+    const offset      = (firstDay + 6) % 7;
     const daysInMonth = new Date(year, month + 1, 0).getDate();
 
     let html = '';
@@ -457,7 +494,6 @@ async function renderCalendar() {
 }
 
 function selectDate(y, m, d) {
-    // Doble comprobación: no permitir clic en días bloqueados
     if (isDateBlocked(y, m, d)) return;
 
     booking.date     = new Date(y, m, d);
@@ -479,17 +515,28 @@ async function loadTakenSlots() {
     const fecha   = formatDate(booking.date);
     const barbero = booking.barber.id;
     try {
-        const res  = await fetch(`${API_BASE}/slots.php?fecha=${fecha}&barbero=${barbero}`);
+        const res = await fetch(`${API_BASE}/slots.php?fecha=${fecha}&barbero=${barbero}`);
+
+        // Verificar que la respuesta es OK antes de parsear
+        if (!res.ok) {
+            console.error(`slots.php error HTTP ${res.status}`);
+            takenSlots = []; dayBlocked = false; dayBlockedMotivo = '';
+            renderTimeSlots(); return;
+        }
+
         const json = await res.json();
+
         if (json.ok) {
-            takenSlots       = json.data.ocupadas  || [];
+            // Normalizar horas para garantizar formato "HH:MM" aunque MySQL devuelva "H:MM"
+            takenSlots       = (json.data.ocupadas || []).map(normalizeTime);
             dayBlocked       = json.data.bloqueado === true;
             dayBlockedMotivo = json.data.motivo    || '';
         } else {
+            console.warn('slots.php respondió ok:false —', json.error || 'sin detalle');
             takenSlots = []; dayBlocked = false; dayBlockedMotivo = '';
         }
     } catch (e) {
-        console.warn('Error cargando slots:', e);
+        console.error('Error fetch slots:', e);
         takenSlots = []; dayBlocked = false; dayBlockedMotivo = '';
     } finally {
         loadingSlots = false;
@@ -535,20 +582,28 @@ function renderTimeSlots() {
         .map(t => {
             const taken    = takenSlots.includes(t);
             const pastTime = isToday && t <= currentHHMM;
-            const disabled = taken || pastTime;
             const selected = booking.time === t;
 
+            // Clases separadas para "ocupado" y "pasado" — distinción visual clara
             let cls = 'time-slot';
-            if (disabled) cls += ' taken';
+            if (taken)    cls += ' taken';
+            else if (pastTime) cls += ' past';
             if (selected) cls += ' selected';
 
-            let label = t;
-            if (taken)    label += ' <small>●</small>';
-            if (pastTime) label  = `<s>${t}</s>`;
+            const disabled = taken || pastTime;
 
             const onclick = disabled ? '' : `onclick="selectTime('${t}')"`;
-            return `<div class="${cls}" ${onclick}>${label}</div>`;
+            return `<div class="${cls}" ${onclick}>${t}</div>`;
         }).join('');
+
+    // Leyenda si hay slots ocupados
+    const hayOcupados = TIME_SLOTS.some(t => takenSlots.includes(t));
+    if (hayOcupados) {
+        const legend = document.createElement('div');
+        legend.style.cssText = 'grid-column:1/-1;display:flex;align-items:center;gap:.5rem;font-size:.72rem;color:var(--color-muted);margin-top:.25rem;';
+        legend.innerHTML = '<span style="display:inline-block;width:10px;height:10px;border:1px solid rgba(212,43,43,0.3);border-radius:2px;background:rgba(212,43,43,0.06);"></span> Horario ocupado';
+        wrap.appendChild(legend);
+    }
 
     const next = document.getElementById('btn-next-3');
     if (next) next.disabled = !(booking.date && booking.time);
@@ -563,7 +618,6 @@ function selectTime(t) {
 
 async function calNav(dir) {
     calendarDate.setMonth(calendarDate.getMonth() + dir);
-    // Limpiar selección si el mes cambia
     if (booking.date) {
         const sameMonth = booking.date.getMonth()    === calendarDate.getMonth() &&
                           booking.date.getFullYear() === calendarDate.getFullYear();
@@ -693,7 +747,7 @@ function formatDate(date) {
 document.addEventListener('DOMContentLoaded', () => {
     renderServices();
     renderBarbers();
-    renderCalendar(); // async, carga días bloqueados del mes actual
+    renderCalendar();
     renderTimeSlots();
     syncClientForm();
 

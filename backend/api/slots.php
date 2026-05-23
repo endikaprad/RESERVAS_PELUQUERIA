@@ -43,10 +43,14 @@ try {
     }
 
     // ── Horas ocupadas de ese barbero en esa fecha ────────────
+    // IMPORTANTE: solo se bloquean horas con estado 'pendiente' o 'aceptada'.
+    // Las reservas 'denegadas' liberan el hueco para que otro cliente pueda reservar.
     $stmt = $db->prepare(
-        'SELECT TIME_FORMAT(hora, "%H:%i") AS hora
+        "SELECT TIME_FORMAT(hora, '%H:%i') AS hora
          FROM reservas
-         WHERE barbero_id = :barbero AND fecha = :fecha'
+         WHERE barbero_id = :barbero
+           AND fecha      = :fecha
+           AND estado     IN ('pendiente', 'aceptada')"
     );
     $stmt->execute([':barbero' => $barbero, ':fecha' => $fecha]);
     $ocupadas = $stmt->fetchAll(PDO::FETCH_COLUMN);
