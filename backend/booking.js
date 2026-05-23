@@ -1,5 +1,5 @@
 // ============================================================
-//  PRADO BARBER CO. — booking.js  (versión con backend MySQL)
+//  PRADO BARBER CO. — booking.js  (días bloqueados aplicados)
 // ============================================================
 
 const API_BASE = './backend/api';
@@ -56,7 +56,7 @@ const PHONE_COUNTRIES = [
 ];
 
 // ===== PREFIX STATE =====
-let selectedCountry = PHONE_COUNTRIES[0]; // España por defecto
+let selectedCountry = PHONE_COUNTRIES[0];
 let prefixDropdownOpen = false;
 
 // ===== STATE =====
@@ -69,9 +69,11 @@ const booking = {
     client: { name: '', phone: '', email: '', notes: '' },
 };
 
-let calendarDate = new Date();
-let takenSlots   = [];
-let loadingSlots = false;
+let calendarDate     = new Date();
+let takenSlots       = [];
+let loadingSlots     = false;
+let dayBlocked       = false;
+let dayBlockedMotivo = '';
 
 // ===== VALIDATION HELPERS =====
 
@@ -99,7 +101,6 @@ function setFieldError(fieldId, message) {
     if (!errEl) {
         errEl = document.createElement('div');
         errEl.className = 'field-error';
-        // Para el campo teléfono, insertar después del phone-hint
         const hint = wrap.querySelector('.phone-hint');
         if (hint) hint.after(errEl);
         else wrap.appendChild(errEl);
@@ -113,7 +114,6 @@ function clearFieldError(fieldId) {
     setFieldError(fieldId, '');
 }
 
-// Error especial para el wrap del teléfono
 function setPhoneError(message) {
     const wrap = document.getElementById('phone-field-wrap');
     const group = document.getElementById('phone-form-group');
@@ -258,7 +258,7 @@ function selectCountry(code) {
     if (codeEl) codeEl.textContent = selectedCountry.dial;
     if (input)  {
         input.placeholder = selectedCountry.hint;
-        input.maxLength   = selectedCountry.digits + 4; // espacio para espacios/guiones
+        input.maxLength   = selectedCountry.digits + 4;
         input.value       = '';
     }
 
@@ -318,7 +318,6 @@ function initPrefixSelector() {
 
     if (search) {
         search.addEventListener('input', filterPrefixList);
-        // Evitar que el keydown cierre el dropdown
         search.addEventListener('keydown', e => e.stopPropagation());
     }
 
@@ -332,7 +331,6 @@ function initPrefixSelector() {
         input.addEventListener('blur', validatePhoneField);
     }
 
-    // Cerrar dropdown al clicar fuera
     document.addEventListener('click', e => {
         if (!prefixDropdownOpen) return;
         const wrap = document.getElementById('phone-field-wrap');
@@ -440,27 +438,59 @@ function renderCalendar() {
             selDate.getMonth()    === month &&
             selDate.getFullYear() === year;
 
+        // Si este día está seleccionado y además bloqueado, marcarlo diferente
+        const isBlockedSelected = isSelected && dayBlocked;
+
         let cls = 'cal-cell';
-        if (disabled)   cls += ' disabled';
-        if (isToday)    cls += ' today';
-        if (isSelected) cls += ' selected';
+        if (disabled)        cls += ' disabled';
+        if (isToday)         cls += ' today';
+        if (isSelected && !isBlockedSelected) cls += ' selected';
+        if (isBlockedSelected) cls += ' blocked-day';
 
         const onclick = disabled ? '' : `onclick="selectDate(${year},${month},${d})"`;
-        html += `<div class="${cls}" ${onclick}>${d}</div>`;
+        const titleAttr = isBlockedSelected ? 'title="Día no disponible"' : '';
+        html += `<div class="${cls}" ${onclick} ${titleAttr}>${d}</div>`;
     }
     grid.innerHTML = html;
 }
 
+// Añadir estilo para .blocked-day dinámicamente si no está en el CSS
+(function injectBlockedDayStyle() {
+    const style = document.createElement('style');
+    style.textContent = `
+        .cal-cell.blocked-day {
+            background: rgba(212,43,43,0.15) !important;
+            border-color: rgba(212,43,43,0.5) !important;
+            color: var(--red) !important;
+            cursor: pointer;
+            position: relative;
+        }
+        .cal-cell.blocked-day::after {
+            content: '✕';
+            position: absolute;
+            top: -4px;
+            right: -2px;
+            font-size: 8px;
+            color: var(--red);
+        }
+    `;
+    document.head.appendChild(style);
+})();
+
 function selectDate(y, m, d) {
-    booking.date = new Date(y, m, d);
-    booking.time = null;
+    booking.date     = new Date(y, m, d);
+    booking.time     = null;
+    dayBlocked       = false;
+    dayBlockedMotivo = '';
     renderCalendar();
     loadTakenSlots();
 }
 
 async function loadTakenSlots() {
     if (!booking.date || !booking.barber) {
-        takenSlots = [];
+        takenSlots       = [];
+        dayBlocked       = false;
+        dayBlockedMotivo = '';
         renderTimeSlots();
         return;
     }
@@ -471,13 +501,24 @@ async function loadTakenSlots() {
     try {
         const res  = await fetch(`${API_BASE}/slots.php?fecha=${fecha}&barbero=${barbero}`);
         const json = await res.json();
-        takenSlots = json.ok ? json.data.ocupadas : [];
+        if (json.ok) {
+            takenSlots       = json.data.ocupadas  || [];
+            dayBlocked       = json.data.bloqueado === true;
+            dayBlockedMotivo = json.data.motivo    || '';
+        } else {
+            takenSlots       = [];
+            dayBlocked       = false;
+            dayBlockedMotivo = '';
+        }
     } catch (e) {
         console.warn('No se pudo conectar a la API:', e);
-        takenSlots = [];
+        takenSlots       = [];
+        dayBlocked       = false;
+        dayBlockedMotivo = '';
     } finally {
         loadingSlots = false;
         renderTimeSlots();
+        renderCalendar(); // redibujar para mostrar el marcador de día bloqueado
     }
 }
 
@@ -491,6 +532,27 @@ function renderTimeSlotsLoading() {
 function renderTimeSlots() {
     const wrap = document.getElementById('time-slots');
     if (!wrap) return;
+
+    // Día bloqueado: mostrar aviso, bloquear botón siguiente
+    if (dayBlocked) {
+        booking.time = null;
+        const motivo = dayBlockedMotivo ? ` — ${dayBlockedMotivo}` : '';
+        wrap.innerHTML = `
+            <div style="grid-column:1/-1; text-align:center; padding:2rem 1rem;
+                        background:rgba(212,43,43,0.06); border:1px solid rgba(212,43,43,0.2);
+                        border-radius:var(--radius-md); color:var(--color-muted);">
+                <div style="font-size:1.5rem; margin-bottom:.5rem;">🔒</div>
+                <div style="font-size:.9rem; color:var(--color-text); font-weight:500; margin-bottom:.25rem;">
+                    Día no disponible${motivo}
+                </div>
+                <div style="font-size:.78rem;">
+                    Por favor selecciona otro día en el calendario.
+                </div>
+            </div>`;
+        const next = document.getElementById('btn-next-3');
+        if (next) next.disabled = true;
+        return;
+    }
 
     const now         = new Date();
     const isToday     = booking.date && booking.date.toDateString() === now.toDateString();
@@ -690,7 +752,11 @@ document.addEventListener('DOMContentLoaded', () => {
     if (btn1) btn1.addEventListener('click', () => { if (booking.service) goToStep(2); });
     if (btn2) btn2.addEventListener('click', () => { if (booking.barber)  goToStep(3); });
     if (btn3) btn3.addEventListener('click', () => {
-        if (booking.date && booking.time) { renderSummary(); goToStep(4); syncClientForm(); }
+        if (booking.date && booking.time && !dayBlocked) {
+            renderSummary();
+            goToStep(4);
+            syncClientForm();
+        }
     });
     if (btnBack2) btnBack2.addEventListener('click', () => goToStep(1));
     if (btnBack3) btnBack3.addEventListener('click', () => goToStep(2));
