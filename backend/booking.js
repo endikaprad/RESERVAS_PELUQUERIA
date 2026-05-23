@@ -2,7 +2,6 @@
 //  PRADO BARBER CO. — booking.js
 // ============================================================
 
-// Declaración única de API_BASE (evita conflicto con main.js)
 window.API_BASE = window.API_BASE || './backend/api';
 
 // ===== DATA =====
@@ -256,11 +255,8 @@ function renderSummary() {
 }
 
 // ===== CLIENT FORM =====
-
-// Patrones de validación de email
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
-// Utilidades teléfono
 function getPhoneCountryData() {
     const sel = document.getElementById('phone-country');
     if (!sel) return { prefix: '', pattern: /^\+?\d{6,15}$/, example: '' };
@@ -273,7 +269,6 @@ function getPhoneCountryData() {
 }
 
 function normalizePhone(raw) {
-    // Elimina espacios, guiones y paréntesis para validar
     return raw.replace(/[\s\-().]/g, '');
 }
 
@@ -307,8 +302,10 @@ function validatePhone(showError = false) {
 
     if (errorEl) errorEl.style.display = (showError && !valid) ? 'block' : 'none';
     if (wrapper) {
-        wrapper.style.borderColor = valid ? 'var(--red)' : (showError ? 'rgba(212,43,43,0.5)' : 'var(--color-border)');
-        wrapper.style.boxShadow   = valid ? '0 0 0 3px rgba(212,43,43,0.1)' : 'none';
+        wrapper.style.borderColor = valid
+            ? 'var(--red)'
+            : (showError ? 'rgba(212,43,43,0.5)' : 'var(--color-border)');
+        wrapper.style.boxShadow = valid ? '0 0 0 3px rgba(212,43,43,0.1)' : 'none';
     }
 
     booking.client.phone = prefix ? `${prefix} ${raw}` : raw;
@@ -331,10 +328,53 @@ function validateEmail(showError = false) {
     }
 
     if (errorEl) errorEl.style.display = (showError && !valid) ? 'block' : 'none';
-    input.style.borderColor = valid ? 'var(--red)' : (showError ? 'rgba(212,43,43,0.5)' : 'var(--color-border)');
-    input.style.boxShadow   = valid ? '0 0 0 3px rgba(212,43,43,0.1)' : 'none';
+    input.style.borderColor = valid
+        ? 'var(--red)'
+        : (showError ? 'rgba(212,43,43,0.5)' : 'var(--color-border)');
+    input.style.boxShadow = valid ? '0 0 0 3px rgba(212,43,43,0.1)' : 'none';
 
     return valid;
+}
+
+function validateName(showError = false) {
+    const input   = document.getElementById('client-name');
+    const errorEl = document.getElementById('name-error');
+    if (!input) return false;
+
+    const val   = input.value.trim();
+    const valid = val.length > 1;
+
+    if (!val) {
+        if (errorEl && showError) errorEl.style.display = 'block';
+        input.style.borderColor = showError ? 'rgba(212,43,43,0.5)' : 'var(--color-border)';
+        input.style.boxShadow   = 'none';
+        return false;
+    }
+
+    if (errorEl) errorEl.style.display = (showError && !valid) ? 'block' : 'none';
+    input.style.borderColor = valid
+        ? 'var(--red)'
+        : (showError ? 'rgba(212,43,43,0.5)' : 'var(--color-border)');
+    input.style.boxShadow = valid ? '0 0 0 3px rgba(212,43,43,0.1)' : 'none';
+
+    return valid;
+}
+
+function validateClientForm() {
+    const name  = document.getElementById('client-name')?.value.trim()  || '';
+    const email = document.getElementById('client-email')?.value.trim() || '';
+    const phone = document.getElementById('client-phone')?.value.trim() || '';
+
+    const nameOk  = name.length > 1;
+    const emailOk = EMAIL_REGEX.test(email);
+    const phoneOk = phone.length > 8;
+
+    booking.client.name  = name;
+    booking.client.email = email;
+
+    const btn = document.getElementById('btn-confirm');
+    if (btn) btn.disabled = !(nameOk && emailOk && phoneOk);
+    return nameOk && emailOk && phoneOk;
 }
 
 function syncClientForm() {
@@ -342,7 +382,6 @@ function syncClientForm() {
     if (nameEl) {
         nameEl.value = booking.client.name;
 
-        // Crear mensaje de error si no existe
         if (!document.getElementById('name-error')) {
             const err = document.createElement('span');
             err.id = 'name-error';
@@ -356,17 +395,7 @@ function syncClientForm() {
             validateClientForm();
         });
 
-        nameEl.addEventListener('blur', () => {
-            const errEl = document.getElementById('name-error');
-            if (nameEl.value.trim().length === 0) {
-                if (errEl) errEl.style.display = 'block';
-            } else if (nameEl.value.trim().length < 2) {
-                if (errEl) errEl.style.display = 'block';
-            } else {
-                if (errEl) errEl.style.display = 'none';
-            }
-            validateClientForm();
-        });
+        nameEl.addEventListener('blur', () => validateName(true));
     }
 
     const notesEl = document.getElementById('client-notes');
@@ -407,38 +436,6 @@ function syncClientForm() {
     }
 }
 
-function validateClientForm() {
-    const nameEl  = document.getElementById('client-name');
-    const name    = nameEl?.value.trim()  || '';
-    const email   = document.getElementById('client-email')?.value.trim() || '';
-    const phone   = document.getElementById('client-phone')?.value.trim() || '';
-
-    const nameOk  = name.length > 1;
-    const emailOk = EMAIL_REGEX.test(email);
-    const phoneOk = phone.length > 8;
-
-    // Indicador visual en el nombre
-    if (nameEl) {
-        if (!nameOk && name.length > 0) {
-            nameEl.style.borderColor = 'rgba(212,43,43,0.5)';
-            nameEl.style.boxShadow   = 'none';
-        } else if (nameOk) {
-            nameEl.style.borderColor = 'var(--red)';
-            nameEl.style.boxShadow   = '0 0 0 3px rgba(212,43,43,0.1)';
-        } else {
-            nameEl.style.borderColor = 'var(--color-border)';
-            nameEl.style.boxShadow   = 'none';
-        }
-    }
-
-    booking.client.name  = name;
-    booking.client.email = email;
-
-    const btn = document.getElementById('btn-confirm');
-    if (btn) btn.disabled = !(nameOk && emailOk && phoneOk);
-    return nameOk && emailOk && phoneOk;
-}
-
 // ===== CONFIRM =====
 async function confirmBooking() {
     const nameEl  = document.getElementById('client-name');
@@ -453,21 +450,13 @@ async function confirmBooking() {
     const emailOk = EMAIL_REGEX.test(email);
     const phoneOk = phone.length > 8;
 
-    // Mostrar errores de todos los campos inválidos
-    const nameErr  = document.getElementById('name-error');
-    if (!nameOk) {
-        if (nameEl) {
-            nameEl.style.borderColor = 'rgba(212,43,43,0.5)';
-            nameEl.style.boxShadow   = 'none';
-        }
-        if (nameErr) nameErr.style.display = 'block';
-    }
-
+    // Forzar validación visual en todos los campos
+    validateName(true);
     validateEmail(true);
     validatePhone(true);
 
     if (!nameOk || !emailOk || !phoneOk) {
-        // Scroll hasta el primer campo con error
+        // Scroll al primer campo con error
         const firstError = !nameOk ? nameEl : (!emailOk ? emailEl : phoneEl);
         if (firstError) firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
@@ -487,52 +476,6 @@ async function confirmBooking() {
         nombre:   name,
         telefono: booking.client.phone || phone,
         email:    email,
-        notas:    booking.client.notes,
-    };
-
-    try {
-        const res  = await fetch(`${window.API_BASE}/booking.php`, {
-            method:  'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body:    JSON.stringify(payload),
-        });
-        const json = await res.json();
-
-        if (json.ok) {
-            goToStep(5);
-            renderConfirmation();
-        } else {
-            if (window.showToast) showToast(json.error || 'Error al reservar', '⚠');
-            btn.disabled    = false;
-            btn.textContent = 'Confirmar reserva ✦';
-            if (res.status === 409) {
-                booking.time = null;
-                await loadTakenSlots();
-            }
-        }
-    } catch (e) {
-        if (window.showToast) showToast('Sin conexión al servidor', '⚠');
-        btn.disabled    = false;
-        btn.textContent = 'Confirmar reserva ✦';
-    }
-}
-
-// ===== CONFIRM =====
-async function confirmBooking() {
-    if (!validateClientForm()) return;
-
-    const btn = document.getElementById('btn-confirm');
-    btn.disabled    = true;
-    btn.textContent = 'Procesando…';
-
-    const payload = {
-        servicio: booking.service.id,
-        barbero:  booking.barber.id,
-        fecha:    formatDate(booking.date),
-        hora:     booking.time,
-        nombre:   booking.client.name,
-        telefono: booking.client.phone,
-        email:    booking.client.email,
         notas:    booking.client.notes,
     };
 
@@ -590,11 +533,9 @@ function formatDate(date) {
 }
 
 // ===== INIT =====
-// Usa readyState guard: si InfinityFree retrasa el script,
-// DOMContentLoaded ya habrá disparado y el listener nunca se ejecuta.
 function initBooking() {
     const grid = document.getElementById('service-grid');
-    if (!grid) return; // No estamos en reservas.html
+    if (!grid) return;
 
     renderServices();
     renderBarbers();
@@ -602,7 +543,6 @@ function initBooking() {
     renderTimeSlots();
     syncClientForm();
 
-    // ── Event delegation: servicio ──────────────────────────
     const serviceGrid = document.getElementById('service-grid');
     if (serviceGrid) {
         serviceGrid.addEventListener('click', (e) => {
@@ -611,7 +551,6 @@ function initBooking() {
         });
     }
 
-    // ── Event delegation: barbero ───────────────────────────
     const barberGrid = document.getElementById('barber-grid');
     if (barberGrid) {
         barberGrid.addEventListener('click', (e) => {
@@ -620,7 +559,6 @@ function initBooking() {
         });
     }
 
-    // ── Event delegation: calendario ────────────────────────
     const calGrid = document.getElementById('cal-grid');
     if (calGrid) {
         calGrid.addEventListener('click', (e) => {
@@ -635,7 +573,6 @@ function initBooking() {
         });
     }
 
-    // ── Event delegation: franjas horarias ──────────────────
     const timeSlots = document.getElementById('time-slots');
     if (timeSlots) {
         timeSlots.addEventListener('click', (e) => {
@@ -644,13 +581,11 @@ function initBooking() {
         });
     }
 
-    // ── Navegación del calendario ────────────────────────────
     const calPrev = document.querySelector('[data-cal-nav="-1"]');
     const calNext = document.querySelector('[data-cal-nav="1"]');
     if (calPrev) calPrev.addEventListener('click', () => calNav(-1));
     if (calNext) calNext.addEventListener('click', () => calNav(1));
 
-    // ── Botones siguiente / volver ───────────────────────────
     const btn1       = document.getElementById('btn-next-1');
     const btn2       = document.getElementById('btn-next-2');
     const btn3       = document.getElementById('btn-next-3');
@@ -671,7 +606,6 @@ function initBooking() {
     if (btnConfirm) btnConfirm.addEventListener('click', confirmBooking);
 }
 
-// Guard para cuando InfinityFree retrasa la carga del script
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initBooking);
 } else {
