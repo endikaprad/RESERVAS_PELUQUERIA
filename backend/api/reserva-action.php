@@ -3,12 +3,16 @@
 //  GET /api/reserva-action.php?token=XXX&accion=aceptar|denegar
 // ============================================================
 
-header('Content-Type: text/html; charset=utf-8');
+// Forzar respuesta HTML correcta — soluciona el problema de ver código
+if (!headers_sent()) {
+    header('Content-Type: text/html; charset=utf-8');
+    header('X-Content-Type-Options: nosniff');
+}
 
 require_once __DIR__ . '/helpers.php';
 
-$token  = trim($_GET['token']  ?? '');
-$accion = trim($_GET['accion'] ?? '');
+$token     = trim($_GET['token']  ?? '');
+$accion    = trim($_GET['accion'] ?? '');
 $fromAdmin = isset($_GET['from']) && $_GET['from'] === 'admin';
 
 if (!$token || !in_array($accion, ['aceptar', 'denegar'], true)) {
@@ -55,17 +59,17 @@ try {
     $baseUrl = 'https://pradopeluqueria.infinityfree.me';
 
     if ($accion === 'aceptar') {
-        $asuntoCliente = 'Reserva confirmada - Prado Barber Co.';
-        $colorHeader   = '#22c55e';
-        $tituloHeader  = 'Reserva confirmada!';
+        $asuntoCliente  = 'Reserva confirmada - Prado Barber Co.';
+        $colorHeader    = '#22c55e';
+        $tituloHeader   = 'Reserva confirmada!';
         $mensajeCliente = 'Tu cita ha sido <strong>confirmada</strong>. Te esperamos!';
-        $pieCliente    = 'Si necesitas cancelar, llamanos al <a href="tel:+34944000000" style="color:#d42b2b;">+34 944 000 000</a>';
+        $pieCliente     = 'Si necesitas cancelar, llamanos al <a href="tel:+34944000000" style="color:#d42b2b;">+34 944 000 000</a>';
     } else {
-        $asuntoCliente = 'Reserva no disponible - Prado Barber Co.';
-        $colorHeader   = '#d42b2b';
-        $tituloHeader  = 'Reserva no disponible';
+        $asuntoCliente  = 'Reserva no disponible - Prado Barber Co.';
+        $colorHeader    = '#d42b2b';
+        $tituloHeader   = 'Reserva no disponible';
         $mensajeCliente = 'Lo sentimos, <strong>' . htmlspecialchars($reserva['barbero_nombre']) . '</strong> no esta disponible para ese horario. Por favor, reserva otra fecha u hora.';
-        $pieCliente    = 'Puedes hacer una nueva reserva en <a href="' . $baseUrl . '/reservas.html" style="color:#d42b2b;">nuestra web</a> o llamarnos al <a href="tel:+34944000000" style="color:#d42b2b;">+34 944 000 000</a>';
+        $pieCliente     = 'Puedes hacer una nueva reserva en <a href="' . $baseUrl . '/reservas.html" style="color:#d42b2b;">nuestra web</a> o llamarnos al <a href="tel:+34944000000" style="color:#d42b2b;">+34 944 000 000</a>';
     }
 
     $htmlCliente = "<!DOCTYPE html><html lang='es'><head><meta charset='UTF-8'></head>
@@ -78,8 +82,7 @@ try {
     <div style='padding:32px;'>
       <p style='color:#f0ece3;font-size:15px;margin-bottom:24px;'>
         Hola <strong>" . htmlspecialchars($reserva['cliente_nombre']) . "</strong>,<br>
-        {$mensajeCliente}<br><br>
-        <span style='color:#7a7880;font-size:13px;'>Email registrado: " . htmlspecialchars($reserva['cliente_email']) . "</span>
+        {$mensajeCliente}
       </p>
       <table style='width:100%;border-collapse:collapse;margin-bottom:28px;'>
         <tr><td style='padding:10px 0;border-bottom:1px solid #252530;color:#7a7880;font-size:13px;width:120px;'>Servicio</td>
@@ -99,7 +102,7 @@ try {
   </div>
 </body></html>";
 
-    sendResend('endikapradodev@gmail.com', $asuntoCliente . ' - ' . htmlspecialchars($reserva['cliente_nombre']), $htmlCliente);
+    sendResend($reserva['cliente_email'], $asuntoCliente, $htmlCliente);
 
     if ($accion === 'aceptar') {
         mostrarPagina('ok', 'Reserva aceptada!',
@@ -147,8 +150,8 @@ function sendResend(string $to, string $subject, string $html): void {
 function mostrarPagina(string $tipo, string $titulo, string $mensaje, bool $fromAdmin = false): never {
     $baseUrl = 'https://pradopeluqueria.infinityfree.me';
     $colores = [
-        'ok'     => ['bg' => '#22c55e', 'icon' => 'V', 'text' => '#fff'],
-        'denied' => ['bg' => '#d42b2b', 'icon' => 'X', 'text' => '#fff'],
+        'ok'     => ['bg' => '#22c55e', 'icon' => '✓', 'text' => '#fff'],
+        'denied' => ['bg' => '#d42b2b', 'icon' => '✕', 'text' => '#fff'],
         'info'   => ['bg' => '#c9a84c', 'icon' => 'i', 'text' => '#000'],
         'error'  => ['bg' => '#6b7280', 'icon' => '!', 'text' => '#fff'],
     ];
