@@ -89,24 +89,15 @@ $hoy = date('Y-m-d');
 $where  = 'WHERE 1=1';
 $params = [];
 
-if ($filtroBarbero !== 'todos') {
-    $where .= ' AND r.barbero_id = ?';
-    $params[] = $filtroBarbero;
-}
-if ($filtroEstado !== 'todos') {
-    $where .= ' AND r.estado = ?';
-    $params[] = $filtroEstado;
-}
+if ($filtroBarbero !== 'todos') { $where .= ' AND r.barbero_id = ?'; $params[] = $filtroBarbero; }
+if ($filtroEstado  !== 'todos') { $where .= ' AND r.estado = ?';     $params[] = $filtroEstado; }
+
 if ($filtroFecha === 'hoy') {
-    $where .= ' AND r.fecha = ?';
-    $params[] = $hoy;
+    $where .= ' AND r.fecha = ?'; $params[] = $hoy;
 } elseif ($filtroFecha === 'semana') {
-    $where .= ' AND r.fecha BETWEEN ? AND ?';
-    $params[] = $hoy;
-    $params[] = date('Y-m-d', strtotime('+7 days'));
+    $where .= ' AND r.fecha BETWEEN ? AND ?'; $params[] = $hoy; $params[] = date('Y-m-d', strtotime('+7 days'));
 } elseif ($filtroFecha === 'custom' && $fechaCustom) {
-    $where .= ' AND r.fecha = ?';
-    $params[] = $fechaCustom;
+    $where .= ' AND r.fecha = ?'; $params[] = $fechaCustom;
 }
 
 $stmt = $db->prepare("
@@ -124,8 +115,7 @@ $stmt = $db->prepare("
 $stmt->execute($params);
 $reservas = $stmt->fetchAll();
 
-$stmtHoy = $db->prepare("SELECT COUNT(*) as total, SUM(s.precio) as ingresos
-    FROM reservas r JOIN servicios s ON s.id = r.servicio_id WHERE r.fecha = ?");
+$stmtHoy = $db->prepare("SELECT COUNT(*) as total, SUM(s.precio) as ingresos FROM reservas r JOIN servicios s ON s.id = r.servicio_id WHERE r.fecha = ?");
 $stmtHoy->execute([$hoy]);
 $statsHoy = $stmtHoy->fetch();
 
@@ -152,198 +142,173 @@ $mesesES = ['','ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov'
 
         /* ── HEADER ── */
         .admin-header{
-            background:#111119;
-            border-bottom:1px solid #252530;
+            background:#111119;border-bottom:1px solid #252530;
             padding:.9rem 1.25rem;
             display:flex;align-items:center;justify-content:space-between;
             position:sticky;top:0;z-index:50;
         }
         .admin-brand{font-family:'Playfair Display',serif;font-size:1.1rem;font-style:italic;}
         .admin-brand span{color:#d42b2b;}
-        .logout-btn{
-            background:transparent;border:1px solid #252530;color:#7a7880;
-            border-radius:4px;padding:.4rem .85rem;
-            font-family:'DM Sans',sans-serif;font-size:.68rem;
-            letter-spacing:.1em;text-transform:uppercase;cursor:pointer;transition:all .3s;
-        }
+        .logout-btn{background:transparent;border:1px solid #252530;color:#7a7880;border-radius:4px;
+            padding:.4rem .9rem;font-family:'DM Sans',sans-serif;font-size:.68rem;
+            letter-spacing:.1em;text-transform:uppercase;cursor:pointer;transition:all .3s;}
         .logout-btn:hover{border-color:#d42b2b;color:#d42b2b;}
 
-        /* ── BODY WRAPPER ── */
+        /* ── BODY ── */
         .admin-body{padding:1rem;max-width:1300px;margin:0 auto;}
 
         /* ── ALERT ── */
         .alert-pendientes{
             background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.25);
-            border-radius:10px;padding:.9rem 1.1rem;margin-bottom:1rem;
-            display:flex;align-items:center;gap:.75rem;font-size:.85rem;flex-wrap:wrap;
+            border-radius:10px;padding:.85rem 1.1rem;margin-bottom:1rem;
+            display:flex;align-items:center;gap:.75rem;flex-wrap:wrap;font-size:.85rem;
         }
         .alert-pendientes strong{color:#f59e0b;}
-        .alert-link{margin-left:auto;color:#f59e0b;font-size:.75rem;letter-spacing:.1em;text-transform:uppercase;}
+        .alert-link{margin-left:auto;color:#f59e0b;font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;}
 
-        /* ── STATS GRID ── */
-        .stats-row{
-            display:grid;
-            grid-template-columns:1fr 1fr;
-            gap:.75rem;
-            margin-bottom:1rem;
-        }
-        .stat-card{
-            background:#111119;border:1px solid #252530;
-            border-radius:12px;padding:1rem 1.1rem;
-        }
-        .stat-label{font-size:.62rem;letter-spacing:.2em;text-transform:uppercase;color:#7a7880;margin-bottom:.35rem;}
+        /* ── STATS ── */
+        .stats-row{display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:1rem;}
+        .stat-card{background:#111119;border:1px solid #252530;border-radius:12px;padding:1rem 1.1rem;}
+        .stat-label{font-size:.6rem;letter-spacing:.2em;text-transform:uppercase;color:#7a7880;margin-bottom:.3rem;}
         .stat-value{font-family:'Playfair Display',serif;font-size:1.75rem;font-weight:700;color:#d42b2b;line-height:1;}
-        .stat-value.green{color:#22c55e;}
-        .stat-value.orange{color:#f59e0b;}
         .stat-value.gold{color:#c9a84c;}
-        .stat-sub{font-size:.68rem;color:#7a7880;margin-top:.2rem;}
+        .stat-value.orange{color:#f59e0b;}
+        .stat-sub{font-size:.65rem;color:#7a7880;margin-top:.2rem;}
 
         /* ── FILTERS ── */
-        .filters{
-            background:#111119;border:1px solid #252530;
-            border-radius:12px;padding:1rem 1.1rem;margin-bottom:1rem;
-        }
-        .filters-title{
-            font-size:.65rem;letter-spacing:.2em;text-transform:uppercase;
-            color:#7a7880;margin-bottom:.75rem;
-        }
-        .filters form{display:flex;flex-direction:column;gap:.6rem;}
-        .filter-row{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;}
-        .filter-label{font-size:.65rem;letter-spacing:.12em;text-transform:uppercase;color:#7a7880;min-width:60px;}
+        .filters{background:#111119;border:1px solid #252530;border-radius:12px;padding:1rem 1.1rem;margin-bottom:1rem;}
+        .filters-label{font-size:.62rem;letter-spacing:.2em;text-transform:uppercase;color:#7a7880;margin-bottom:.75rem;}
+        .filters form{display:flex;flex-direction:column;gap:.55rem;}
+        .frow{display:flex;align-items:center;gap:.5rem;}
+        .flabel{font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:#7a7880;white-space:nowrap;min-width:52px;}
         select,input[type=date]{
-            flex:1;min-width:100px;
-            background:#18181f;border:1px solid #252530;border-radius:6px;
-            padding:.5rem .75rem;color:#f0ece3;
-            font-family:'DM Sans',sans-serif;font-size:.82rem;
+            flex:1;background:#18181f;border:1px solid #252530;border-radius:6px;
+            padding:.5rem .65rem;color:#f0ece3;font-family:'DM Sans',sans-serif;font-size:.82rem;
         }
         select:focus,input[type=date]:focus{outline:none;border-color:#d42b2b;}
         .filter-submit{
             background:#d42b2b;color:#fff;border:none;border-radius:4px;
-            padding:.6rem 1.25rem;font-family:'DM Sans',sans-serif;
-            font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;
-            cursor:pointer;transition:background .3s;align-self:flex-end;
+            padding:.55rem 1.1rem;font-family:'DM Sans',sans-serif;font-size:.7rem;
+            letter-spacing:.12em;text-transform:uppercase;cursor:pointer;transition:background .3s;
+            white-space:nowrap;flex-shrink:0;
         }
         .filter-submit:hover{background:#a81e1e;}
 
         /* ── SECTION HEADER ── */
-        .section-header{
-            display:flex;align-items:center;justify-content:space-between;
-            margin-bottom:.75rem;padding:.25rem 0;
-        }
+        .section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem;}
         .section-title-admin{font-family:'Playfair Display',serif;font-size:1.1rem;}
-        .section-count{font-size:.75rem;color:#7a7880;}
+        .section-count{font-size:.72rem;color:#7a7880;}
 
-        /* ── RESERVATION CARDS (mobile default) ── */
-        .reservas-list{display:flex;flex-direction:column;gap:.75rem;}
+        /* ════════════════════════════════════
+           MOBILE CARDS  (< 900px — default)
+           ════════════════════════════════════ */
+        .reservas-cards{display:flex;flex-direction:column;gap:1rem;}
 
-        .reserva-card{
-            background:#111119;border:1px solid #252530;
-            border-radius:12px;overflow:hidden;
-            transition:border-color .25s;
+        .rc{
+            background:#111119;
+            border:1px solid #252530;
+            border-left-width:3px;
+            border-radius:12px;
+            overflow:hidden;
         }
-        .reserva-card:hover{border-color:#3a3a48;}
+        .rc.pendiente{border-left-color:#f59e0b;}
+        .rc.aceptada {border-left-color:#22c55e;}
+        .rc.denegada {border-left-color:#d42b2b;opacity:.65;}
 
-        /* Status left border */
-        .reserva-card.estado-pendiente{border-left:3px solid #f59e0b;}
-        .reserva-card.estado-aceptada {border-left:3px solid #22c55e;}
-        .reserva-card.estado-denegada {border-left:3px solid #d42b2b;opacity:.6;}
-
-        /* Card top row */
+        /* top row */
         .rc-top{
-            display:flex;align-items:center;justify-content:space-between;
-            padding:.85rem 1rem .5rem;
-            gap:.5rem;
+            display:flex;align-items:flex-start;justify-content:space-between;
+            padding:1rem 1rem .6rem;gap:.5rem;
         }
-        .rc-id{font-size:.68rem;color:#7a7880;}
-        .rc-hora{
-            font-family:'Playfair Display',serif;font-size:1.3rem;
-            font-weight:700;color:#d42b2b;line-height:1;
-        }
-        .rc-fecha{font-size:.78rem;color:#c0bcc9;}
+        .rc-top-left{}
+        .rc-id{font-size:.65rem;color:#7a7880;margin-bottom:.15rem;}
+        .rc-hora{font-family:'Playfair Display',serif;font-size:1.45rem;font-weight:700;color:#d42b2b;line-height:1;}
+        .rc-fecha{font-size:.8rem;color:#a0a0b0;margin-top:.2rem;}
 
-        /* Estado badge */
-        .estado-badge{
+        /* estado badge */
+        .ebadge{
             display:inline-flex;align-items:center;gap:.3rem;
-            padding:.2rem .65rem;border-radius:100px;
-            font-size:.68rem;font-weight:600;letter-spacing:.04em;white-space:nowrap;
+            padding:.3rem .75rem;border-radius:100px;
+            font-size:.7rem;font-weight:600;letter-spacing:.04em;white-space:nowrap;
+            flex-shrink:0;
         }
-        .badge-pendiente{background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.3);color:#f59e0b;}
-        .badge-aceptada {background:rgba(34,197,94,.12); border:1px solid rgba(34,197,94,.3); color:#22c55e;}
-        .badge-denegada {background:rgba(212,43,43,.12); border:1px solid rgba(212,43,43,.3); color:#d42b2b;}
+        .ebadge-pendiente{background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.3);color:#f59e0b;}
+        .ebadge-aceptada {background:rgba(34,197,94,.12); border:1px solid rgba(34,197,94,.3); color:#22c55e;}
+        .ebadge-denegada {background:rgba(212,43,43,.12); border:1px solid rgba(212,43,43,.3); color:#d42b2b;}
 
-        /* Card body */
-        .rc-body{padding:.25rem 1rem .85rem;display:flex;flex-direction:column;gap:.6rem;}
+        /* divider */
+        .rc-divider{height:1px;background:#1c1c26;margin:0 1rem;}
 
-        .rc-info-grid{
-            display:grid;grid-template-columns:1fr 1fr;gap:.35rem .75rem;
-        }
-        .rc-info-item{}
-        .rc-info-label{font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:#7a7880;margin-bottom:.1rem;}
-        .rc-info-value{font-size:.85rem;color:#f0ece3;}
-        .rc-info-value.gold{color:#c9a84c;font-weight:500;}
+        /* body */
+        .rc-body{padding:.85rem 1rem 1rem;display:flex;flex-direction:column;gap:.85rem;}
 
-        .rc-cliente-name{font-size:.95rem;font-weight:500;color:#f0ece3;}
-        .rc-cliente-meta{font-size:.75rem;color:#7a7880;display:flex;flex-wrap:wrap;gap:.35rem .75rem;margin-top:.1rem;}
+        .rc-cliente-name{font-size:1rem;font-weight:500;margin-bottom:.3rem;}
+        .rc-cliente-meta{display:flex;flex-direction:column;gap:.2rem;}
+        .rc-meta-item{font-size:.78rem;color:#7a7880;}
 
-        /* Barbero badge */
-        .b-pill{
-            display:inline-block;padding:.2rem .6rem;
+        .rc-details{display:grid;grid-template-columns:1fr 1fr;gap:.6rem 1rem;}
+        .rc-detail{}
+        .rc-detail-label{font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;color:#7a7880;margin-bottom:.2rem;}
+        .rc-detail-value{font-size:.88rem;color:#f0ece3;}
+        .rc-detail-value.gold{color:#c9a84c;font-weight:500;}
+        .rc-detail-sub{font-size:.72rem;color:#7a7880;}
+
+        .rc-barbero-pill{
+            display:inline-block;padding:.25rem .65rem;
             background:rgba(212,43,43,.08);border:1px solid rgba(212,43,43,.2);
-            border-radius:100px;font-size:.72rem;color:#d42b2b;
+            border-radius:100px;font-size:.75rem;color:#d42b2b;
         }
 
-        /* Action buttons */
+        .rc-notas{
+            font-size:.78rem;color:#7a7880;font-style:italic;
+            padding:.55rem .75rem;background:#0d0d14;
+            border-radius:6px;border-left:2px solid #2a2a38;
+        }
+
+        /* action buttons */
         .rc-actions{
-            display:flex;gap:.5rem;padding:.75rem 1rem;
-            border-top:1px solid #1e1e28;
+            display:flex;gap:.6rem;
+            padding:.85rem 1rem;
+            border-top:1px solid #1c1c26;
         }
         .btn-accept,.btn-deny{
             flex:1;display:flex;align-items:center;justify-content:center;gap:.4rem;
-            padding:.65rem .5rem;border-radius:6px;
-            font-family:'DM Sans',sans-serif;font-size:.75rem;font-weight:600;
-            letter-spacing:.08em;text-transform:uppercase;
-            cursor:pointer;text-decoration:none;transition:all .2s;
+            padding:.7rem .5rem;border-radius:7px;
+            font-family:'DM Sans',sans-serif;font-size:.78rem;font-weight:600;
+            letter-spacing:.06em;text-transform:uppercase;
+            cursor:pointer;text-decoration:none;transition:all .22s;
             border:1px solid transparent;
         }
-        .btn-accept{
-            background:rgba(34,197,94,.12);border-color:rgba(34,197,94,.3);color:#22c55e;
-        }
-        .btn-accept:hover{background:#22c55e;color:#000;}
-        .btn-deny{
-            background:rgba(212,43,43,.1);border-color:rgba(212,43,43,.25);color:#d42b2b;
-        }
-        .btn-deny:hover{background:#d42b2b;color:#fff;}
+        .btn-accept{background:rgba(34,197,94,.12);border-color:rgba(34,197,94,.35);color:#22c55e;}
+        .btn-accept:hover,.btn-accept:active{background:#22c55e;color:#000;}
+        .btn-deny{background:rgba(212,43,43,.1);border-color:rgba(212,43,43,.3);color:#d42b2b;}
+        .btn-deny:hover,.btn-deny:active{background:#d42b2b;color:#fff;}
 
-        .rc-notas{
-            font-size:.78rem;color:#7a7880;padding:.5rem .75rem;
-            background:#0d0d14;border-radius:6px;border-left:2px solid #252530;
-            font-style:italic;
-        }
-
-        /* ── EMPTY STATE ── */
-        .empty-state{
-            background:#111119;border:1px solid #252530;border-radius:12px;
-            padding:3.5rem 2rem;text-align:center;color:#7a7880;
-        }
+        /* ── EMPTY ── */
+        .empty-state{background:#111119;border:1px solid #252530;border-radius:12px;padding:3.5rem 2rem;text-align:center;color:#7a7880;}
         .empty-icon{font-size:2.5rem;margin-bottom:.75rem;opacity:.3;}
 
-        /* ── DESKTOP TABLE (≥900px) ── */
-        @media(min-width:900px){
-            .admin-body{padding:2rem;}
-            .stats-row{grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:1.5rem;}
-            .stat-value{font-size:2rem;}
-            .filters form{flex-direction:row;align-items:center;flex-wrap:wrap;}
-            .filter-row{flex-wrap:nowrap;}
-            .filter-label{min-width:auto;}
-            .filter-submit{align-self:auto;}
+        /* ════════════════════════════════════
+           DESKTOP TABLE  (≥ 900px)
+           ════════════════════════════════════ */
+        .reservas-cards  { /* already flex column, stays as-is on mobile */ }
+        .table-desktop   { display:none; }   /* hidden on mobile */
 
-            /* Hide cards, show table on desktop */
-            .reservas-list{display:none;}
-            .table-desktop{display:block;}
+        @media (min-width: 900px) {
+            .admin-header   { padding:1rem 2rem; }
+            .admin-body     { padding:2rem; }
+            .stats-row      { grid-template-columns:repeat(4,1fr); gap:1rem; margin-bottom:1.5rem; }
+            .stat-value     { font-size:2rem; }
+
+            .filters form   { flex-direction:row; align-items:center; flex-wrap:wrap; gap:.75rem; }
+            .frow           { flex-wrap:nowrap; }
+
+            /* swap visibility */
+            .reservas-cards { display:none !important; }
+            .table-desktop  { display:block !important; }
         }
 
         /* ── DESKTOP TABLE STYLES ── */
-        .table-desktop{display:none;}
         .table-wrap-d{background:#111119;border:1px solid #252530;border-radius:12px;overflow:hidden;}
         .table-header-d{padding:1.1rem 1.5rem;border-bottom:1px solid #252530;display:flex;align-items:center;justify-content:space-between;}
         .table-title-d{font-family:'Playfair Display',serif;font-size:1.1rem;}
@@ -360,15 +325,18 @@ $mesesES = ['','ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov'
         .td-notas{font-size:.75rem;color:#7a7880;max-width:140px;}
         .action-btns{display:flex;gap:.4rem;}
         .tb-accept,.tb-deny{
-            padding:.3rem .65rem;border-radius:4px;font-family:'DM Sans',sans-serif;
+            padding:.32rem .65rem;border-radius:4px;font-family:'DM Sans',sans-serif;
             font-size:.67rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;
-            cursor:pointer;text-decoration:none;transition:all .2s;border:1px solid transparent;
-            white-space:nowrap;
+            cursor:pointer;text-decoration:none;transition:all .2s;border:1px solid transparent;white-space:nowrap;
         }
         .tb-accept{background:rgba(34,197,94,.12);border-color:rgba(34,197,94,.3);color:#22c55e;}
         .tb-accept:hover{background:#22c55e;color:#000;}
         .tb-deny{background:rgba(212,43,43,.1);border-color:rgba(212,43,43,.25);color:#d42b2b;}
         .tb-deny:hover{background:#d42b2b;color:#fff;}
+        .estado-badge{display:inline-flex;align-items:center;gap:.3rem;padding:.22rem .65rem;border-radius:100px;font-size:.68rem;font-weight:600;letter-spacing:.04em;white-space:nowrap;}
+        .badge-pendiente{background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.3);color:#f59e0b;}
+        .badge-aceptada {background:rgba(34,197,94,.12); border:1px solid rgba(34,197,94,.3); color:#22c55e;}
+        .badge-denegada {background:rgba(212,43,43,.12); border:1px solid rgba(212,43,43,.3); color:#d42b2b;}
     </style>
 </head>
 <body>
@@ -376,7 +344,7 @@ $mesesES = ['','ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov'
 <div class="admin-header">
     <div class="admin-brand">Prado <span>Barber</span> · Admin</div>
     <form method="POST" style="margin:0;">
-        <button class="logout-btn" name="logout" value="1">Salir</button>
+        <button class="logout-btn" name="logout" value="1">Cerrar sesión</button>
     </form>
 </div>
 
@@ -385,7 +353,7 @@ $mesesES = ['','ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov'
     <?php if ($statsPend['total'] > 0): ?>
     <div class="alert-pendientes">
         <span style="font-size:1.1rem;">⏳</span>
-        <span><strong><?= $statsPend['total'] ?> pendiente<?= $statsPend['total']!=1?'s':'' ?></strong> sin confirmar</span>
+        <span><strong><?= $statsPend['total'] ?> reserva<?= $statsPend['total']!=1?'s':'' ?> pendiente<?= $statsPend['total']!=1?'s':'' ?></strong> sin confirmar</span>
         <a href="?estado=pendiente&fecha=todas" class="alert-link">Ver →</a>
     </div>
     <?php endif; ?>
@@ -416,17 +384,17 @@ $mesesES = ['','ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov'
 
     <!-- FILTERS -->
     <div class="filters">
-        <div class="filters-title">Filtros</div>
+        <div class="filters-label">Filtros</div>
         <form method="GET">
-            <div class="filter-row">
-                <span class="filter-label">Barbero</span>
+            <div class="frow">
+                <span class="flabel">Barbero</span>
                 <select name="barbero">
                     <option value="todos" <?= $filtroBarbero==='todos'?'selected':'' ?>>Todos</option>
                     <?php foreach ($barberos as $b): ?>
                         <option value="<?= $b['id'] ?>" <?= $filtroBarbero===$b['id']?'selected':'' ?>><?= htmlspecialchars($b['nombre']) ?></option>
                     <?php endforeach; ?>
                 </select>
-                <span class="filter-label">Estado</span>
+                <span class="flabel">Estado</span>
                 <select name="estado">
                     <option value="todos"     <?= $filtroEstado==='todos'    ?'selected':'' ?>>Todos</option>
                     <option value="pendiente" <?= $filtroEstado==='pendiente'?'selected':'' ?>>⏳ Pendientes</option>
@@ -434,8 +402,8 @@ $mesesES = ['','ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov'
                     <option value="denegada"  <?= $filtroEstado==='denegada' ?'selected':'' ?>>✕ Denegadas</option>
                 </select>
             </div>
-            <div class="filter-row">
-                <span class="filter-label">Fecha</span>
+            <div class="frow">
+                <span class="flabel">Fecha</span>
                 <select name="fecha" onchange="this.form.submit()">
                     <option value="hoy"    <?= $filtroFecha==='hoy'   ?'selected':'' ?>>Hoy</option>
                     <option value="semana" <?= $filtroFecha==='semana'?'selected':'' ?>>Próximos 7 días</option>
@@ -450,67 +418,71 @@ $mesesES = ['','ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov'
         </form>
     </div>
 
-    <!-- HEADER -->
+    <!-- SECTION HEADER -->
     <div class="section-header">
         <div class="section-title-admin">Reservas</div>
         <div class="section-count"><?= count($reservas) ?> resultado<?= count($reservas)!=1?'s':'' ?></div>
     </div>
 
     <?php if (empty($reservas)): ?>
-        <div class="empty-state">
-            <div class="empty-icon">📅</div>
-            <div>No hay reservas para los filtros seleccionados.</div>
-        </div>
+    <div class="empty-state">
+        <div class="empty-icon">📅</div>
+        <div>No hay reservas para los filtros seleccionados.</div>
+    </div>
     <?php else: ?>
 
-    <!-- MOBILE CARDS -->
-    <div class="reservas-list">
+    <!-- ═══ MOBILE CARDS ═══ -->
+    <div class="reservas-cards">
         <?php foreach ($reservas as $r):
-            $dt = new DateTime($r['fecha']);
-            $diaNum = (int)$dt->format('w');
-            $mesNum = (int)$dt->format('n');
-            $fechaStr = $diasES[$diaNum] . ' ' . $dt->format('j') . ' ' . $mesesES[$mesNum];
-            $hora = substr($r['hora'], 0, 5);
-            $estadoClass = 'estado-' . $r['estado'];
+            $dt      = new DateTime($r['fecha']);
+            $diaNum  = (int)$dt->format('w');
+            $mesNum  = (int)$dt->format('n');
+            $fechaStr= $diasES[$diaNum] . ' ' . $dt->format('j') . ' ' . $mesesES[$mesNum];
+            $hora    = substr($r['hora'], 0, 5);
+            $est     = $r['estado'];
         ?>
-        <div class="reserva-card <?= $estadoClass ?>">
+        <div class="rc <?= $est ?>">
             <div class="rc-top">
-                <div>
+                <div class="rc-top-left">
                     <div class="rc-id">#<?= $r['id'] ?></div>
                     <div class="rc-hora"><?= $hora ?></div>
                     <div class="rc-fecha"><?= $fechaStr ?></div>
                 </div>
-                <?php if ($r['estado'] === 'pendiente'): ?>
-                    <span class="estado-badge badge-pendiente">⏳ Pendiente</span>
-                <?php elseif ($r['estado'] === 'aceptada'): ?>
-                    <span class="estado-badge badge-aceptada">✓ Aceptada</span>
+                <?php if ($est==='pendiente'): ?>
+                    <span class="ebadge ebadge-pendiente">⏳ Pendiente</span>
+                <?php elseif ($est==='aceptada'): ?>
+                    <span class="ebadge ebadge-aceptada">✓ Aceptada</span>
                 <?php else: ?>
-                    <span class="estado-badge badge-denegada">✕ Denegada</span>
+                    <span class="ebadge ebadge-denegada">✕ Denegada</span>
                 <?php endif; ?>
             </div>
 
+            <div class="rc-divider"></div>
+
             <div class="rc-body">
+                <!-- Cliente -->
                 <div>
                     <div class="rc-cliente-name"><?= htmlspecialchars($r['cliente_nombre']) ?></div>
                     <div class="rc-cliente-meta">
-                        <span><?= htmlspecialchars($r['cliente_email']) ?></span>
-                        <span><?= htmlspecialchars($r['cliente_telefono']) ?></span>
+                        <span class="rc-meta-item">✉ <?= htmlspecialchars($r['cliente_email']) ?></span>
+                        <span class="rc-meta-item">📞 <?= htmlspecialchars($r['cliente_telefono']) ?></span>
                     </div>
                 </div>
 
-                <div class="rc-info-grid">
-                    <div class="rc-info-item">
-                        <div class="rc-info-label">Servicio</div>
-                        <div class="rc-info-value"><?= htmlspecialchars($r['servicio']) ?></div>
-                        <div style="font-size:.72rem;color:#7a7880;"><?= $r['duracion'] ?></div>
+                <!-- Details grid -->
+                <div class="rc-details">
+                    <div class="rc-detail">
+                        <div class="rc-detail-label">Servicio</div>
+                        <div class="rc-detail-value"><?= htmlspecialchars($r['servicio']) ?></div>
+                        <div class="rc-detail-sub"><?= $r['duracion'] ?></div>
                     </div>
-                    <div class="rc-info-item">
-                        <div class="rc-info-label">Precio</div>
-                        <div class="rc-info-value gold"><?= number_format($r['precio'],0) ?> €</div>
+                    <div class="rc-detail">
+                        <div class="rc-detail-label">Precio</div>
+                        <div class="rc-detail-value gold"><?= number_format($r['precio'],0) ?> €</div>
                     </div>
-                    <div class="rc-info-item">
-                        <div class="rc-info-label">Barbero</div>
-                        <div class="rc-info-value"><span class="b-pill"><?= htmlspecialchars($r['barbero']) ?></span></div>
+                    <div class="rc-detail">
+                        <div class="rc-detail-label">Barbero</div>
+                        <div class="rc-detail-value"><span class="rc-barbero-pill"><?= htmlspecialchars($r['barbero']) ?></span></div>
                     </div>
                 </div>
 
@@ -519,7 +491,7 @@ $mesesES = ['','ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov'
                 <?php endif; ?>
             </div>
 
-            <?php if ($r['estado'] === 'pendiente'): ?>
+            <?php if ($est === 'pendiente'): ?>
             <div class="rc-actions">
                 <a href="?accion=aceptar&token=<?= urlencode($r['token']) ?>&<?= http_build_query(['barbero'=>$filtroBarbero,'fecha'=>$filtroFecha,'estado'=>$filtroEstado,'fecha_custom'=>$fechaCustom]) ?>"
                    class="btn-accept"
@@ -537,7 +509,7 @@ $mesesES = ['','ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov'
         <?php endforeach; ?>
     </div>
 
-    <!-- DESKTOP TABLE -->
+    <!-- ═══ DESKTOP TABLE ═══ -->
     <div class="table-desktop">
         <div class="table-wrap-d">
             <div class="table-header-d">
@@ -554,11 +526,11 @@ $mesesES = ['','ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov'
                 </thead>
                 <tbody>
                 <?php foreach ($reservas as $r):
-                    $dt = new DateTime($r['fecha']);
-                    $diaNum = (int)$dt->format('w');
-                    $mesNum = (int)$dt->format('n');
-                    $fechaStr = $diasES[$diaNum] . ' ' . $dt->format('j') . ' ' . $mesesES[$mesNum];
-                    $rowStyle = $r['estado']==='denegada' ? 'opacity:.55;' : '';
+                    $dt      = new DateTime($r['fecha']);
+                    $diaNum  = (int)$dt->format('w');
+                    $mesNum  = (int)$dt->format('n');
+                    $fechaStr= $diasES[$diaNum] . ' ' . $dt->format('j') . ' ' . $mesesES[$mesNum];
+                    $rowStyle= $r['estado']==='denegada' ? 'opacity:.55;' : '';
                 ?>
                 <tr style="<?= $rowStyle ?>">
                     <td style="color:#7a7880;font-size:.75rem;">#<?= $r['id'] ?></td>
@@ -573,9 +545,12 @@ $mesesES = ['','ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov'
                     <td class="td-precio"><?= number_format($r['precio'],0) ?> €</td>
                     <td class="td-barbero"><span class="b-badge"><?= htmlspecialchars($r['barbero']) ?></span></td>
                     <td>
-                        <?php if ($r['estado']==='pendiente'): ?><span class="estado-badge badge-pendiente">⏳ Pendiente</span>
-                        <?php elseif ($r['estado']==='aceptada'): ?><span class="estado-badge badge-aceptada">✓ Aceptada</span>
-                        <?php else: ?><span class="estado-badge badge-denegada">✕ Denegada</span>
+                        <?php if ($r['estado']==='pendiente'): ?>
+                            <span class="estado-badge badge-pendiente">⏳ Pendiente</span>
+                        <?php elseif ($r['estado']==='aceptada'): ?>
+                            <span class="estado-badge badge-aceptada">✓ Aceptada</span>
+                        <?php else: ?>
+                            <span class="estado-badge badge-denegada">✕ Denegada</span>
                         <?php endif; ?>
                     </td>
                     <td>
