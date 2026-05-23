@@ -48,7 +48,7 @@ function isValidName(v) {
 
 function isValidPhone(v) {
     const digits = v.replace(/[\s\-().+]/g, '');
-    return /^\d{9,}$/.test(digits);
+    return /^\d{9}$/.test(digits);
 }
 
 function isValidEmail(v) {
@@ -116,7 +116,7 @@ function validateField(fieldId) {
             return false;
         }
         if (!isValidPhone(val)) {
-            setFieldError(fieldId, '⚠ El teléfono debe tener al menos 9 dígitos.');
+            setFieldError(fieldId, '⚠ El teléfono debe tener exactamente 9 dígitos.');
             return false;
         }
         clearFieldError(fieldId);
