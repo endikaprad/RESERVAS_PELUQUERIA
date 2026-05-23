@@ -256,25 +256,265 @@ function renderSummary() {
 }
 
 // ===== CLIENT FORM =====
-function syncClientForm() {
-    ['name','phone','email','notes'].forEach(field => {
-        const el = document.getElementById(`client-${field}`);
-        if (el) {
-            el.value = booking.client[field];
-            el.addEventListener('input', () => {
-                booking.client[field] = el.value;
-                validateClientForm();
-            });
+
+// Patrones de validación de email
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+
+// Utilidades teléfono
+function getPhoneCountryData() {
+    const sel = document.getElementById('phone-country');
+    if (!sel) return { prefix: '', pattern: /^\+?\d{6,15}$/, example: '' };
+    const opt = sel.options[sel.selectedIndex];
+    return {
+        prefix:  opt.dataset.prefix  || '',
+        pattern: new RegExp(opt.dataset.pattern),
+        example: opt.dataset.example || '',
+    };
+}
+
+function normalizePhone(raw) {
+    // Elimina espacios, guiones y paréntesis para validar
+    return raw.replace(/[\s\-().]/g, '');
+}
+
+function validatePhone(showError = false) {
+    const input   = document.getElementById('client-phone');
+    const errorEl = document.getElementById('phone-error');
+    const hintEl  = document.getElementById('phone-hint');
+    const wrapper = document.getElementById('phone-wrapper');
+    if (!input) return false;
+
+    const { prefix, pattern, example } = getPhoneCountryData();
+    const raw  = input.value.trim();
+    const norm = normalizePhone(raw);
+
+    if (hintEl && example) {
+        hintEl.textContent = `Ej: ${example}`;
+    } else if (hintEl) {
+        hintEl.textContent = '';
+    }
+
+    if (!norm) {
+        if (errorEl) errorEl.style.display = 'none';
+        if (wrapper) {
+            wrapper.style.borderColor = 'var(--color-border)';
+            wrapper.style.boxShadow   = 'none';
         }
-    });
+        return false;
+    }
+
+    const valid = pattern.test(norm);
+
+    if (errorEl) errorEl.style.display = (showError && !valid) ? 'block' : 'none';
+    if (wrapper) {
+        wrapper.style.borderColor = valid ? 'var(--red)' : (showError ? 'rgba(212,43,43,0.5)' : 'var(--color-border)');
+        wrapper.style.boxShadow   = valid ? '0 0 0 3px rgba(212,43,43,0.1)' : 'none';
+    }
+
+    booking.client.phone = prefix ? `${prefix} ${raw}` : raw;
+    return valid;
+}
+
+function validateEmail(showError = false) {
+    const input   = document.getElementById('client-email');
+    const errorEl = document.getElementById('email-error');
+    if (!input) return false;
+
+    const val   = input.value.trim();
+    const valid = EMAIL_REGEX.test(val);
+
+    if (!val) {
+        if (errorEl) errorEl.style.display = 'none';
+        input.style.borderColor = 'var(--color-border)';
+        input.style.boxShadow   = 'none';
+        return false;
+    }
+
+    if (errorEl) errorEl.style.display = (showError && !valid) ? 'block' : 'none';
+    input.style.borderColor = valid ? 'var(--red)' : (showError ? 'rgba(212,43,43,0.5)' : 'var(--color-border)');
+    input.style.boxShadow   = valid ? '0 0 0 3px rgba(212,43,43,0.1)' : 'none';
+
+    return valid;
+}
+
+function syncClientForm() {
+    const nameEl = document.getElementById('client-name');
+    if (nameEl) {
+        nameEl.value = booking.client.name;
+
+        // Crear mensaje de error si no existe
+        if (!document.getElementById('name-error')) {
+            const err = document.createElement('span');
+            err.id = 'name-error';
+            err.textContent = 'El nombre es obligatorio';
+            err.style.cssText = 'font-size:0.72rem; color:var(--red); margin-top:0.25rem; display:none;';
+            nameEl.parentNode.appendChild(err);
+        }
+
+        nameEl.addEventListener('input', () => {
+            booking.client.name = nameEl.value.trim();
+            validateClientForm();
+        });
+
+        nameEl.addEventListener('blur', () => {
+            const errEl = document.getElementById('name-error');
+            if (nameEl.value.trim().length === 0) {
+                if (errEl) errEl.style.display = 'block';
+            } else if (nameEl.value.trim().length < 2) {
+                if (errEl) errEl.style.display = 'block';
+            } else {
+                if (errEl) errEl.style.display = 'none';
+            }
+            validateClientForm();
+        });
+    }
+
+    const notesEl = document.getElementById('client-notes');
+    if (notesEl) {
+        notesEl.value = booking.client.notes;
+        notesEl.addEventListener('input', () => {
+            booking.client.notes = notesEl.value;
+        });
+    }
+
+    const emailEl = document.getElementById('client-email');
+    if (emailEl) {
+        emailEl.value = booking.client.email;
+        emailEl.addEventListener('input', () => {
+            booking.client.email = emailEl.value.trim();
+            validateClientForm();
+        });
+        emailEl.addEventListener('blur', () => validateEmail(true));
+    }
+
+    const phoneEl = document.getElementById('client-phone');
+    if (phoneEl) {
+        phoneEl.addEventListener('input', () => {
+            validatePhone(false);
+            validateClientForm();
+        });
+        phoneEl.addEventListener('blur', () => validatePhone(true));
+    }
+
+    const countryEl = document.getElementById('phone-country');
+    if (countryEl) {
+        countryEl.addEventListener('change', () => {
+            const { example } = getPhoneCountryData();
+            if (phoneEl) phoneEl.placeholder = example || '000 000 000';
+            if (phoneEl && phoneEl.value.trim()) validatePhone(true);
+            validateClientForm();
+        });
+    }
 }
 
 function validateClientForm() {
-    const { name, phone, email } = booking.client;
-    const valid = name.trim().length > 1 && phone.trim().length > 8 && email.includes('@');
+    const nameEl  = document.getElementById('client-name');
+    const name    = nameEl?.value.trim()  || '';
+    const email   = document.getElementById('client-email')?.value.trim() || '';
+    const phone   = document.getElementById('client-phone')?.value.trim() || '';
+
+    const nameOk  = name.length > 1;
+    const emailOk = EMAIL_REGEX.test(email);
+    const phoneOk = phone.length > 8;
+
+    // Indicador visual en el nombre
+    if (nameEl) {
+        if (!nameOk && name.length > 0) {
+            nameEl.style.borderColor = 'rgba(212,43,43,0.5)';
+            nameEl.style.boxShadow   = 'none';
+        } else if (nameOk) {
+            nameEl.style.borderColor = 'var(--red)';
+            nameEl.style.boxShadow   = '0 0 0 3px rgba(212,43,43,0.1)';
+        } else {
+            nameEl.style.borderColor = 'var(--color-border)';
+            nameEl.style.boxShadow   = 'none';
+        }
+    }
+
+    booking.client.name  = name;
+    booking.client.email = email;
+
     const btn = document.getElementById('btn-confirm');
-    if (btn) btn.disabled = !valid;
-    return valid;
+    if (btn) btn.disabled = !(nameOk && emailOk && phoneOk);
+    return nameOk && emailOk && phoneOk;
+}
+
+// ===== CONFIRM =====
+async function confirmBooking() {
+    const nameEl  = document.getElementById('client-name');
+    const emailEl = document.getElementById('client-email');
+    const phoneEl = document.getElementById('client-phone');
+
+    const name  = nameEl?.value.trim()  || '';
+    const email = emailEl?.value.trim() || '';
+    const phone = phoneEl?.value.trim() || '';
+
+    const nameOk  = name.length > 1;
+    const emailOk = EMAIL_REGEX.test(email);
+    const phoneOk = phone.length > 8;
+
+    // Mostrar errores de todos los campos inválidos
+    const nameErr  = document.getElementById('name-error');
+    if (!nameOk) {
+        if (nameEl) {
+            nameEl.style.borderColor = 'rgba(212,43,43,0.5)';
+            nameEl.style.boxShadow   = 'none';
+        }
+        if (nameErr) nameErr.style.display = 'block';
+    }
+
+    validateEmail(true);
+    validatePhone(true);
+
+    if (!nameOk || !emailOk || !phoneOk) {
+        // Scroll hasta el primer campo con error
+        const firstError = !nameOk ? nameEl : (!emailOk ? emailEl : phoneEl);
+        if (firstError) firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+        if (window.showToast) showToast('Por favor, revisa los campos marcados en rojo', '⚠');
+        return;
+    }
+
+    const btn = document.getElementById('btn-confirm');
+    btn.disabled    = true;
+    btn.textContent = 'Procesando…';
+
+    const payload = {
+        servicio: booking.service.id,
+        barbero:  booking.barber.id,
+        fecha:    formatDate(booking.date),
+        hora:     booking.time,
+        nombre:   name,
+        telefono: booking.client.phone || phone,
+        email:    email,
+        notas:    booking.client.notes,
+    };
+
+    try {
+        const res  = await fetch(`${window.API_BASE}/booking.php`, {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body:    JSON.stringify(payload),
+        });
+        const json = await res.json();
+
+        if (json.ok) {
+            goToStep(5);
+            renderConfirmation();
+        } else {
+            if (window.showToast) showToast(json.error || 'Error al reservar', '⚠');
+            btn.disabled    = false;
+            btn.textContent = 'Confirmar reserva ✦';
+            if (res.status === 409) {
+                booking.time = null;
+                await loadTakenSlots();
+            }
+        }
+    } catch (e) {
+        if (window.showToast) showToast('Sin conexión al servidor', '⚠');
+        btn.disabled    = false;
+        btn.textContent = 'Confirmar reserva ✦';
+    }
 }
 
 // ===== CONFIRM =====
