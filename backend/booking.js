@@ -2,7 +2,6 @@
 //  PRADO BARBER CO. — booking.js
 // ============================================================
 
-// Declaración única de API_BASE (evita conflicto con main.js)
 window.API_BASE = window.API_BASE || './backend/api';
 
 // ===== DATA =====
@@ -41,6 +40,223 @@ let calendarDate = new Date();
 let takenSlots   = [];
 let loadingSlots = false;
 
+// ===== VALIDACIÓN =====
+// Reglas por campo
+const RULES = {
+    name: {
+        // Solo letras, tildes, ñ/Ñ y espacios, mínimo 2 caracteres
+        blockKey:   /^[0-9!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?`~]$/,
+        cleanPaste: v => v.replace(/[^a-zA-ZÀ-ÿ\u00f1\u00d1\s]/g, ''),
+        validate:   v => {
+            if (!v.trim()) return { ok: false, msg: 'El nombre es obligatorio.' };
+            if (!/^[a-zA-ZÀ-ÿ\u00f1\u00d1\s]{2,}$/.test(v.trim()))
+                return { ok: false, msg: 'El nombre solo puede contener letras.' };
+            return { ok: true };
+        },
+    },
+    phone: {
+        // Solo dígitos, +, guión y espacios
+        blockKey:   /^[a-zA-ZÀ-ÿ!@#$%^&*()_=\[\]{};':"\\|,.<>\/?`~]$/,
+        cleanPaste: v => v.replace(/[^\d+\-\s]/g, ''),
+        validate:   v => {
+            if (!v.trim()) return { ok: false, msg: 'El teléfono es obligatorio.' };
+            const digits = v.replace(/\D/g, '');
+            if (digits.length < 9)
+                return { ok: false, msg: 'El teléfono debe tener al menos 9 dígitos.' };
+            return { ok: true };
+        },
+    },
+    email: {
+        blockKey:   null,
+        cleanPaste: null,
+        validate:   v => {
+            if (!v.trim()) return { ok: false, msg: 'El email es obligatorio.' };
+            if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v.trim()))
+                return { ok: false, msg: 'Introduce un email válido (ej: nombre@dominio.com).' };
+            return { ok: true };
+        },
+    },
+};
+
+// ===== HELPERS VISUALES =====
+// El mensaje de error va en un div FUERA del input, justo debajo del form-group
+function getErrorEl(fieldKey) {
+    // Buscamos el contenedor hermano con id "error-{key}"
+    return document.getElementById(`error-${fieldKey}`);
+}
+
+function showError(fieldKey, msg) {
+    const input = document.getElementById(`client-${fieldKey}`);
+    const errEl = getErrorEl(fieldKey);
+    if (input) {
+        input.style.borderColor = 'var(--red)';
+        input.style.boxShadow   = '0 0 0 3px rgba(212,43,43,0.2)';
+    }
+    if (errEl) {
+        errEl.textContent = '⚠ ' + msg;
+        errEl.style.display = 'block';
+    }
+}
+
+function showOk(fieldKey) {
+    const input = document.getElementById(`client-${fieldKey}`);
+    const errEl = getErrorEl(fieldKey);
+    if (input) {
+        input.style.borderColor = 'rgba(34,197,94,0.55)';
+        input.style.boxShadow   = '0 0 0 3px rgba(34,197,94,0.12)';
+    }
+    if (errEl) {
+        errEl.textContent = '';
+        errEl.style.display = 'none';
+    }
+}
+
+function clearState(fieldKey) {
+    const input = document.getElementById(`client-${fieldKey}`);
+    const errEl = getErrorEl(fieldKey);
+    if (input) {
+        input.style.borderColor = '';
+        input.style.boxShadow   = '';
+    }
+    if (errEl) {
+        errEl.textContent = '';
+        errEl.style.display = 'none';
+    }
+}
+
+// ===== VALIDAR UN CAMPO =====
+// mode: 'silent' → solo actualiza botón sin pintar
+//       'blur'   → pinta error si hay contenido incorrecto, limpia si vacío
+//       'submit' → pinta siempre, incluso si vacío
+function validateField(key, mode) {
+    const input = document.getElementById(`client-${key}`);
+    if (!input) return false;
+    const val    = input.value;
+    const result = RULES[key].validate(val);
+
+    booking.client[key] = val;
+
+    if (mode === 'silent') {
+        if (result.ok) clearState(key);
+        return result.ok;
+    }
+    if (mode === 'blur') {
+        if (!val.trim()) { clearState(key); return false; }
+        if (result.ok)   showOk(key);
+        else             showError(key, result.msg);
+        return result.ok;
+    }
+    if (mode === 'submit') {
+        if (result.ok) showOk(key);
+        else           showError(key, result.msg);
+        return result.ok;
+    }
+    return result.ok;
+}
+
+function validateAll(mode) {
+    const keys = ['name', 'phone', 'email'];
+    const results = keys.map(k => validateField(k, mode));
+    const allOk = results.every(Boolean);
+    const btn = document.getElementById('btn-confirm');
+    if (btn) btn.disabled = !allOk;
+    return allOk;
+}
+
+// ===== INYECTAR DIVS DE ERROR EN EL DOM =====
+// Los insertamos una sola vez al entrar al step 4
+function injectErrorDivs() {
+    Object.keys(RULES).forEach(key => {
+        if (document.getElementById(`error-${key}`)) return; // ya existe
+        const input = document.getElementById(`client-${key}`);
+        if (!input) return;
+        const div = document.createElement('div');
+        div.id = `error-${key}`;
+        div.style.cssText = [
+            'display:none',
+            'color:var(--red)',
+            'font-size:.75rem',
+            'margin-top:.4rem',
+            'padding:.35rem .6rem',
+            'background:rgba(212,43,43,0.07)',
+            'border-left:2px solid var(--red)',
+            'border-radius:0 4px 4px 0',
+            'line-height:1.4',
+        ].join(';');
+        // Insertar después del form-group que contiene el input
+        const group = input.closest('.form-group') || input.parentElement;
+        group.parentNode.insertBefore(div, group.nextSibling);
+    });
+}
+
+// ===== SETUP LISTENERS FORMULARIO =====
+function syncClientForm() {
+    injectErrorDivs();
+
+    // Restaurar valores y limpiar estado visual
+    Object.keys(RULES).forEach(key => {
+        const input = document.getElementById(`client-${key}`);
+        if (!input) return;
+        input.value = booking.client[key] || '';
+        clearState(key);
+
+        // Eliminar listeners previos clonando
+        const fresh = input.cloneNode(true);
+        input.parentNode.replaceChild(fresh, input);
+        fresh.value = booking.client[key] || '';
+
+        // --- keydown: bloquear caracteres no permitidos ---
+        if (RULES[key].blockKey) {
+            fresh.addEventListener('keydown', function(e) {
+                if (RULES[key].blockKey.test(e.key)) {
+                    e.preventDefault();
+                }
+            });
+        }
+
+        // --- paste: limpiar texto pegado ---
+        if (RULES[key].cleanPaste) {
+            fresh.addEventListener('paste', function() {
+                setTimeout(() => {
+                    fresh.value = RULES[key].cleanPaste(fresh.value);
+                    booking.client[key] = fresh.value;
+                    validateAll('silent');
+                }, 0);
+            });
+        }
+
+        // --- input: validar en silencio para habilitar botón ---
+        fresh.addEventListener('input', function() {
+            booking.client[key] = fresh.value;
+            // Si ya había error visible, revalidar en blur-mode para actualizar
+            const errEl = getErrorEl(key);
+            if (errEl && errEl.style.display !== 'none') {
+                validateField(key, 'blur');
+            }
+            validateAll('silent');
+        });
+
+        // --- blur: mostrar error si el campo tiene contenido incorrecto ---
+        fresh.addEventListener('blur', function() {
+            booking.client[key] = fresh.value;
+            validateField(key, 'blur');
+            validateAll('silent');
+        });
+    });
+
+    // Notas (sin validación)
+    const notesEl = document.getElementById('client-notes');
+    if (notesEl) {
+        const freshNotes = notesEl.cloneNode(true);
+        notesEl.parentNode.replaceChild(freshNotes, notesEl);
+        freshNotes.value = booking.client.notes || '';
+        freshNotes.addEventListener('input', () => { booking.client.notes = freshNotes.value; });
+    }
+
+    // Estado inicial del botón (campos vacíos → disabled)
+    validateAll('silent');
+}
+
 // ===== STEP NAV =====
 function goToStep(n) {
     if (n < 1 || n > 5) return;
@@ -65,7 +281,7 @@ function updateStepsBar() {
     });
 }
 
-// ===== STEP 1: SERVICE =====
+// ===== STEP 1 =====
 function renderServices() {
     const grid = document.getElementById('service-grid');
     if (!grid) return;
@@ -85,7 +301,7 @@ function selectService(id) {
     if (btn) btn.disabled = false;
 }
 
-// ===== STEP 2: BARBER =====
+// ===== STEP 2 =====
 function renderBarbers() {
     const grid = document.getElementById('barber-grid');
     if (!grid) return;
@@ -106,7 +322,7 @@ function selectBarber(id) {
     if (booking.date) loadTakenSlots();
 }
 
-// ===== STEP 3: DATE & TIME =====
+// ===== STEP 3 =====
 function renderCalendar() {
     const grid  = document.getElementById('cal-grid');
     const title = document.getElementById('cal-title');
@@ -127,18 +343,16 @@ function renderCalendar() {
 
     let html = '';
     for (let i = 0; i < offset; i++) html += `<div class="cal-cell empty"></div>`;
-
     for (let d = 1; d <= daysInMonth; d++) {
         const date     = new Date(year, month, d);
         const isToday  = date.getTime() === today.getTime();
         const isPast   = date < today;
         const isSunday = date.getDay() === 0;
         const disabled = isPast || isSunday;
-
-        const selDate    = booking.date;
+        const selDate  = booking.date;
         const isSelected = selDate &&
-            selDate.getDate()     === d     &&
-            selDate.getMonth()    === month &&
+            selDate.getDate() === d &&
+            selDate.getMonth() === month &&
             selDate.getFullYear() === year;
 
         let cls = 'cal-cell';
@@ -160,24 +374,15 @@ function selectDate(y, m, d) {
 }
 
 async function loadTakenSlots() {
-    if (!booking.date || !booking.barber) {
-        takenSlots = [];
-        renderTimeSlots();
-        return;
-    }
-
+    if (!booking.date || !booking.barber) { takenSlots = []; renderTimeSlots(); return; }
     loadingSlots = true;
     renderTimeSlotsLoading();
-
-    const fecha   = formatDate(booking.date);
-    const barbero = booking.barber.id;
-
     try {
-        const res  = await fetch(`${window.API_BASE}/slots.php?fecha=${fecha}&barbero=${barbero}`);
+        const res  = await fetch(`${window.API_BASE}/slots.php?fecha=${formatDate(booking.date)}&barbero=${booking.barber.id}`);
         const json = await res.json();
         takenSlots = json.ok ? json.data.ocupadas : [];
-    } catch (e) {
-        console.warn('No se pudo conectar a la API:', e);
+    } catch(e) {
+        console.warn('slots error', e);
         takenSlots = [];
     } finally {
         loadingSlots = false;
@@ -188,19 +393,16 @@ async function loadTakenSlots() {
 function renderTimeSlotsLoading() {
     const wrap = document.getElementById('time-slots');
     if (!wrap) return;
-    wrap.innerHTML = `<div style="grid-column:1/-1;text-align:center;color:var(--color-muted);
-        font-size:.82rem;padding:1.5rem 0;">Cargando horarios…</div>`;
+    wrap.innerHTML = `<div style="grid-column:1/-1;text-align:center;color:var(--color-muted);font-size:.82rem;padding:1.5rem 0;">Cargando horarios…</div>`;
 }
 
 function renderTimeSlots() {
     const wrap = document.getElementById('time-slots');
     if (!wrap) return;
-
-    const now         = new Date();
-    const isToday     = booking.date &&
-        booking.date.toDateString() === now.toDateString();
+    const now  = new Date();
+    const isToday  = booking.date && booking.date.toDateString() === now.toDateString();
     const currentHHMM = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
-    const esSabado    = booking.date && booking.date.getDay() === 6;
+    const esSabado = booking.date && booking.date.getDay() === 6;
 
     wrap.innerHTML = TIME_SLOTS
         .filter(t => !esSabado || t < '14:00')
@@ -209,17 +411,9 @@ function renderTimeSlots() {
             const pastTime = isToday && t <= currentHHMM;
             const disabled = taken || pastTime;
             const selected = booking.time === t;
-
-            let cls = 'time-slot';
-            if (disabled) cls += ' taken';
-            if (selected) cls += ' selected';
-
-            let label = t;
-            if (taken)    label += ' <small>●</small>';
-            if (pastTime) label = `<s>${t}</s>`;
-
-            const dataAttr = disabled ? '' : `data-time="${t}"`;
-            return `<div class="${cls}" ${dataAttr}>${label}</div>`;
+            let cls   = 'time-slot' + (disabled ? ' taken' : '') + (selected ? ' selected' : '');
+            let label = taken ? t + ' <small>●</small>' : pastTime ? `<s>${t}</s>` : t;
+            return `<div class="${cls}" ${disabled ? '' : `data-time="${t}"`}>${label}</div>`;
         }).join('');
 
     const next = document.getElementById('btn-next-3');
@@ -230,7 +424,7 @@ function selectTime(t) {
     booking.time = t;
     renderTimeSlots();
     const next = document.getElementById('btn-next-3');
-    if (next) next.disabled = !(booking.date && booking.time);
+    if (next) next.disabled = false;
 }
 
 function calNav(dir) {
@@ -242,230 +436,49 @@ function calNav(dir) {
 function renderSummary() {
     const DAYS   = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
     const MONTHS = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
-
     const dateStr = booking.date
         ? `${DAYS[booking.date.getDay()]}, ${booking.date.getDate()} ${MONTHS[booking.date.getMonth()]}`
         : '—';
-
-    document.getElementById('sum-service').textContent  = booking.service?.name || '—';
-    document.getElementById('sum-barber').textContent   = booking.barber?.name  || '—';
+    document.getElementById('sum-service').textContent  = booking.service?.name     || '—';
+    document.getElementById('sum-barber').textContent   = booking.barber?.name      || '—';
     document.getElementById('sum-date').textContent     = dateStr;
-    document.getElementById('sum-time').textContent     = booking.time           || '—';
+    document.getElementById('sum-time').textContent     = booking.time              || '—';
     document.getElementById('sum-duration').textContent = booking.service?.duration || '—';
     document.getElementById('sum-price').textContent    = booking.service ? `${booking.service.price} €` : '—';
 }
 
-// ===== CLIENT FORM =====
-
-// Patrones de validación de email
-const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
-
-// Utilidades teléfono
-function getPhoneCountryData() {
-    const sel = document.getElementById('phone-country');
-    if (!sel) return { prefix: '', pattern: /^\+?\d{6,15}$/, example: '' };
-    const opt = sel.options[sel.selectedIndex];
-    return {
-        prefix:  opt.dataset.prefix  || '',
-        pattern: new RegExp(opt.dataset.pattern),
-        example: opt.dataset.example || '',
-    };
-}
-
-function normalizePhone(raw) {
-    // Elimina espacios, guiones y paréntesis para validar
-    return raw.replace(/[\s\-().]/g, '');
-}
-
-function validatePhone(showError = false) {
-    const input   = document.getElementById('client-phone');
-    const errorEl = document.getElementById('phone-error');
-    const hintEl  = document.getElementById('phone-hint');
-    const wrapper = document.getElementById('phone-wrapper');
-    if (!input) return false;
-
-    const { prefix, pattern, example } = getPhoneCountryData();
-    const raw  = input.value.trim();
-    const norm = normalizePhone(raw);
-
-    if (!norm) {
-        if (errorEl) errorEl.style.display = 'none';
-        if (wrapper) {
-            wrapper.style.borderColor = 'var(--color-border)';
-            wrapper.style.boxShadow   = 'none';
-        }
-        return false;
-    }
-
-    const valid = pattern.test(norm);
-
-    if (errorEl) errorEl.style.display = (showError && !valid) ? 'block' : 'none';
-    if (wrapper) {
-        wrapper.style.borderColor = valid ? 'var(--red)' : (showError ? 'rgba(212,43,43,0.5)' : 'var(--color-border)');
-        wrapper.style.boxShadow   = valid ? '0 0 0 3px rgba(212,43,43,0.1)' : 'none';
-    }
-
-    booking.client.phone = prefix ? `${prefix} ${raw}` : raw;
-    return valid;
-}
-
-function validateEmail(showError = false) {
-    const input   = document.getElementById('client-email');
-    const errorEl = document.getElementById('email-error');
-    if (!input) return false;
-
-    const val   = input.value.trim();
-    const valid = EMAIL_REGEX.test(val);
-
-    if (!val) {
-        if (errorEl) errorEl.style.display = 'none';
-        input.style.borderColor = 'var(--color-border)';
-        input.style.boxShadow   = 'none';
-        return false;
-    }
-
-    if (errorEl) errorEl.style.display = (showError && !valid) ? 'block' : 'none';
-    input.style.borderColor = valid ? 'var(--red)' : (showError ? 'rgba(212,43,43,0.5)' : 'var(--color-border)');
-    input.style.boxShadow   = valid ? '0 0 0 3px rgba(212,43,43,0.1)' : 'none';
-
-    return valid;
-}
-
-function syncClientForm() {
-    const nameEl = document.getElementById('client-name');
-    if (nameEl) {
-        nameEl.value = booking.client.name;
-
-        // Crear mensaje de error si no existe
-        if (!document.getElementById('name-error')) {
-            const err = document.createElement('span');
-            err.id = 'name-error';
-            err.textContent = 'El nombre es obligatorio';
-            err.style.cssText = 'font-size:0.72rem; color:var(--red); margin-top:0.25rem; display:none;';
-            nameEl.parentNode.appendChild(err);
-        }
-
-        nameEl.addEventListener('input', () => {
-            booking.client.name = nameEl.value.trim();
-            validateClientForm();
-        });
-
-        nameEl.addEventListener('blur', () => {
-            const errEl = document.getElementById('name-error');
-            if (nameEl.value.trim().length === 0) {
-                if (errEl) errEl.style.display = 'block';
-            } else if (nameEl.value.trim().length < 2) {
-                if (errEl) errEl.style.display = 'block';
-            } else {
-                if (errEl) errEl.style.display = 'none';
-            }
-            validateClientForm();
-        });
-    }
-
-    const notesEl = document.getElementById('client-notes');
-    if (notesEl) {
-        notesEl.value = booking.client.notes;
-        notesEl.addEventListener('input', () => {
-            booking.client.notes = notesEl.value;
-        });
-    }
-
-    const emailEl = document.getElementById('client-email');
-    if (emailEl) {
-        emailEl.value = booking.client.email;
-        emailEl.addEventListener('input', () => {
-            booking.client.email = emailEl.value.trim();
-            validateClientForm();
-        });
-        emailEl.addEventListener('blur', () => validateEmail(true));
-    }
-
-    const phoneEl = document.getElementById('client-phone');
-    if (phoneEl) {
-        phoneEl.addEventListener('input', () => {
-            validatePhone(false);
-            validateClientForm();
-        });
-        phoneEl.addEventListener('blur', () => validatePhone(true));
-    }
-
-    const countryEl = document.getElementById('phone-country');
-    if (countryEl) {
-        countryEl.addEventListener('change', () => {
-            const { example } = getPhoneCountryData();
-            if (phoneEl) phoneEl.placeholder = example || '000 000 000';
-            if (phoneEl && phoneEl.value.trim()) validatePhone(true);
-            validateClientForm();
-        });
-    }
-}
-
-function validateClientForm() {
-    const nameEl  = document.getElementById('client-name');
-    const name    = nameEl?.value.trim()  || '';
-    const email   = document.getElementById('client-email')?.value.trim() || '';
-    const phone   = document.getElementById('client-phone')?.value.trim() || '';
-
-    const nameOk  = name.length > 1;
-    const emailOk = EMAIL_REGEX.test(email);
-    const phoneOk = phone.length > 8;
-
-    // Indicador visual en el nombre
-    if (nameEl) {
-        if (!nameOk && name.length > 0) {
-            nameEl.style.borderColor = 'rgba(212,43,43,0.5)';
-            nameEl.style.boxShadow   = 'none';
-        } else if (nameOk) {
-            nameEl.style.borderColor = 'var(--red)';
-            nameEl.style.boxShadow   = '0 0 0 3px rgba(212,43,43,0.1)';
-        } else {
-            nameEl.style.borderColor = 'var(--color-border)';
-            nameEl.style.boxShadow   = 'none';
-        }
-    }
-
-    booking.client.name  = name;
-    booking.client.email = email;
-
-    const btn = document.getElementById('btn-confirm');
-    if (btn) btn.disabled = !(nameOk && emailOk && phoneOk);
-    return nameOk && emailOk && phoneOk;
-}
-
 // ===== CONFIRM =====
 async function confirmBooking() {
-    const nameEl  = document.getElementById('client-name');
-    const emailEl = document.getElementById('client-email');
-    const phoneEl = document.getElementById('client-phone');
+    // Leer siempre del DOM antes de validar
+    Object.keys(RULES).forEach(key => {
+        const el = document.getElementById(`client-${key}`);
+        if (el) booking.client[key] = el.value;
+    });
+    const notesEl = document.getElementById('client-notes');
+    if (notesEl) booking.client.notes = notesEl.value;
 
-    const name  = nameEl?.value.trim()  || '';
-    const email = emailEl?.value.trim() || '';
-    const phone = phoneEl?.value.trim() || '';
+    // Validar todos en modo submit → pinta todos los errores
+    const isValid = validateAll('submit');
 
-    const nameOk  = name.length > 1;
-    const emailOk = EMAIL_REGEX.test(email);
-    const phoneOk = phone.length > 8;
+    if (!isValid) {
+        // Construir mensaje descriptivo
+        const errores = Object.keys(RULES)
+            .filter(k => !RULES[k].validate(booking.client[k] || '').ok)
+            .map(k => ({ name: { name: 'nombre', phone: 'teléfono', email: 'email' }[k] }))
+            .map(o => o.name);
 
-    // Mostrar errores de todos los campos inválidos
-    const nameErr  = document.getElementById('name-error');
-    if (!nameOk) {
-        if (nameEl) {
-            nameEl.style.borderColor = 'rgba(212,43,43,0.5)';
-            nameEl.style.boxShadow   = 'none';
-        }
-        if (nameErr) nameErr.style.display = 'block';
-    }
+        const msg = errores.length === 1
+            ? `El campo "${errores[0]}" está vacío o es incorrecto.`
+            : `Campos incorrectos: ${errores.join(', ')}.`;
 
-    validateEmail(true);
-    validatePhone(true);
+        if (window.showToast) showToast(msg, '⚠');
 
-    if (!nameOk || !emailOk || !phoneOk) {
-        // Scroll hasta el primer campo con error
-        const firstError = !nameOk ? nameEl : (!emailOk ? emailEl : phoneEl);
-        if (firstError) firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        // Scroll al primer error
+        setTimeout(() => {
+            const firstErr = document.querySelector('[id^="error-"][style*="block"]');
+            if (firstErr) firstErr.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 50);
 
-        if (window.showToast) showToast('Por favor, revisa los campos marcados en rojo', '⚠');
         return;
     }
 
@@ -478,10 +491,10 @@ async function confirmBooking() {
         barbero:  booking.barber.id,
         fecha:    formatDate(booking.date),
         hora:     booking.time,
-        nombre:   name,
-        telefono: booking.client.phone || phone,
-        email:    email,
-        notas:    booking.client.notes,
+        nombre:   booking.client.name.trim(),
+        telefono: booking.client.phone.trim(),
+        email:    booking.client.email.trim(),
+        notas:    booking.client.notes || '',
     };
 
     try {
@@ -491,7 +504,6 @@ async function confirmBooking() {
             body:    JSON.stringify(payload),
         });
         const json = await res.json();
-
         if (json.ok) {
             goToStep(5);
             renderConfirmation();
@@ -499,58 +511,9 @@ async function confirmBooking() {
             if (window.showToast) showToast(json.error || 'Error al reservar', '⚠');
             btn.disabled    = false;
             btn.textContent = 'Confirmar reserva ✦';
-            if (res.status === 409) {
-                booking.time = null;
-                await loadTakenSlots();
-            }
+            if (res.status === 409) { booking.time = null; await loadTakenSlots(); }
         }
-    } catch (e) {
-        if (window.showToast) showToast('Sin conexión al servidor', '⚠');
-        btn.disabled    = false;
-        btn.textContent = 'Confirmar reserva ✦';
-    }
-}
-
-// ===== CONFIRM =====
-async function confirmBooking() {
-    if (!validateClientForm()) return;
-
-    const btn = document.getElementById('btn-confirm');
-    btn.disabled    = true;
-    btn.textContent = 'Procesando…';
-
-    const payload = {
-        servicio: booking.service.id,
-        barbero:  booking.barber.id,
-        fecha:    formatDate(booking.date),
-        hora:     booking.time,
-        nombre:   booking.client.name,
-        telefono: booking.client.phone,
-        email:    booking.client.email,
-        notas:    booking.client.notes,
-    };
-
-    try {
-        const res  = await fetch(`${window.API_BASE}/booking.php`, {
-            method:  'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body:    JSON.stringify(payload),
-        });
-        const json = await res.json();
-
-        if (json.ok) {
-            goToStep(5);
-            renderConfirmation();
-        } else {
-            if (window.showToast) showToast(json.error || 'Error al reservar', '⚠');
-            btn.disabled    = false;
-            btn.textContent = 'Confirmar reserva ✦';
-            if (res.status === 409) {
-                booking.time = null;
-                await loadTakenSlots();
-            }
-        }
-    } catch (e) {
+    } catch(e) {
         if (window.showToast) showToast('Sin conexión al servidor', '⚠');
         btn.disabled    = false;
         btn.textContent = 'Confirmar reserva ✦';
@@ -562,110 +525,63 @@ function renderConfirmation() {
     const dateStr = booking.date
         ? `${booking.date.getDate()} ${MONTHS[booking.date.getMonth()]} ${booking.date.getFullYear()}`
         : '—';
-
     const box = document.getElementById('confirmation-detail');
     if (box) {
         box.innerHTML = `
           <p><strong>${booking.service?.name}</strong> con <strong>${booking.barber?.name}</strong></p>
           <p>${dateStr} · ${booking.time}</p>
           <p style="color:var(--color-muted);font-size:.875rem;margin-top:.5rem">
-            Confirmación enviada a ${booking.client.email}
-          </p>`;
+            Confirmación enviada a ${booking.client.email}</p>`;
     }
     if (window.showToast) showToast('¡Reserva confirmada! Te esperamos.');
 }
 
 // ===== UTIL =====
 function formatDate(date) {
-    const y = date.getFullYear();
-    const m = String(date.getMonth() + 1).padStart(2, '0');
-    const d = String(date.getDate()).padStart(2, '0');
-    return `${y}-${m}-${d}`;
+    return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
 }
 
 // ===== INIT =====
-// Usa readyState guard: si InfinityFree retrasa el script,
-// DOMContentLoaded ya habrá disparado y el listener nunca se ejecuta.
 function initBooking() {
-    const grid = document.getElementById('service-grid');
-    if (!grid) return; // No estamos en reservas.html
+    if (!document.getElementById('service-grid')) return;
 
     renderServices();
     renderBarbers();
     renderCalendar();
     renderTimeSlots();
-    syncClientForm();
 
-    // ── Event delegation: servicio ──────────────────────────
-    const serviceGrid = document.getElementById('service-grid');
-    if (serviceGrid) {
-        serviceGrid.addEventListener('click', (e) => {
-            const option = e.target.closest('[data-service-id]');
-            if (option) selectService(option.dataset.serviceId);
-        });
-    }
+    document.getElementById('service-grid')?.addEventListener('click', e => {
+        const o = e.target.closest('[data-service-id]');
+        if (o) selectService(o.dataset.serviceId);
+    });
+    document.getElementById('barber-grid')?.addEventListener('click', e => {
+        const o = e.target.closest('[data-barber-id]');
+        if (o) selectBarber(o.dataset.barberId);
+    });
+    document.getElementById('cal-grid')?.addEventListener('click', e => {
+        const c = e.target.closest('[data-cal-day]');
+        if (c) selectDate(+c.dataset.calYear, +c.dataset.calMonth, +c.dataset.calDay);
+    });
+    document.getElementById('time-slots')?.addEventListener('click', e => {
+        const s = e.target.closest('[data-time]');
+        if (s) selectTime(s.dataset.time);
+    });
+    document.querySelector('[data-cal-nav="-1"]')?.addEventListener('click', () => calNav(-1));
+    document.querySelector('[data-cal-nav="1"]')?.addEventListener('click',  () => calNav(1));
 
-    // ── Event delegation: barbero ───────────────────────────
-    const barberGrid = document.getElementById('barber-grid');
-    if (barberGrid) {
-        barberGrid.addEventListener('click', (e) => {
-            const option = e.target.closest('[data-barber-id]');
-            if (option) selectBarber(option.dataset.barberId);
-        });
-    }
-
-    // ── Event delegation: calendario ────────────────────────
-    const calGrid = document.getElementById('cal-grid');
-    if (calGrid) {
-        calGrid.addEventListener('click', (e) => {
-            const cell = e.target.closest('[data-cal-day]');
-            if (cell) {
-                selectDate(
-                    parseInt(cell.dataset.calYear),
-                    parseInt(cell.dataset.calMonth),
-                    parseInt(cell.dataset.calDay)
-                );
-            }
-        });
-    }
-
-    // ── Event delegation: franjas horarias ──────────────────
-    const timeSlots = document.getElementById('time-slots');
-    if (timeSlots) {
-        timeSlots.addEventListener('click', (e) => {
-            const slot = e.target.closest('[data-time]');
-            if (slot) selectTime(slot.dataset.time);
-        });
-    }
-
-    // ── Navegación del calendario ────────────────────────────
-    const calPrev = document.querySelector('[data-cal-nav="-1"]');
-    const calNext = document.querySelector('[data-cal-nav="1"]');
-    if (calPrev) calPrev.addEventListener('click', () => calNav(-1));
-    if (calNext) calNext.addEventListener('click', () => calNav(1));
-
-    // ── Botones siguiente / volver ───────────────────────────
-    const btn1       = document.getElementById('btn-next-1');
-    const btn2       = document.getElementById('btn-next-2');
-    const btn3       = document.getElementById('btn-next-3');
-    const btnBack2   = document.getElementById('btn-back-2');
-    const btnBack3   = document.getElementById('btn-back-3');
-    const btnBack4   = document.getElementById('btn-back-4');
-    const btnConfirm = document.getElementById('btn-confirm');
-
-    if (btn1) btn1.addEventListener('click', () => { if (booking.service) goToStep(2); });
-    if (btn2) btn2.addEventListener('click', () => { if (booking.barber)  goToStep(3); });
-    if (btn3) btn3.addEventListener('click', () => {
+    document.getElementById('btn-next-1')?.addEventListener('click', () => { if (booking.service) goToStep(2); });
+    document.getElementById('btn-next-2')?.addEventListener('click', () => { if (booking.barber)  goToStep(3); });
+    document.getElementById('btn-next-3')?.addEventListener('click', () => {
         if (booking.date && booking.time) { renderSummary(); goToStep(4); syncClientForm(); }
     });
+    document.getElementById('btn-back-2')?.addEventListener('click', () => goToStep(1));
+    document.getElementById('btn-back-3')?.addEventListener('click', () => goToStep(2));
+    document.getElementById('btn-back-4')?.addEventListener('click', () => goToStep(3));
 
-    if (btnBack2)   btnBack2.addEventListener('click',  () => goToStep(1));
-    if (btnBack3)   btnBack3.addEventListener('click',  () => goToStep(2));
-    if (btnBack4)   btnBack4.addEventListener('click',  () => goToStep(3));
-    if (btnConfirm) btnConfirm.addEventListener('click', confirmBooking);
+    // btn-confirm: listener permanente, NO se clona nunca
+    document.getElementById('btn-confirm')?.addEventListener('click', confirmBooking);
 }
 
-// Guard para cuando InfinityFree retrasa la carga del script
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initBooking);
 } else {
