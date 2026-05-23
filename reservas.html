@@ -3,15 +3,63 @@
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <meta name="theme-color" content="#0a0c16">
         <title>Reservas · Prado Barber Co.</title>
-        <link rel="shortcut icon" href="img/logo.png" />
-
         <link rel="stylesheet" href="css/variables.css" />
         <link rel="stylesheet" href="css/layout.css" />
         <link rel="stylesheet" href="css/components.css" />
         <link rel="stylesheet" href="css/booking.css" />
         <link rel="stylesheet" href="css/mobile.css" />
+
+        <style>
+        /* ===== FIELD VALIDATION ERRORS ===== */
+        .field-error {
+            display: none;
+            align-items: center;
+            gap: 0.4rem;
+            font-size: 0.76rem;
+            color: #e05555;
+            margin-top: 0.35rem;
+            padding: 0.4rem 0.65rem;
+            background: rgba(212, 43, 43, 0.07);
+            border-left: 2px solid rgba(212, 43, 43, 0.5);
+            border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+            line-height: 1.4;
+        }
+        .form-group input.input-error,
+        .form-group textarea.input-error {
+            border-color: rgba(212, 43, 43, 0.7) !important;
+            box-shadow: 0 0 0 3px rgba(212, 43, 43, 0.1) !important;
+        }
+        @keyframes shakeField {
+            0%, 100% { transform: translateX(0); }
+            20%       { transform: translateX(-6px); }
+            40%       { transform: translateX(6px); }
+            60%       { transform: translateX(-4px); }
+            80%       { transform: translateX(4px); }
+        }
+        .form-group input.input-error {
+            animation: shakeField 0.4s ease;
+        }
+        /* Ensure each form-group in the client section is self-contained */
+        .client-fields {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+        .client-fields .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+        .client-fields .span-full {
+            grid-column: 1 / -1;
+        }
+        @media (max-width: 600px) {
+            .client-fields {
+                grid-template-columns: 1fr;
+            }
+        }
+        </style>
 
         <script src="backend/main.js" defer></script>
         <script src="backend/booking.js" defer></script>
@@ -21,14 +69,13 @@
         <!-- NAVBAR -->
         <nav class="navbar">
             <div class="nav-left">
-                <a href="index.html" class="nav-logo">
-                    <div class="nav-brand-name">
-                        <span class="nbn-prado">PRADO</span>
-                        <span class="nbn-separator"></span>
-                        <span class="nbn-sub"
-                            style="transform:translateY(2px);">BARBER<br />CO.</span>
-                    </div>
-                </a>
+            <a href="index.html" class="nav-logo">
+            <div class="nav-brand-name">
+                <span class="nbn-prado">PRADO</span>
+                <span class="nbn-separator"></span>
+                <span class="nbn-sub" style="transform: translateY(2px);">BARBER<br />CO.</span>
+            </div>
+            </a>
             </div>
             <div class="nav-links">
                 <a href="index.html">Inicio</a>
@@ -88,6 +135,13 @@
 
             <!-- STEP 1: SERVICIO -->
             <div class="step-panel active" id="step-1">
+                <span class="section-label">Paso 1</span>
+                <h2 class="section-title" style="font-size:1.75rem; margin-bottom:0.5rem;">
+                    ¿Qué servicio buscas?
+                </h2>
+                <p style="color:var(--color-muted); font-size:.875rem; margin-bottom:2rem;">
+                    Selecciona el servicio que quieres reservar.
+                </p>
                 <div class="service-select-grid" id="service-grid"></div>
                 <div class="booking-nav" style="justify-content:flex-end;">
                     <button class="btn btn-primary" id="btn-next-1" disabled>
@@ -98,21 +152,27 @@
 
             <!-- STEP 2: BARBERO -->
             <div class="step-panel" id="step-2">
-                <span class="section-label">Elige tu barbero</span>
+                <span class="section-label">Paso 2</span>
+                <h2 class="section-title" style="font-size:1.75rem; margin-bottom:0.5rem;">
+                    Elige tu barbero
+                </h2>
+                <p style="color:var(--color-muted); font-size:.875rem; margin-bottom:2rem;">
+                    ¿Con quién prefieres trabajar hoy?
+                </p>
                 <div class="barber-select-grid" id="barber-grid"></div>
                 <div class="booking-nav">
-                    <button class="btn btn-ghost" id="btn-back-2">←
-                        Volver</button>
-                    <button class="btn btn-primary" id="btn-next-2"
-                        disabled>Continuar →</button>
+                    <button class="btn btn-ghost" id="btn-back-2">← Volver</button>
+                    <button class="btn btn-primary" id="btn-next-2" disabled>Continuar →</button>
                 </div>
             </div>
 
             <!-- STEP 3: FECHA & HORA -->
             <div class="step-panel" id="step-3">
-                <span class="section-label">Fecha y hora</span>
-                <p
-                    style="color:var(--color-muted); font-size:.875rem; margin-bottom:1.5rem;">
+                <span class="section-label">Paso 3</span>
+                <h2 class="section-title" style="font-size:1.75rem; margin-bottom:0.5rem;">
+                    Fecha y hora
+                </h2>
+                <p style="color:var(--color-muted); font-size:.875rem; margin-bottom:2rem;">
                     Los domingos permanecemos cerrados.
                 </p>
 
@@ -120,10 +180,8 @@
                     <div class="cal-header">
                         <span class="cal-title" id="cal-title"></span>
                         <div class="cal-nav">
-                            <button data-cal-nav="-1"
-                                aria-label="Mes anterior">‹</button>
-                            <button data-cal-nav="1"
-                                aria-label="Mes siguiente">›</button>
+                            <button onclick="calNav(-1)" aria-label="Mes anterior">‹</button>
+                            <button onclick="calNav(1)"  aria-label="Mes siguiente">›</button>
                         </div>
                     </div>
                     <div class="cal-days-header">
@@ -138,29 +196,29 @@
                     <div class="cal-grid" id="cal-grid"></div>
                 </div>
 
-                <h3
-                    style="font-size:.875rem; letter-spacing:.1em; text-transform:uppercase;
-                     color:var(--color-muted); margin-bottom:1rem; margin-top:1.5rem;">
+                <h3 style="font-size:.875rem; letter-spacing:.1em; text-transform:uppercase;
+                     color:var(--color-muted); margin-bottom:1rem;">
                     Horarios disponibles
                 </h3>
                 <div class="time-slots" id="time-slots"></div>
 
                 <div class="booking-nav">
-                    <button class="btn btn-ghost" id="btn-back-3">←
-                        Volver</button>
-                    <button class="btn btn-primary" id="btn-next-3"
-                        disabled>Continuar →</button>
+                    <button class="btn btn-ghost" id="btn-back-3">← Volver</button>
+                    <button class="btn btn-primary" id="btn-next-3" disabled>Continuar →</button>
                 </div>
             </div>
 
             <!-- STEP 4: CONFIRMAR -->
             <div class="step-panel" id="step-4">
-                <span class="section-label">Confirma tu reserva</span>
-                <p
-                    style="color:var(--color-muted); font-size:.875rem; margin-bottom:2rem;">
+                <span class="section-label">Paso 4</span>
+                <h2 class="section-title" style="font-size:1.75rem; margin-bottom:0.5rem;">
+                    Confirma tu reserva
+                </h2>
+                <p style="color:var(--color-muted); font-size:.875rem; margin-bottom:2rem;">
                     Revisa el resumen y rellena tus datos.
                 </p>
 
+                <!-- Resumen -->
                 <div class="booking-summary">
                     <div class="summary-row">
                         <span class="summary-label">Servicio</span>
@@ -188,120 +246,43 @@
                     </div>
                 </div>
 
-                <!-- FORMULARIO DATOS CLIENTE -->
-                <div
-                    style="display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-bottom:1rem;">
+                <!-- Datos del cliente — cada campo en su propio form-group -->
+                <div class="client-fields">
 
                     <div class="form-group">
                         <label for="client-name">Nombre completo *</label>
                         <input type="text" id="client-name"
-                            placeholder="Ej. Jon Ibáñez" />
+                               placeholder="Ej. Jon Ibáñez"
+                               autocomplete="name" />
+                        <!-- .field-error se inserta aquí por JS dentro de este form-group -->
                     </div>
 
-                    <!-- TELÉFONO CON SELECTOR DE PAÍS -->
                     <div class="form-group">
                         <label for="client-phone">Teléfono *</label>
-                        <div
-                            style="display:flex; gap:0; border:1px solid var(--color-border); border-radius:var(--radius-md); overflow:hidden; background:var(--color-surface2); transition:border-color var(--transition);"
-                            id="phone-wrapper">
-                            <select id="phone-country" style="
-                                background:var(--color-surface2);
-                                border:none;
-                                border-right:1px solid var(--color-border);
-                                color:var(--color-text);
-                                font-family:var(--font-body);
-                                font-size:0.9rem;
-                                padding:0.85rem 0.5rem 0.85rem 0.75rem;
-                                cursor:pointer;
-                                outline:none;
-                                flex-shrink:0;
-                                width:auto;
-                                max-width:115px;
-                            ">
-                                <option value="ES" data-prefix="+34"
-                                    data-pattern="^[6789]\d{8}$"
-                                    data-example="612 345 678">🇪🇸 +34</option>
-                                <option value="FR" data-prefix="+33"
-                                    data-pattern="^[67]\d{8}$"
-                                    data-example="612 345 678">🇫🇷 +33</option>
-                                <option value="DE" data-prefix="+49"
-                                    data-pattern="^1[5-7]\d{9,10}$"
-                                    data-example="151 23456789">🇩🇪
-                                    +49</option>
-                                <option value="IT" data-prefix="+39"
-                                    data-pattern="^3\d{9}$"
-                                    data-example="312 345 6789">🇮🇹
-                                    +39</option>
-                                <option value="PT" data-prefix="+351"
-                                    data-pattern="^9[1236]\d{7}$"
-                                    data-example="912 345 678">🇵🇹
-                                    +351</option>
-                                <option value="GB" data-prefix="+44"
-                                    data-pattern="^7\d{9}$"
-                                    data-example="7911 123456">🇬🇧 +44</option>
-                                <option value="US" data-prefix="+1"
-                                    data-pattern="^\d{10}$"
-                                    data-example="2025550123">🇺🇸 +1</option>
-                                <option value="MX" data-prefix="+52"
-                                    data-pattern="^[1-9]\d{9}$"
-                                    data-example="5512345678">🇲🇽 +52</option>
-                                <option value="AR" data-prefix="+54"
-                                    data-pattern="^9\d{10}$"
-                                    data-example="91123456789">🇦🇷 +54</option>
-                                <option value="CO" data-prefix="+57"
-                                    data-pattern="^3\d{9}$"
-                                    data-example="3001234567">🇨🇴 +57</option>
-                                <option value="CL" data-prefix="+56"
-                                    data-pattern="^9\d{8}$"
-                                    data-example="912345678">🇨🇱 +56</option>
-                                <option value="MA" data-prefix="+212"
-                                    data-pattern="^[67]\d{8}$"
-                                    data-example="612345678">🇲🇦 +212</option>
-                                <option value="OTHER" data-prefix
-                                    data-pattern="^\+?\d{6,15}$" data-example>🌐
-                                    Otro</option>
-                            </select>
-                            <input type="tel" id="client-phone"
-                                placeholder="612 345 678"
-                                style="
-                                    background:transparent;
-                                    border:none;
-                                    color:var(--color-text);
-                                    font-family:var(--font-body);
-                                    font-size:0.9rem;
-                                    padding:0.85rem 1rem;
-                                    outline:none;
-                                    flex:1;
-                                    min-width:0;
-                                " />
-                        </div>
-                        <span id="phone-hint"
-                            style="font-size:0.72rem; color:var(--color-muted); margin-top:0.25rem; display:block;"></span>
-                        <span id="phone-error"
-                            style="font-size:0.72rem; color:var(--red); margin-top:0.25rem; display:none;">Número
-                            no válido para este país</span>
+                        <input type="tel" id="client-phone"
+                               placeholder="+34 600 000 000"
+                               autocomplete="tel" />
+                        <!-- .field-error se inserta aquí por JS dentro de este form-group -->
                     </div>
 
-                    <div class="form-group" style="grid-column:1/-1;">
+                    <div class="form-group span-full">
                         <label for="client-email">Email *</label>
                         <input type="email" id="client-email"
-                            placeholder="tu@email.com" />
-                        <span id="email-error"
-                            style="font-size:0.72rem; color:var(--red); margin-top:0.25rem; display:none;">Introduce
-                            un email válido (ej: nombre@dominio.com)</span>
+                               placeholder="tu@email.com"
+                               autocomplete="email" />
+                        <!-- .field-error se inserta aquí por JS dentro de este form-group -->
                     </div>
 
-                    <div class="form-group" style="grid-column:1/-1;">
+                    <div class="form-group span-full">
                         <label for="client-notes">Notas adicionales</label>
                         <textarea id="client-notes" rows="3"
-                            placeholder="¿Algo que debamos saber? (opcional)"></textarea>
+                                  placeholder="¿Algo que debamos saber? (opcional)"></textarea>
                     </div>
 
                 </div>
 
                 <div class="booking-nav">
-                    <button class="btn btn-ghost" id="btn-back-4">←
-                        Volver</button>
+                    <button class="btn btn-ghost" id="btn-back-4">← Volver</button>
                     <button class="btn btn-primary" id="btn-confirm" disabled>
                         Confirmar reserva ✦
                     </button>
@@ -313,19 +294,16 @@
                 <div class="confirmation-box">
                     <div class="confirmation-icon">✦</div>
                     <h2>¡Reserva confirmada!</h2>
-                    <p>Nos vemos pronto. Te hemos enviado los detalles por
-                        email.</p>
+                    <p>Nos vemos pronto. Te hemos enviado los detalles por email.</p>
                     <div id="confirmation-detail"
-                        style="background:var(--color-surface); border:1px solid var(--color-border);
-                        border-radius:var(--radius-lg); padding:1.5rem; margin:2rem auto;
-                        max-width:400px; font-size:.9rem; line-height:1.8;">
+                         style="background:var(--color-surface); border:1px solid var(--color-border);
+                         border-radius:var(--radius-lg); padding:1.5rem; margin:2rem auto;
+                         max-width:400px; font-size:.9rem; line-height:1.8;">
                     </div>
-                    <div
-                        style="display:flex; gap:1rem; justify-content:center; flex-wrap:wrap;">
-                        <a href="index.html" class="btn btn-outline">Volver al
-                            inicio</a>
+                    <div style="display:flex; gap:1rem; justify-content:center; flex-wrap:wrap;">
+                        <a href="index.html" class="btn btn-outline">Volver al inicio</a>
                         <a href="reservas.html" class="btn btn-primary"
-                            onclick="location.reload();return false;">
+                           onclick="location.reload();return false;">
                             Nueva reserva
                         </a>
                     </div>
