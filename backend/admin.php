@@ -30,7 +30,7 @@ if (!isset($_SESSION['admin'])) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <meta name="theme-color" content="#111119">
 
-    <link rel="icon" type="image/png" href="img/admin.png">
+    <link rel="icon" type="image/png" href="../img/admin.png">
     <title>Admin · Prado Barber Co.</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,700&family=DM+Sans:wght@300;400;500&display=swap');
@@ -139,7 +139,7 @@ $mesesES = ['','ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov'
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Admin · Prado Barber Co.</title>
-    <link rel="icon" type="image/png" href="img/admin.png">
+    <link rel="icon" type="image/png" href="../img/admin.png">
     <meta name="theme-color" content="#111119">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,700&family=DM+Sans:wght@300;400;500&display=swap');
