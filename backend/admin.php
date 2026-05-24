@@ -3684,12 +3684,18 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
             }
 
             // ── Bar chart con altura correcta ────────────────────────────
-            function buildBarChart(items, color) {
+            function buildBarChartTall(items, color) {
                 const maxV = Math.max(...items.map(x => x.value), 1);
-                let html = '<div class="bar-chart">';
+                let html = '<div style="display:flex;align-items:flex-end;gap:8px;height:160px;padding:0 0 32px 0;position:relative;">';
+                html += `<div style="position:absolute;bottom:32px;left:0;right:0;height:1px;background:rgba(245,240,232,0.06);"></div>`;
                 items.forEach((item, i) => {
-                    const h = Math.max(Math.round(item.value / maxV * 88), 3);
-                    html += `<div class="bar-item" onmouseenter="showTip(event,'','${item.tip||item.value}')" onmouseleave="hideTip()"><div class="bar-fill" style="height:${h}px;background:${color};--bar-delay:${i*0.07}s;"></div><span class="bar-label">${item.label}</span></div>`;
+                    const h = Math.max(Math.round(item.value / maxV * 110), 3);
+                    html += `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;position:relative;">
+          <div style="font-size:.68rem;color:#7a7880;font-weight:500;">${item.value || ''}</div>
+          <div style="width:100%;border-radius:4px 4px 0 0;background:${color};height:${h}px;transition:height .4s;"
+               onmouseenter="showTip(event,'','${item.tip||item.value}')" onmouseleave="hideTip()"></div>
+          <div style="position:absolute;bottom:-26px;font-size:.72rem;color:#a0a0b0;white-space:nowrap;">${item.label}</div>
+        </div>`;
                 });
                 html += '</div>';
                 return html;
@@ -3799,233 +3805,139 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
             }
 
             // ── SERVICIOS MEJORADO (FIX 4) ───────────────────────────────
-            function buildServicesCardV2(svcs, kpi) {
-                if (!svcs || !svcs.length) return '<div class="stats-card"><div class="stats-card-title">Servicios más solicitados</div><div style="color:#7a7880;font-size:.82rem;text-align:center;padding:2rem;">Sin datos</div></div>';
-
-                const maxTotal = Math.max(...svcs.map(s => +s.total), 1);
-                const maxAcept = Math.max(...svcs.map(s => {
-                    const ac = s.ingresos > 0 ? Math.round(+s.ingresos / +s.precio) : 0;
-                    return ac;
-                }), 1);
-
-                let html = '<div class="stats-card">';
-                html += '<div class="stats-card-title">Servicios más solicitados</div>';
-
-                // Tabla de resumen rápida
-                html += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:.4rem;margin-bottom:1.25rem;">';
-                html += statPill('Aceptadas', svcs.reduce((a, s) => a + Math.round(s.ingresos > 0 ? +s.ingresos / +s.precio : 0), 0), '#22c55e');
-                html += statPill('Denegadas', svcs.reduce((a, s) => a + (+s.total - Math.round(s.ingresos > 0 ? +s.ingresos / +s.precio : 0)), 0), '#d42b2b');
-                html += statPill('Dinero perdido', svcs.reduce((a, s) => {
-                    const ac = Math.round(s.ingresos > 0 ? +s.ingresos / +s.precio : 0);
-                    return a + (+s.total - ac) * +s.precio;
-                }, 0) + '€', '#f59e0b');
-                html += '</div>';
-
-                // Por servicio
-                html += '<div class="svc-stat-list">';
-                svcs.forEach((s, i) => {
-                    const aceptadas = s.ingresos > 0 ? Math.round(+s.ingresos / +s.precio) : 0;
-                    const noAcept = +s.total - aceptadas;
-                    const perdido = noAcept * +s.precio;
-                    const ganado = aceptadas * +s.precio;
-                    const barAcPct = Math.round(aceptadas / maxTotal * 100);
-                    const barNoPct = Math.round(noAcept / maxTotal * 100);
-                    const delay = i * 0.08;
-
-                    html += `<div style="margin-bottom:1rem;padding-bottom:1rem;border-bottom:1px solid #1c1c26;">
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.5rem;">
-                <div style="display:flex;align-items:center;gap:.6rem;">
-                  <div class="svc-stat-rank">${i+1}</div>
-                  <div style="font-size:.88rem;font-weight:500;">${s.nombre}</div>
-                </div>
-                <div style="font-size:.72rem;color:#7a7880;">${s.precio}€/cita</div>
-              </div>
-              <div style="display:flex;gap:1.5rem;margin-bottom:.5rem;">
-                <div style="font-size:.75rem;color:#22c55e;">✓ ${aceptadas} citas · <strong style="color:#22c55e;">${ganado.toFixed(0)}€</strong></div>
-                <div style="font-size:.75rem;color:#d42b2b;text-decoration-color:#d42b2b;">✕ ${noAcept} citas · <span style="text-decoration:line-through;opacity:.7;">${perdido.toFixed(0)}€</span></div>
-              </div>
-              <div style="display:flex;flex-direction:column;gap:3px;">
-                <div style="display:flex;align-items:center;gap:.4rem;">
-                  <span style="font-size:.55rem;color:#22c55e;width:12px;">✓</span>
-                  <div style="flex:1;height:5px;background:#1c1c26;border-radius:3px;overflow:hidden;">
-                    <div class="svc-stat-bar-fill" style="--svc-w:${barAcPct}%;--svc-delay:${delay}s;background:linear-gradient(90deg,#22c55e,#16a34a);height:100%;border-radius:3px;"></div>
-                  </div>
-                </div>
-                <div style="display:flex;align-items:center;gap:.4rem;">
-                  <span style="font-size:.55rem;color:#d42b2b;width:12px;">✕</span>
-                  <div style="flex:1;height:5px;background:#1c1c26;border-radius:3px;overflow:hidden;">
-                    <div class="svc-stat-bar-fill" style="--svc-w:${barNoPct}%;--svc-delay:${delay+0.1}s;background:linear-gradient(90deg,#d42b2b,#a81e1e);height:100%;border-radius:3px;"></div>
-                  </div>
-                </div>
-              </div>
-            </div>`;
-                });
-                html += '</div></div>';
-                return html;
-            }
-
-            function statPill(label, value, color) {
-                return `<div style="background:#0d0d14;border:1px solid #1c1c26;border-radius:8px;padding:.6rem .5rem;text-align:center;">
-          <div style="font-size:.78rem;font-weight:700;color:${color};">${typeof value==='number'&&value>999?(value/1000).toFixed(1)+'k':value}</div>
-          <div style="font-size:.58rem;color:#7a7880;letter-spacing:.08em;text-transform:uppercase;margin-top:.15rem;">${label}</div>
-        </div>`;
-            }
-
-            // ── HEATMAP REDISEÑADO (FIX 2) ───────────────────────────────
-            // Diseño tipo GitHub: compacto, cuadrículas por semana en columnas
-            // con etiquetas de mes arriba y día de semana a la izquierda
             function buildHeatmapV2(hmap) {
                 const today = new Date();
+                const MONTHS_ES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+                const DOW = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
+
                 const map = {};
                 hmap.forEach(h => {
                     map[h.dia] = +h.total;
                 });
                 const maxV = Math.max(...Object.values(map), 1);
 
-                // Generar array de 30 días hacia atrás desde hoy
-                const days = [];
-                for (let i = 29; i >= 0; i--) {
-                    const d = new Date(today);
-                    d.setDate(d.getDate() - i);
-                    const iso = d.toISOString().slice(0, 10);
-                    const dow = (d.getDay() + 6) % 7; // 0=Lun … 6=Dom
-                    const v = map[iso] || 0;
-                    const lvl = v === 0 ? 0 : v <= maxV * .25 ? 1 : v <= maxV * .5 ? 2 : v <= maxV * .75 ? 3 : 4;
-                    days.push({
-                        iso,
-                        dow,
-                        v,
-                        lvl,
-                        day: d.getDate(),
-                        month: d.getMonth()
-                    });
+                function getLevel(v) {
+                    if (!v) return 0;
+                    if (v <= maxV * .25) return 1;
+                    if (v <= maxV * .5) return 2;
+                    if (v <= maxV * .75) return 3;
+                    return 4;
                 }
 
-                // Construir columnas (semanas): la primera columna empieza el lunes de la semana del día más antiguo
-                // Rellenar con nulls al inicio hasta llegar al dow correcto del primer día
-                const firstDow = days[0].dow;
-                const grid = []; // grid[col][row] — col = semana, row = día semana
-                let col = [];
-                for (let pad = 0; pad < firstDow; pad++) col.push(null);
-                for (const d of days) {
-                    col.push(d);
-                    if (col.length === 7) {
-                        grid.push(col);
-                        col = [];
-                    }
-                }
-                if (col.length > 0) {
-                    while (col.length < 7) col.push(null);
-                    grid.push(col);
-                }
-
-                const MONTHS_ES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
-                const DOW_LABELS = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
                 const COLORS = [{
                         bg: 'rgba(255,255,255,0.04)',
-                        border: 'rgba(255,255,255,0.06)'
+                        border: 'rgba(255,255,255,0.07)'
                     },
                     {
                         bg: 'rgba(212,43,43,0.20)',
-                        border: 'rgba(212,43,43,0.25)'
+                        border: 'rgba(212,43,43,0.30)'
                     },
                     {
-                        bg: 'rgba(212,43,43,0.42)',
-                        border: 'rgba(212,43,43,0.50)'
+                        bg: 'rgba(212,43,43,0.45)',
+                        border: 'rgba(212,43,43,0.55)'
                     },
                     {
-                        bg: 'rgba(212,43,43,0.68)',
-                        border: 'rgba(212,43,43,0.75)'
+                        bg: 'rgba(212,43,43,0.72)',
+                        border: 'rgba(212,43,43,0.80)'
                     },
                     {
-                        bg: 'rgba(212,43,43,0.92)',
-                        border: '#d42b2b'
+                        bg: '#d42b2b',
+                        border: '#ff4040'
                     },
                 ];
 
-                // Construir etiquetas de mes (aparece en la primera columna de cada mes)
-                const monthLabels = grid.map((wcol) => {
-                    const first = wcol.find(c => c !== null);
-                    if (!first) return '';
-                    // Solo mostrar si es el día 1-7 del mes (primera semana del mes)
-                    return first.day <= 7 ? MONTHS_ES[first.month] : '';
-                });
+                const start = new Date(today);
+                start.setDate(start.getDate() - 29);
 
-                // HTML
+                const months = [];
+                let cur = new Date(start.getFullYear(), start.getMonth(), 1);
+                const endMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+                while (cur <= endMonth) {
+                    months.push(new Date(cur));
+                    cur.setMonth(cur.getMonth() + 1);
+                }
+
+                const todayISO = today.toISOString().slice(0, 10);
+
                 let html = `
     <style>
-      .hm2-wrap { display:flex; gap:0; align-items:flex-start; width:100%; overflow-x:auto; padding-bottom:4px; }
-      .hm2-yaxis { display:flex; flex-direction:column; gap:0; margin-right:6px; flex-shrink:0; padding-top:22px; }
-      .hm2-ylabel { height:18px; width:14px; font-size:10px; color:#4a4a5a; display:flex; align-items:center; justify-content:flex-end; line-height:1; }
-      .hm2-cols-wrap { display:flex; flex-direction:column; gap:0; }
-      .hm2-months-row { display:flex; gap:4px; height:20px; align-items:center; margin-bottom:2px; }
-      .hm2-month-label { width:18px; font-size:10px; color:#4a4a5a; text-align:center; overflow:visible; white-space:nowrap; margin-left:-10px; }
-      .hm2-cols { display:flex; gap:4px; }
-      .hm2-col { display:flex; flex-direction:column; gap:4px; }
-      .hm2-cell { width:18px; height:18px; border-radius:4px; cursor:default; position:relative; transition:transform .15s; flex-shrink:0; }
-      .hm2-cell:hover { transform:scale(1.3); z-index:10; }
-      .hm2-cell-empty { width:18px; height:18px; flex-shrink:0; }
-      .hm2-legend { display:flex; align-items:center; gap:6px; margin-top:12px; }
-      .hm2-legend-lbl { font-size:10px; color:#4a4a5a; }
-      .hm2-legend-cell { width:14px; height:14px; border-radius:3px; }
-      .hm2-stats { display:grid; grid-template-columns:1fr 1fr 1fr; gap:.6rem; margin-top:.75rem; }
-      .hm2-stat { background:#0d0d14; border:1px solid #1c1c26; border-radius:8px; padding:.6rem; text-align:center; }
-      .hm2-stat-num { font-family:'Playfair Display',serif; font-size:1.2rem; font-weight:700; line-height:1; }
-      .hm2-stat-lbl { font-size:.6rem; color:#7a7880; letter-spacing:.1em; text-transform:uppercase; margin-top:.2rem; }
+      .hm3-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+      .hm3-legend{display:flex;align-items:center;gap:5px;}
+      .hm3-legend span{font-size:10px;color:#4a4a5a;}
+      .hm3-lswatch{width:11px;height:11px;border-radius:3px;}
+      .hm3-calendar{display:flex;gap:0;flex-wrap:wrap;}
+      .hm3-month{flex:1;min-width:200px;padding-right:20px;}
+      .hm3-month:last-child{padding-right:0;}
+      .hm3-mname{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#d42b2b;font-weight:600;margin-bottom:8px;}
+      .hm3-dow-row{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-bottom:3px;}
+      .hm3-dow{font-size:10px;color:#3a3a48;text-align:center;padding:2px 0;}
+      .hm3-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;}
+      .hm3-c{aspect-ratio:1;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:9px;position:relative;cursor:default;}
+      .hm3-c:hover .hm3-tip{display:block;}
+      .hm3-tip{display:none;position:absolute;bottom:calc(100% + 4px);left:50%;transform:translateX(-50%);background:#1c1c26;border:1px solid #2f2f3c;border-radius:5px;padding:3px 8px;font-size:10px;color:#f0ece3;white-space:nowrap;z-index:20;pointer-events:none;}
+      .hm3-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:14px;}
+      .hm3-stat{background:#0d0d14;border:1px solid #1c1c26;border-radius:8px;padding:10px;text-align:center;}
+      .hm3-snum{font-family:'Playfair Display',serif;font-size:1.25rem;font-weight:700;line-height:1;}
+      .hm3-slbl{font-size:10px;color:#7a7880;letter-spacing:.1em;text-transform:uppercase;margin-top:3px;}
     </style>
-    <div class="hm2-wrap">
-      <div class="hm2-yaxis">`;
+    <div class="hm3-top">
+      <div style="font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:#7a7880;">Reservas por día</div>
+      <div class="hm3-legend">
+        <span>Sin reservas</span>`;
 
-                DOW_LABELS.forEach((l, i) => {
-                    // Solo L, X, V, D para no saturar
-                    const show = [0, 2, 4, 6].includes(i);
-                    html += `<div class="hm2-ylabel">${show ? l : ''}</div>`;
-                    if (i < 6) html += `<div style="height:4px;"></div>`;
-                });
-
-                html += `</div><div class="hm2-cols-wrap"><div class="hm2-months-row">`;
-
-                // Etiquetas de mes encima de cada columna
-                grid.forEach((wcol, ci) => {
-                    html += `<div class="hm2-month-label">${monthLabels[ci] || ''}</div>`;
-                });
-
-                html += `</div><div class="hm2-cols">`;
-
-                grid.forEach((wcol) => {
-                    html += `<div class="hm2-col">`;
-                    wcol.forEach((cell) => {
-                        if (!cell) {
-                            html += `<div class="hm2-cell-empty"></div>`;
-                        } else {
-                            const c = COLORS[cell.lvl];
-                            const tip = `${cell.iso}: ${cell.v} cita${cell.v !== 1 ? 's' : ''}`;
-                            html += `<div class="hm2-cell" style="background:${c.bg};border:1px solid ${c.border};" title="${tip}" onmouseenter="showTip(event,'','${tip}')" onmouseleave="hideTip()"></div>`;
-                        }
-                    });
-                    html += `</div>`;
-                });
-
-                html += `</div></div></div>`;
-
-                // Leyenda
-                html += `<div class="hm2-legend">
-      <span class="hm2-legend-lbl">Menos</span>`;
                 COLORS.forEach(c => {
-                    html += `<div class="hm2-legend-cell" style="background:${c.bg};border:1px solid ${c.border};"></div>`;
+                    html += `<div class="hm3-lswatch" style="background:${c.bg};border:1px solid ${c.border};"></div>`;
                 });
-                html += `<span class="hm2-legend-lbl">Más</span></div>`;
+                html += `<span>Muchas</span></div></div>`;
+                html += `<div class="hm3-calendar">`;
 
-                // Stats
+                months.forEach((mDate) => {
+                    const y = mDate.getFullYear(),
+                        m = mDate.getMonth();
+                    const daysInMonth = new Date(y, m + 1, 0).getDate();
+                    const firstDow = (new Date(y, m, 1).getDay() + 6) % 7;
+
+                    html += `<div class="hm3-month">`;
+                    html += `<div class="hm3-mname">${MONTHS_ES[m]} ${y}</div>`;
+                    html += `<div class="hm3-dow-row">`;
+                    DOW.forEach(d => html += `<div class="hm3-dow">${d}</div>`);
+                    html += `</div><div class="hm3-grid">`;
+
+                    for (let p = 0; p < firstDow; p++) html += `<div class="hm3-c" style="background:transparent;border:none;"></div>`;
+
+                    for (let d = 1; d <= daysInMonth; d++) {
+                        const dt = new Date(y, m, d);
+                        const iso = `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+                        const isInRange = dt >= start && dt <= today;
+                        const isToday = iso === todayISO;
+                        const v = map[iso] || 0;
+
+                        if (!isInRange) {
+                            html += `<div class="hm3-c" style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.04);color:#2a2a38;">${d}</div>`;
+                        } else {
+                            const c = COLORS[getLevel(v)];
+                            const txtColor = getLevel(v) >= 3 ? 'rgba(255,255,255,0.85)' : '#4a4a5a';
+                            const border = isToday ? '2px solid rgba(212,43,43,0.8)' : `1px solid ${c.border}`;
+                            html += `<div class="hm3-c" style="background:${c.bg};border:${border};color:${txtColor};">${d}`;
+                            if (v > 0) html += `<div class="hm3-tip">${v} cita${v!==1?'s':''}</div>`;
+                            html += `</div>`;
+                        }
+                    }
+                    html += `</div></div>`;
+                });
+
+                html += `</div>`;
+
                 const totalCitas = Object.values(map).reduce((a, b) => a + b, 0);
                 const diasActivos = Object.keys(map).filter(k => map[k] > 0).length;
                 const maxEntry = Object.entries(map).sort((a, b) => b[1] - a[1])[0];
-                const maxDiaVal = maxEntry ? maxEntry[1] : 0;
+                const avgCitas = diasActivos > 0 ? (totalCitas / diasActivos).toFixed(1) : '0';
 
-                html += `<div class="hm2-stats">
-      <div class="hm2-stat"><div class="hm2-stat-num" style="color:#d42b2b;">${totalCitas}</div><div class="hm2-stat-lbl">Total (30d)</div></div>
-      <div class="hm2-stat"><div class="hm2-stat-num" style="color:#c9a84c;">${diasActivos}</div><div class="hm2-stat-lbl">Días activos</div></div>
-      <div class="hm2-stat"><div class="hm2-stat-num" style="color:#22c55e;">${maxDiaVal}</div><div class="hm2-stat-lbl">Máx. en un día</div></div>
+                html += `<div class="hm3-stats">
+      <div class="hm3-stat"><div class="hm3-snum" style="color:#d42b2b;">${totalCitas}</div><div class="hm3-slbl">Total 30d</div></div>
+      <div class="hm3-stat"><div class="hm3-snum" style="color:#c9a84c;">${diasActivos}</div><div class="hm3-slbl">Días activos</div></div>
+      <div class="hm3-stat"><div class="hm3-snum" style="color:#22c55e;">${maxEntry ? maxEntry[1] : 0}</div><div class="hm3-slbl">Máx. día</div></div>
+      <div class="hm3-stat"><div class="hm3-snum" style="color:#6b9fff;">${avgCitas}</div><div class="hm3-slbl">Media/día activo</div></div>
     </div>`;
 
                 return html;
