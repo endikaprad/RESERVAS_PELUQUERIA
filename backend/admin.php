@@ -536,6 +536,51 @@ $mesesES = ['','ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov'
             .stats-kpis{grid-template-columns:1fr 1fr;}
             .kpi-value{font-size:1.6rem;}
         }
+
+        /* ================================================================
+        STATS FIXES — CSS adicional para admin.php
+        Añadir dentro del bloque <style> existente, antes del cierre </style>
+        ================================================================ */
+
+        /* FIX 4: Tasa de aceptación — meta items en fila horizontal en PC */
+        .conversion-meta-row {
+            display: grid !important;
+            grid-template-columns: repeat(4, 1fr) !important;
+            gap: .5rem !important;
+            width: 100% !important;
+            margin-top: .75rem;
+        }
+
+        /* FIX 5: Barbero cards — cursor pointer y hover mejorado */
+        .barbero-stat-card {
+            position: relative;
+            cursor: pointer;
+            user-select: none;
+            transition: border-color .25s, transform .25s, box-shadow .25s;
+        }
+        .barbero-stat-card:hover {
+            border-color: rgba(212,43,43,.45) !important;
+            box-shadow: 0 8px 32px rgba(212,43,43,.15), 0 0 0 1px rgba(212,43,43,.08) !important;
+        }
+        .barbero-stat-card:active {
+            transform: translateY(1px) !important;
+        }
+
+        /* FIX 2: Heatmap — override de las clases antiguas */
+        .hm-col, .heatmap-grid { display: none !important; }
+
+        /* Modal de barbero — transición suave en botón de cerrar */
+        #barbero-modal-overlay button:hover {
+            border-color: #d42b2b !important;
+            color: #d42b2b !important;
+        }
+
+        /* Responsive: en móvil los meta de conversión vuelven a 2 columnas */
+        @media (max-width: 600px) {
+            .conversion-meta-row {
+                grid-template-columns: repeat(2, 1fr) !important;
+            }
+        }
     </style>
 </head>
 <body>
@@ -891,11 +936,16 @@ $mesesES = ['','ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov'
     </div>
 </div>
 
-
-<!-- ================================================================
-     STATS JAVASCRIPT
-================================================================ -->
 <script>
+// ================================================================
+//  STATS JAVASCRIPT — VERSIÓN CORREGIDA
+//  Fix 1: Tooltip vacío en gráfico de barras
+//  Fix 2: Heatmap rediseñado con semanas claras
+//  Fix 3: Servicios separados en aceptadas vs denegadas
+//  Fix 4: Meta-items tasa aceptación en fila
+//  Fix 5: Todos los barberos + modal de detalle
+// ================================================================
+
 (function(){
 const STATS_API = './api/stats.php';
 let statsLoaded = false;
@@ -961,6 +1011,153 @@ function onVisible(el, cb) {
     }, { threshold: 0.15 }).observe(el);
 }
 
+// ── Barbero Modal ─────────────────────────────────────────────
+function openBarberoModal(b, allBarbers) {
+    // Cerrar si existe
+    document.getElementById('barbero-modal-overlay')?.remove();
+
+    const maxIng = Math.max(...allBarbers.map(x => +x.ingresos), 1);
+    const pct    = maxIng > 0 ? Math.round(+b.ingresos / maxIng * 100) : 0;
+    const ticket = Number(+b.ingresos / Math.max(+b.aceptadas||+b.total_citas, 1)).toFixed(0);
+
+    const overlay = document.createElement('div');
+    overlay.id = 'barbero-modal-overlay';
+    overlay.style.cssText = `
+        position:fixed;inset:0;background:rgba(0,0,0,0.82);backdrop-filter:blur(10px);
+        z-index:2000;display:flex;align-items:center;justify-content:center;padding:1.5rem;
+        opacity:0;transition:opacity .3s ease;cursor:pointer;
+    `;
+
+    const modal = document.createElement('div');
+    modal.style.cssText = `
+        background:#111119;border:1px solid #2f2f3c;border-radius:20px;
+        max-width:440px;width:100%;padding:0;overflow:hidden;
+        transform:translateY(20px) scale(.97);transition:transform .35s cubic-bezier(.16,1,.3,1),opacity .35s ease;
+        opacity:0;cursor:default;box-shadow:0 24px 80px rgba(0,0,0,.7),0 0 0 1px rgba(212,43,43,.08);
+    `;
+    modal.addEventListener('click', e => e.stopPropagation());
+
+    // Colores por barbero
+    const colorMap = { EP:'#d42b2b', MV:'#2550a0', AR:'#c9a84c' };
+    const accentColor = colorMap[b.iniciales] || '#d42b2b';
+
+    // Actividad últimos 6 meses - simplificado
+    const meses = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+    const mesActual = new Date().getMonth();
+    const ultimos6 = Array.from({length:6}, (_,i) => meses[(mesActual - 5 + i + 12) % 12]);
+
+    modal.innerHTML = `
+        <!-- Header con color del barbero -->
+        <div style="background:linear-gradient(135deg,${accentColor}22 0%,${accentColor}08 100%);
+                    border-bottom:1px solid ${accentColor}30;padding:2rem 2rem 1.5rem;
+                    position:relative;overflow:hidden;">
+            <div style="position:absolute;top:-20px;right:-20px;width:120px;height:120px;
+                        border-radius:50%;border:1px solid ${accentColor}15;"></div>
+            <div style="position:absolute;top:10px;right:10px;width:60px;height:60px;
+                        border-radius:50%;border:1px solid ${accentColor}10;"></div>
+            <div style="display:flex;align-items:center;gap:1.25rem;position:relative;z-index:1;">
+                <div style="width:68px;height:68px;border-radius:16px;
+                            background:linear-gradient(135deg,${accentColor}25,${accentColor}10);
+                            border:2px solid ${accentColor}50;
+                            display:flex;align-items:center;justify-content:center;
+                            font-family:'Playfair Display',serif;font-size:1.4rem;font-weight:700;
+                            color:${accentColor};flex-shrink:0;
+                            box-shadow:0 4px 20px ${accentColor}30;">
+                    ${b.iniciales}
+                </div>
+                <div>
+                    <div style="font-family:'Playfair Display',serif;font-size:1.3rem;font-weight:700;
+                                color:#f0ece3;margin-bottom:.2rem;">${b.nombre}</div>
+                    <div style="font-size:.7rem;letter-spacing:.15em;text-transform:uppercase;
+                                color:${accentColor};font-weight:600;">${b.total_citas} citas totales</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- KPIs en fila -->
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0;border-bottom:1px solid #252530;">
+            ${[
+                {num: b.aceptadas||0, lbl:'Aceptadas', col:'#22c55e'},
+                {num: b.pendientes||0, lbl:'Pendientes', col:'#f59e0b'},
+                {num: Number(b.ingresos||0).toFixed(0)+'€', lbl:'Ingresos', col:'#c9a84c'},
+            ].map((k,i) => `
+                <div style="padding:1.25rem 1rem;text-align:center;${i<2?'border-right:1px solid #252530;':''}">
+                    <div style="font-family:'Playfair Display',serif;font-size:1.5rem;font-weight:700;
+                                color:${k.col};line-height:1;">${k.num}</div>
+                    <div style="font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;
+                                color:#7a7880;margin-top:.3rem;">${k.lbl}</div>
+                </div>`).join('')}
+        </div>
+
+        <!-- Barra de ingresos -->
+        <div style="padding:1.5rem 2rem;border-bottom:1px solid #252530;">
+            <div style="display:flex;justify-content:space-between;font-size:.72rem;
+                        color:#7a7880;margin-bottom:.6rem;">
+                <span>Rendimiento de ingresos</span>
+                <span style="color:${accentColor};font-weight:600;">${Number(b.ingresos||0).toFixed(0)} €</span>
+            </div>
+            <div style="height:8px;background:#1c1c26;border-radius:4px;overflow:hidden;">
+                <div class="modal-prog-fill" style="height:100%;border-radius:4px;width:0;
+                            background:linear-gradient(90deg,${accentColor},${accentColor}99);
+                            transition:width 1.2s cubic-bezier(.16,1,.3,1) .2s;
+                            --target-w:${pct}%;"></div>
+            </div>
+        </div>
+
+        <!-- Ticket medio + otras métricas -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;padding:1.5rem 2rem;border-bottom:1px solid #252530;">
+            <div style="background:#0d0d14;border-radius:10px;padding:1rem;text-align:center;border:1px solid #1c1c26;">
+                <div style="font-family:'Playfair Display',serif;font-size:1.4rem;font-weight:700;
+                            color:#c9a84c;">${ticket}€</div>
+                <div style="font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;color:#7a7880;margin-top:.25rem;">Ticket medio</div>
+            </div>
+            <div style="background:#0d0d14;border-radius:10px;padding:1rem;text-align:center;border:1px solid #1c1c26;">
+                <div style="font-family:'Playfair Display',serif;font-size:1.4rem;font-weight:700;color:#a78bfa;">
+                    ${b.total_citas > 0 ? Math.round((+b.aceptadas / +b.total_citas) * 100) : 0}%
+                </div>
+                <div style="font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;color:#7a7880;margin-top:.25rem;">Tasa aceptación</div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div style="padding:1.25rem 2rem;display:flex;align-items:center;justify-content:space-between;">
+            <span style="font-size:.72rem;color:#7a7880;letter-spacing:.05em;">Prado Barber Co. · Admin</span>
+            <button onclick="document.getElementById('barbero-modal-overlay').remove();document.body.style.overflow='';"
+                    style="padding:.5rem 1.25rem;background:transparent;border:1px solid #252530;
+                           border-radius:6px;color:#7a7880;font-family:'DM Sans',sans-serif;
+                           font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;
+                           transition:all .2s;"
+                    onmouseover="this.style.borderColor='#d42b2b';this.style.color='#d42b2b';"
+                    onmouseout="this.style.borderColor='#252530';this.style.color='#7a7880';">
+                Cerrar
+            </button>
+        </div>
+    `;
+
+    overlay.appendChild(modal);
+    document.body.appendChild(overlay);
+
+    requestAnimationFrame(() => {
+        overlay.style.opacity = '1';
+        modal.style.opacity   = '1';
+        modal.style.transform = 'translateY(0) scale(1)';
+        // Animar barra de progreso
+        setTimeout(() => {
+            const fill = modal.querySelector('.modal-prog-fill');
+            if (fill) fill.style.width = fill.style.getPropertyValue('--target-w') || pct + '%';
+        }, 100);
+    });
+
+    overlay.addEventListener('click', () => {
+        overlay.style.opacity = '0';
+        modal.style.opacity   = '0';
+        modal.style.transform = 'translateY(10px) scale(.97)';
+        setTimeout(() => { overlay.remove(); document.body.style.overflow = ''; }, 300);
+    });
+
+    document.body.style.overflow = 'hidden';
+}
+
 function renderStats(d) {
     const kpi   = d.kpi    || {};
     const hoy   = d.hoy    || {};
@@ -973,7 +1170,19 @@ function renderStats(d) {
     const hmap  = d.heatmap_30d || [];
     const tasa  = d.tasa_conversion ?? 0;
 
-    const maxBarbIng = Math.max(...barbs.map(b => +b.ingresos), 1);
+    // FIX 5: Asegurar que todos los barberos del sistema aparecen
+    // (barberos con 0 citas no vienen en d.barberos desde la API, así que los fusionamos)
+    const ALL_BARBERS_BASE = [
+        { id:'endika', nombre:'Endika Prado', iniciales:'EP' },
+        { id:'marcos', nombre:'Marcos Vila',  iniciales:'MV' },
+        { id:'alex',   nombre:'Alex Ramos',   iniciales:'AR' },
+    ];
+    const barbsComplete = ALL_BARBERS_BASE.map(base => {
+        const found = barbs.find(b => b.iniciales === base.iniciales);
+        return found || { ...base, total_citas:0, ingresos:0, aceptadas:0, pendientes:0 };
+    });
+
+    const maxBarbIng = Math.max(...barbsComplete.map(b => +b.ingresos), 1);
     const maxDow     = Math.max(...dow.map(x => x.count), 1);
     const maxHora    = Math.max(...horas.map(h => +h.total), 1);
     const maxSvc     = Math.max(...svcs.map(s => +s.total), 1);
@@ -1005,19 +1214,14 @@ function renderStats(d) {
 <div class="stats-section">
     <div class="stats-section-label">Rendimiento por barbero</div>
     <div class="stats-grid-3">
-        ${barbs.map((b,i) => barberCard(b, maxBarbIng, i)).join('')}
+        ${barbsComplete.map((b,i) => barberCard(b, maxBarbIng, i, barbsComplete)).join('')}
     </div>
 </div>
 
 <div class="stats-section">
     <div class="stats-section-label">Servicios &amp; conversión</div>
     <div class="stats-grid-2">
-        <div class="stats-card">
-            <div class="stats-card-title">Servicios más solicitados</div>
-            <div class="svc-stat-list">
-                ${svcs.map((s,i) => svcItem(s, maxSvc, i)).join('')}
-            </div>
-        </div>
+        ${buildServicesCard(svcs)}
         <div class="stats-card" style="display:flex;flex-direction:column;align-items:center;">
             <div class="stats-card-title" style="width:100%;">Tasa de aceptación</div>
             ${buildConversionRing(tasa, kpi)}
@@ -1059,6 +1263,9 @@ function renderStats(d) {
 
     document.getElementById('stats-content').innerHTML = html;
 
+    // Guardar referencia a barberos para el modal
+    window._statsBarberos = barbsComplete;
+
     setTimeout(() => {
         document.querySelectorAll('.kpi-card').forEach((card, i) => {
             setTimeout(() => {
@@ -1091,13 +1298,13 @@ function kpiCard(label, value, color, icon, suffix) {
     </div>`;
 }
 
+// FIX 1: tooltip con valor real
 function buildBarChart(items, color) {
     const maxV = Math.max(...items.map(x => x.value), 1);
     return `<div class="bar-chart">
         ${items.map((item, i) => `
-        <div class="bar-item" onmouseenter="showTip(event,'','')" onmouseleave="hideTip()">
+        <div class="bar-item" onmouseenter="showTip(event,'','${item.tip || item.value}')" onmouseleave="hideTip()">
             <div class="bar-fill" style="height:${Math.max(item.value/maxV*88,3)}px;background:${color};--bar-delay:${i*0.07}s;"></div>
-            <div class="bar-tooltip">${item.tip || item.value}</div>
             <span class="bar-label">${item.label}</span>
         </div>`).join('')}
     </div>`;
@@ -1137,6 +1344,7 @@ function buildLineChart(meses, field, unit) {
     </svg>`;
 }
 
+// FIX 4: conversión meta-items en fila horizontal
 function buildConversionRing(tasa, kpi) {
     const dash = (tasa / 100) * 345;
     return `<div class="conversion-wrap">
@@ -1151,7 +1359,7 @@ function buildConversionRing(tasa, kpi) {
                 <div class="conv-sub">aceptadas</div>
             </div>
         </div>
-        <div class="conversion-meta">
+        <div class="conversion-meta conversion-meta-row">
             <div class="conv-meta-item"><div class="conv-meta-num" style="color:#22c55e;">${kpi.aceptadas||0}</div><div class="conv-meta-lbl">Aceptadas</div></div>
             <div class="conv-meta-item"><div class="conv-meta-num" style="color:#f59e0b;">${kpi.pendientes||0}</div><div class="conv-meta-lbl">Pendientes</div></div>
             <div class="conv-meta-item"><div class="conv-meta-num" style="color:#d42b2b;">${kpi.denegadas||0}</div><div class="conv-meta-lbl">Denegadas</div></div>
@@ -1160,304 +1368,254 @@ function buildConversionRing(tasa, kpi) {
     </div>`;
 }
 
-function barberCard(b, maxIng, i) {
+// FIX 5: barberos con click → modal, incluye barberos sin citas
+function barberCard(b, maxIng, i, allBarbers) {
     const pct = maxIng > 0 ? Math.round(+b.ingresos / maxIng * 100) : 0;
-    const ticket = Number(+b.ingresos / Math.max(+b.aceptadas, 1)).toFixed(0);
-    return `<div class="barbero-stat-card">
+    const ticket = Number(+b.ingresos / Math.max(+b.aceptadas||+b.total_citas, 1)).toFixed(0);
+    const isEmpty = +b.total_citas === 0;
+    const colorMap = { EP:'#d42b2b', MV:'#2550a0', AR:'#c9a84c' };
+    const accent = colorMap[b.iniciales] || '#d42b2b';
+
+    return `<div class="barbero-stat-card" style="cursor:pointer;${isEmpty?'opacity:.65;':''}"
+                 onclick="window._openBarberoModal('${b.iniciales}')"
+                 title="Ver detalles de ${b.nombre}">
+        ${isEmpty ? `<div style="position:absolute;top:.75rem;right:.75rem;
+                        font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;
+                        color:#7a7880;border:1px solid #252530;border-radius:100px;
+                        padding:.2rem .5rem;">Sin citas</div>` : ''}
         <div class="barbero-stat-header">
-            <div class="barbero-avatar-stat">${b.iniciales}</div>
+            <div class="barbero-avatar-stat" style="background:linear-gradient(135deg,${accent}25,${accent}08);border-color:${accent}40;color:${accent};">${b.iniciales}</div>
             <div>
                 <div class="barbero-stat-name">${b.nombre}</div>
                 <div class="barbero-stat-sub">${b.total_citas} citas totales</div>
             </div>
+            <div style="margin-left:auto;width:28px;height:28px;border-radius:50%;
+                        background:rgba(245,240,232,.04);border:1px solid #252530;
+                        display:flex;align-items:center;justify-content:center;
+                        font-size:.7rem;color:#7a7880;flex-shrink:0;">→</div>
         </div>
         <div class="barbero-progress-wrap">
-            <div class="barbero-progress-label"><span>Ingresos generados</span><span>${Number(b.ingresos).toFixed(0)} €</span></div>
-            <div class="progress-track"><div class="progress-fill" style="--prog-w:${pct}%;--prog-delay:${.2+i*.15}s;"></div></div>
+            <div class="barbero-progress-label"><span>Ingresos generados</span><span style="color:${accent};">${Number(b.ingresos).toFixed(0)} €</span></div>
+            <div class="progress-track"><div class="progress-fill" style="--prog-w:${pct}%;--prog-delay:${.2+i*.15}s;background:linear-gradient(90deg,${accent},${accent}99);"></div></div>
         </div>
         <div class="barbero-kpi-row">
-            <div class="barbero-kpi"><div class="barbero-kpi-num">${b.aceptadas}</div><div class="barbero-kpi-lbl">Aceptadas</div></div>
-            <div class="barbero-kpi"><div class="barbero-kpi-num" style="color:#f59e0b;">${b.pendientes}</div><div class="barbero-kpi-lbl">Pendientes</div></div>
-            <div class="barbero-kpi"><div class="barbero-kpi-num" style="color:#c9a84c;">${ticket}€</div><div class="barbero-kpi-lbl">Ticket medio</div></div>
+            <div class="barbero-kpi"><div class="barbero-kpi-num" style="color:#22c55e;">${b.aceptadas||0}</div><div class="barbero-kpi-lbl">Aceptadas</div></div>
+            <div class="barbero-kpi"><div class="barbero-kpi-num" style="color:#f59e0b;">${b.pendientes||0}</div><div class="barbero-kpi-lbl">Pendientes</div></div>
+            <div class="barbero-kpi"><div class="barbero-kpi-num" style="color:#c9a84c;">${isEmpty ? '—' : ticket+'€'}</div><div class="barbero-kpi-lbl">Ticket medio</div></div>
         </div>
     </div>`;
 }
 
-function svcItem(s, maxSvc, i) {
-    const pct = Math.round(+s.total / maxSvc * 100);
+// FIX 3: Servicios separados en aceptadas y denegadas
+function buildServicesCard(svcs) {
+    if (!svcs || svcs.length === 0) {
+        return `<div class="stats-card"><div class="stats-card-title">Servicios más solicitados</div>
+            <div style="color:#7a7880;font-size:.82rem;text-align:center;padding:2rem;">Sin datos</div></div>`;
+    }
+    const maxTotal = Math.max(...svcs.map(s => +s.total), 1);
+
+    // Separar en dos listas visuales
+    return `<div class="stats-card">
+        <div class="stats-card-title">Servicios más solicitados</div>
+
+        <div style="margin-bottom:1rem;">
+            <div style="font-size:.6rem;letter-spacing:.15em;text-transform:uppercase;
+                        color:#22c55e;margin-bottom:.65rem;display:flex;align-items:center;gap:.4rem;">
+                <span style="width:6px;height:6px;border-radius:50%;background:#22c55e;display:inline-block;"></span>
+                Citas aceptadas
+            </div>
+            <div class="svc-stat-list">
+                ${svcs.map((s,i) => svcItem(s, maxTotal, i, true)).join('')}
+            </div>
+        </div>
+
+        <div style="border-top:1px solid #1c1c26;padding-top:1rem;">
+            <div style="font-size:.6rem;letter-spacing:.15em;text-transform:uppercase;
+                        color:#d42b2b;margin-bottom:.65rem;display:flex;align-items:center;gap:.4rem;">
+                <span style="width:6px;height:6px;border-radius:50%;background:#d42b2b;display:inline-block;"></span>
+                Citas denegadas / no confirmadas
+            </div>
+            <div class="svc-stat-list">
+                ${svcs.map((s,i) => svcItemDenied(s, maxTotal, i)).join('')}
+            </div>
+        </div>
+    </div>`;
+}
+
+function svcItem(s, maxSvc, i, accepted) {
+    // accepted = mostrar campo ingresos (solo las aceptadas generan ingresos)
+    const total = accepted ? (+s.total - (s.denegadas||0)) : +s.total; // Approx: usamos s.total para aceptadas
+    // Nota: la API no separa aceptadas/denegadas por servicio, usamos total y ingresos como proxy
+    const aceptadasEst = s.ingresos > 0 ? Math.round(+s.ingresos / +s.precio) : 0;
+    const pct = Math.round(aceptadasEst / Math.max(+s.total, 1) * 100);
+    const barPct = maxSvc > 0 ? Math.round(aceptadasEst / maxSvc * 100) : 0;
+
+    if (aceptadasEst === 0) return `<div class="svc-stat-item" style="opacity:.4;">
+        <div class="svc-stat-rank">${i+1}</div>
+        <div class="svc-stat-info">
+            <div class="svc-stat-name">${s.nombre}</div>
+            <div class="svc-stat-bar"><div class="svc-stat-bar-fill" style="--svc-w:0%;--svc-delay:${i*.09}s;"></div></div>
+        </div>
+        <div class="svc-stat-meta">
+            <div class="svc-stat-count">0 citas</div>
+            <div class="svc-stat-euros">0 €</div>
+        </div>
+    </div>`;
+
     return `<div class="svc-stat-item">
         <div class="svc-stat-rank">${i+1}</div>
         <div class="svc-stat-info">
             <div class="svc-stat-name">${s.nombre}</div>
-            <div class="svc-stat-bar"><div class="svc-stat-bar-fill" style="--svc-w:${pct}%;--svc-delay:${i*.09}s;"></div></div>
+            <div class="svc-stat-bar"><div class="svc-stat-bar-fill" style="--svc-w:${barPct}%;--svc-delay:${i*.09}s;background:linear-gradient(90deg,#22c55e,#16a34a);"></div></div>
         </div>
         <div class="svc-stat-meta">
-            <div class="svc-stat-count">${s.total} citas</div>
-            <div class="svc-stat-euros">${Number(s.ingresos).toFixed(0)} €</div>
+            <div class="svc-stat-count">${aceptadasEst} citas</div>
+            <div class="svc-stat-euros" style="color:#22c55e;">${Number(s.ingresos).toFixed(0)} €</div>
         </div>
     </div>`;
 }
 
+function svcItemDenied(s, maxSvc, i) {
+    // Citas sin ingreso = denegadas + pendientes sin confirmar
+    const aceptadasEst = s.ingresos > 0 ? Math.round(+s.ingresos / +s.precio) : 0;
+    const noAceptadas  = +s.total - aceptadasEst;
+    const barPct       = noAceptadas > 0 ? Math.round(noAceptadas / maxSvc * 100) : 0;
+
+    if (noAceptadas <= 0) return `<div class="svc-stat-item" style="opacity:.35;">
+        <div class="svc-stat-rank" style="background:rgba(212,43,43,.05);border-color:rgba(212,43,43,.1);">${i+1}</div>
+        <div class="svc-stat-info">
+            <div class="svc-stat-name">${s.nombre}</div>
+            <div class="svc-stat-bar" style="height:4px;background:#1c1c26;border-radius:2px;"></div>
+        </div>
+        <div class="svc-stat-meta">
+            <div class="svc-stat-count">0 citas</div>
+            <div class="svc-stat-euros" style="color:#7a7880;">—</div>
+        </div>
+    </div>`;
+
+    return `<div class="svc-stat-item">
+        <div class="svc-stat-rank" style="background:rgba(212,43,43,.08);border-color:rgba(212,43,43,.2);color:#d42b2b;">${i+1}</div>
+        <div class="svc-stat-info">
+            <div class="svc-stat-name">${s.nombre}</div>
+            <div class="svc-stat-bar"><div class="svc-stat-bar-fill" style="--svc-w:${barPct}%;--svc-delay:${i*.09}s;background:linear-gradient(90deg,#d42b2b,#a81e1e);"></div></div>
+        </div>
+        <div class="svc-stat-meta">
+            <div class="svc-stat-count">${noAceptadas} citas</div>
+            <div class="svc-stat-euros" style="color:#d42b2b;">0 €</div>
+        </div>
+    </div>`;
+}
+
+// FIX 2: Heatmap rediseñado — más claro, con etiquetas de semana y día
 function buildHeatmap(hmap) {
     const today = new Date();
     const map = {};
     hmap.forEach(h => { map[h.dia] = +h.total; });
     const maxV = Math.max(...Object.values(map), 1);
-    const cols = [];
+
+    // Construir 30 días agrupados en semanas (columnas) × días (filas L-D)
+    // Empezar desde 29 días atrás
+    const DAYS_LABEL = ['L','M','X','J','V','S','D'];
+    // Llenar un array de 30 entradas con {iso, dow(0=lun..6=dom), v, level}
+    const entries = [];
     for (let i = 29; i >= 0; i--) {
         const d = new Date(today);
         d.setDate(d.getDate() - i);
         const iso = d.toISOString().slice(0,10);
-        const dow = (d.getDay() + 6) % 7;
+        const dow = (d.getDay() + 6) % 7; // 0=lun
         const v = map[iso] || 0;
         const level = v===0?0:v<=maxV*.25?1:v<=maxV*.5?2:v<=maxV*.75?3:4;
-        if (dow===0 || cols.length===0) cols.push([]);
-        cols[cols.length-1].push({iso, v, level, lbl: dow===0?d.getDate():''});
+        entries.push({ iso, dow, v, level, date: d });
     }
-    const DAYS = ['L','M','X','J','V','S','D'];
-    return `<div class="heatmap-wrap">
-        <div style="display:flex;gap:4px;align-items:flex-start;">
-            <div style="display:flex;flex-direction:column;gap:3px;margin-top:18px;">
-                ${DAYS.map(d=>`<div style="height:20px;font-size:.5rem;color:#7a7880;display:flex;align-items:center;">${d}</div>`).join('')}
-            </div>
-            <div style="overflow-x:auto;flex:1;">
-                <div class="heatmap-grid">
-                    ${cols.map(col=>`<div class="hm-col">
-                        <div style="height:14px;font-size:.5rem;color:#7a7880;text-align:center;">${col[0]?.lbl||''}</div>
-                        ${col.map(cell=>`<div class="hm-cell" data-v="${cell.level}" title="${cell.iso}: ${cell.v} cita${cell.v!==1?'s':''}"></div>`).join('')}
+
+    // Agrupar en semanas (columnas)
+    // Primera semana: desde el primer día hasta el próximo lunes
+    const weeks = [];
+    let week = Array(7).fill(null);
+    entries.forEach(entry => {
+        week[entry.dow] = entry;
+        if (entry.dow === 6) { weeks.push(week); week = Array(7).fill(null); }
+    });
+    // Última semana incompleta
+    if (week.some(x => x !== null)) weeks.push(week);
+
+    // Etiquetas de semana (fecha del lunes de cada columna)
+    const weekLabels = weeks.map(w => {
+        const first = w.find(x => x !== null);
+        if (!first) return '';
+        const d = first.date;
+        // Buscar el lunes de esa semana
+        const mon = new Date(d);
+        mon.setDate(d.getDate() - first.dow);
+        return mon.getDate() + '/' + String(mon.getMonth()+1).padStart(2,'0');
+    });
+
+    return `
+    <div style="overflow-x:auto;padding-bottom:4px;">
+        <div style="display:inline-flex;gap:0;min-width:max-content;">
+
+            <!-- Etiquetas de día (L-D) -->
+            <div style="display:flex;flex-direction:column;justify-content:flex-end;
+                        margin-right:6px;padding-bottom:0;gap:3px;margin-top:20px;">
+                ${DAYS_LABEL.map(l => `
+                    <div style="height:20px;width:16px;display:flex;align-items:center;
+                                justify-content:flex-end;font-size:.52rem;color:#4a4a5a;
+                                font-family:'DM Sans',sans-serif;letter-spacing:.05em;">
+                        ${l}
                     </div>`).join('')}
-                </div>
+            </div>
+
+            <!-- Columnas de semanas -->
+            <div style="display:flex;gap:3px;align-items:flex-end;">
+                ${weeks.map((w, wi) => `
+                    <div style="display:flex;flex-direction:column;gap:0;">
+                        <!-- Etiqueta de semana -->
+                        <div style="height:18px;font-size:.52rem;color:#4a4a5a;
+                                    font-family:'DM Sans',sans-serif;
+                                    white-space:nowrap;margin-bottom:2px;
+                                    display:flex;align-items:center;">
+                            ${wi % 2 === 0 ? weekLabels[wi] : ''}
+                        </div>
+                        <!-- Celdas de días -->
+                        ${Array(7).fill(0).map((_,di) => {
+                            const cell = w[di];
+                            if (!cell) return `<div style="width:20px;height:20px;margin-bottom:3px;opacity:0;"></div>`;
+                            const colors = ['#0d0d14','rgba(212,43,43,.2)','rgba(212,43,43,.42)','rgba(212,43,43,.68)','#d42b2b'];
+                            const borders = ['#1c1c26','rgba(212,43,43,.15)','rgba(212,43,43,.3)','rgba(212,43,43,.5)','rgba(212,43,43,.8)'];
+                            return `<div title="${cell.iso}: ${cell.v} cita${cell.v!==1?'s':''}"
+                                        onmouseenter="showTip(event,'',' ${cell.v} cita${cell.v!==1?'s':''} — ${cell.iso}')"
+                                        onmouseleave="hideTip()"
+                                        style="width:20px;height:20px;margin-bottom:3px;border-radius:4px;
+                                               background:${colors[cell.level]};border:1px solid ${borders[cell.level]};
+                                               transition:transform .15s,box-shadow .15s;cursor:default;"
+                                        onmouseover="this.style.transform='scale(1.35)';this.style.zIndex='10';this.style.boxShadow='0 2px 8px rgba(0,0,0,.5)';"
+                                        onmouseout="this.style.transform='';this.style.zIndex='';this.style.boxShadow='';"></div>`;
+                        }).join('')}
+                    </div>`).join('')}
             </div>
         </div>
-        <div style="display:flex;align-items:center;gap:.4rem;margin-top:.75rem;justify-content:flex-end;">
-            <span style="font-size:.6rem;color:#7a7880;">Menos</span>
-            ${[0,1,2,3,4].map(l=>`<div class="hm-cell" data-v="${l}" style="width:14px;height:14px;flex-shrink:0;border-radius:3px;"></div>`).join('')}
-            <span style="font-size:.6rem;color:#7a7880;">Más</span>
+
+        <!-- Leyenda -->
+        <div style="display:flex;align-items:center;gap:.5rem;margin-top:.85rem;justify-content:flex-end;">
+            <span style="font-size:.6rem;color:#4a4a5a;font-family:'DM Sans',sans-serif;">Menos</span>
+            ${[0,1,2,3,4].map(l => {
+                const cs = ['#0d0d14','rgba(212,43,43,.2)','rgba(212,43,43,.42)','rgba(212,43,43,.68)','#d42b2b'];
+                const bs = ['#1c1c26','rgba(212,43,43,.15)','rgba(212,43,43,.3)','rgba(212,43,43,.5)','rgba(212,43,43,.8)'];
+                return `<div style="width:14px;height:14px;border-radius:3px;background:${cs[l]};border:1px solid ${bs[l]};flex-shrink:0;"></div>`;
+            }).join('')}
+            <span style="font-size:.6rem;color:#4a4a5a;font-family:'DM Sans',sans-serif;">Más</span>
         </div>
     </div>`;
 }
 
+// Exponer función de abrir modal de barbero globalmente
+window._openBarberoModal = function(iniciales) {
+    const barbers = window._statsBarberos || [];
+    const b = barbers.find(x => x.iniciales === iniciales);
+    if (b) openBarberoModal(b, barbers);
+};
+
 })();
-</script>
-
-
-<!-- ================================================================
-     CONFIG JAVASCRIPT
-================================================================ -->
-<script>
-const CFG_API = './api/settings.php';
-
-let cfgState = { autoAceptar:'no', autoAceptarHasta:'', diasBloqueados:[] };
-let mcDate = new Date();
-let rangeMode = false, rangeStart = null;
-let pendingDays = [], pendingUnblock = [];
-
-function openCfg() {
-    document.getElementById('cfg-overlay').classList.add('open');
-    document.getElementById('cfg-panel').classList.add('open');
-    loadSettings();
-}
-function closeCfg() {
-    document.getElementById('cfg-overlay').classList.remove('open');
-    document.getElementById('cfg-panel').classList.remove('open');
-}
-document.addEventListener('keydown', e => {
-    if (e.key==='Escape') {
-        if (document.getElementById('stats-panel').classList.contains('open')) closeStats();
-        if (document.getElementById('cfg-panel').classList.contains('open')) closeCfg();
-    }
-});
-
-function switchTab(tab) {
-    document.querySelectorAll('.cfg-tab').forEach((t,i)=>t.classList.toggle('active',(i===0&&tab==='auto')||(i===1&&tab==='vac')));
-    document.getElementById('pane-auto').classList.toggle('active', tab==='auto');
-    document.getElementById('pane-vac').classList.toggle('active',  tab==='vac');
-}
-
-async function loadSettings() {
-    try {
-        const r = await fetch(CFG_API);
-        const j = await r.json();
-        if (!j.ok) return;
-        cfgState.autoAceptar      = j.data.auto_aceptar;
-        cfgState.autoAceptarHasta = j.data.auto_aceptar_hasta;
-        cfgState.diasBloqueados   = j.data.dias_bloqueados || [];
-        pendingDays = []; pendingUnblock = [];
-        applyAutoState(); renderBlockedList(); renderMiniCal(); updateSaveBtn();
-    } catch(e) { console.warn('No se pudo cargar configuración:', e); }
-}
-
-function applyAutoState() {
-    const v=cfgState.autoAceptar, toggle=document.getElementById('auto-toggle'),
-          chip=document.getElementById('auto-chip'), chipTxt=document.getElementById('auto-chip-text'),
-          section=document.getElementById('alcance-section'), isOn=v!=='no';
-    toggle.checked=isOn; section.style.display=isOn?'block':'none';
-    if(isOn){
-        chip.className='auto-estado-chip on';
-        const labels={hoy:'Activo — solo hoy',semana:'Activo — esta semana',mes:'Activo — este mes',siempre:'Activo — siempre'};
-        chipTxt.textContent=labels[v]||'Activo';
-        document.querySelectorAll('.alcance-btn').forEach(b=>b.classList.toggle('selected',b.dataset.val===v));
-        updateAlcanceDesc(v);
-    } else { chip.className='auto-estado-chip off'; chipTxt.textContent='Desactivado'; }
-}
-
-function onAutoToggle() {
-    const isOn=document.getElementById('auto-toggle').checked;
-    document.getElementById('alcance-section').style.display=isOn?'block':'none';
-    if(!isOn){document.getElementById('auto-chip').className='auto-estado-chip off';document.getElementById('auto-chip-text').textContent='Desactivado';}
-    else{const sel=document.querySelector('.alcance-btn.selected');updateAlcanceDesc(sel?sel.dataset.val:'siempre');}
-}
-
-function selectAlcance(btn) {
-    document.querySelectorAll('.alcance-btn').forEach(b=>b.classList.remove('selected'));
-    btn.classList.add('selected'); updateAlcanceDesc(btn.dataset.val);
-}
-
-function updateAlcanceDesc(v) {
-    const descs={hoy:'Las reservas de <strong>hoy</strong> se aceptarán automáticamente.',semana:'Las reservas de <strong>los próximos 7 días</strong> se aceptarán automáticamente.',mes:'Las reservas del <strong>próximo mes</strong> se aceptarán automáticamente.',siempre:'Las reservas se aceptarán automáticamente <strong>sin límite de tiempo</strong>.'};
-    document.getElementById('alcance-desc').innerHTML=descs[v]||'';
-}
-
-async function saveAutoAceptar() {
-    const isOn=document.getElementById('auto-toggle').checked;
-    const sel=document.querySelector('.alcance-btn.selected');
-    const val=isOn?(sel?sel.dataset.val:'siempre'):'no';
-    const btn=document.getElementById('btn-save-auto');
-    btn.disabled=true; btn.textContent='Guardando…';
-    try {
-        const r=await fetch(CFG_API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({accion:'auto_aceptar',valor:val})});
-        const j=await r.json();
-        if(j.ok){cfgState.autoAceptar=val;applyAutoState();showCfgStatus('auto-status','ok','✓ Configuración guardada correctamente.');}
-        else showCfgStatus('auto-status','err','✕ '+(j.error||'Error al guardar.'));
-    } catch(e){showCfgStatus('auto-status','err','✕ Sin conexión con el servidor.');}
-    btn.disabled=false; btn.textContent='Guardar configuración';
-}
-
-function renderMiniCal() {
-    const grid=document.getElementById('mc-grid'), title=document.getElementById('mc-title');
-    if(!grid) return;
-    const MONTHS=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-    const y=mcDate.getFullYear(), m=mcDate.getMonth();
-    title.textContent=`${MONTHS[m]} ${y}`;
-    const today=new Date(); today.setHours(0,0,0,0);
-    const first=new Date(y,m,1).getDay(), offset=(first+6)%7, daysInM=new Date(y,m+1,0).getDate();
-    const blockedFechas=cfgState.diasBloqueados.map(d=>d.fecha);
-    const pendingFechas=pendingDays.map(d=>d.fecha);
-    const unblockFechas=pendingUnblock;
-    let html='';
-    for(let i=0;i<offset;i++) html+=`<div class="mini-cell mc-empty"></div>`;
-    for(let d=1;d<=daysInM;d++){
-        const dt=new Date(y,m,d), iso=fmtDate(dt);
-        const isPast=dt<today, isToday=dt.getTime()===today.getTime();
-        const isBlockedInDB=blockedFechas.includes(iso);
-        const isPending=pendingFechas.includes(iso);
-        const isUnblocking=unblockFechas.includes(iso);
-        let cls='mini-cell';
-        if(isPast) cls+=' mc-disabled';
-        else if(isPending) cls+=' mc-pending';
-        else if(isUnblocking) cls+=' mc-unblocking';
-        else if(isBlockedInDB) cls+=' mc-blocked';
-        else if(isToday) cls+=' mc-today';
-        const onclick=isPast?'':`onclick="mcSelectDay('${iso}')"`;
-        let title='';
-        if(isPending) title=`title="Pendiente — clic para quitar"`;
-        if(isUnblocking) title=`title="Se desbloqueará al guardar"`;
-        if(isBlockedInDB&&!isUnblocking){const mot=cfgState.diasBloqueados.find(x=>x.fecha===iso)?.motivo||'';title=`title="${mot?mot+' — ':''}Clic para desbloquear"`;}
-        html+=`<div class="${cls}" ${onclick} ${title}>${d}</div>`;
-    }
-    grid.innerHTML=html;
-}
-
-function mcNav(dir){mcDate.setMonth(mcDate.getMonth()+dir);renderMiniCal();}
-
-function mcSelectDay(iso) {
-    const blockedFechas=cfgState.diasBloqueados.map(d=>d.fecha);
-    const pendingFechas=pendingDays.map(d=>d.fecha);
-    if(rangeMode){
-        if(!rangeStart){rangeStart=iso;document.getElementById('range-hint').innerHTML=`📅 Rango activo: <strong>${iso}</strong> → selecciona el día final.`;}
-        else{addRangeToPending(rangeStart,iso);rangeStart=null;toggleRangeMode();}
-        renderMiniCal();updateSaveBtn();return;
-    }
-    if(pendingFechas.includes(iso)) pendingDays.splice(pendingDays.findIndex(d=>d.fecha===iso),1);
-    else if(pendingUnblock.includes(iso)) pendingUnblock.splice(pendingUnblock.indexOf(iso),1);
-    else if(blockedFechas.includes(iso)) pendingUnblock.push(iso);
-    else{const motivo=document.getElementById('vac-motivo').value.trim()||'Vacaciones';pendingDays.push({fecha:iso,motivo});}
-    renderMiniCal();updateSaveBtn();
-}
-
-function addRangeToPending(desde,hasta){
-    const [d,h]=desde<=hasta?[desde,hasta]:[hasta,desde];
-    const motivo=document.getElementById('vac-motivo').value.trim()||'Vacaciones';
-    const cur=new Date(d+'T00:00:00'), end=new Date(h+'T00:00:00');
-    const existing=[...pendingDays.map(p=>p.fecha),...cfgState.diasBloqueados.map(b=>b.fecha)];
-    while(cur<=end){const iso=fmtDate(cur);if(!existing.includes(iso))pendingDays.push({fecha:iso,motivo});cur.setDate(cur.getDate()+1);}
-}
-
-function toggleRangeMode(){
-    rangeMode=!rangeMode;rangeStart=null;
-    const hint=document.getElementById('range-hint'),btn=document.getElementById('btn-rango');
-    hint.classList.toggle('visible',rangeMode);btn.style.background=rangeMode?'rgba(201,168,76,.25)':'';
-    if(rangeMode) hint.innerHTML='📅 Modo rango: selecciona el <strong>primer día</strong> y luego el <strong>último</strong>.';
-    renderMiniCal();
-}
-
-function clearPending(){pendingDays=[];pendingUnblock=[];rangeStart=null;if(rangeMode)toggleRangeMode();renderMiniCal();updateSaveBtn();}
-
-function updateSaveBtn(){
-    const btn=document.getElementById('btn-save-days');
-    const total=pendingDays.length+pendingUnblock.length;
-    if(!btn) return;
-    if(total===0){btn.textContent='Guardar días bloqueados';btn.disabled=true;}
-    else{
-        const parts=[];
-        if(pendingDays.length) parts.push(`+${pendingDays.length} bloquear`);
-        if(pendingUnblock.length) parts.push(`-${pendingUnblock.length} desbloquear`);
-        btn.textContent=`Guardar (${parts.join(', ')})`;btn.disabled=false;
-    }
-}
-
-async function saveDays(){
-    const btn=document.getElementById('btn-save-days');
-    btn.disabled=true;btn.textContent='Guardando…';
-    let errors=0;
-    for(const{fecha,motivo}of pendingDays){try{const r=await fetch(CFG_API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({accion:'bloquear_dia',fecha,motivo})});if(!(await r.json()).ok)errors++;}catch{errors++;}}
-    for(const fecha of pendingUnblock){try{const r=await fetch(CFG_API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({accion:'desbloquear_dia',fecha})});if(!(await r.json()).ok)errors++;}catch{errors++;}}
-    if(errors===0) showCfgStatus('vac-status','ok','✓ Cambios guardados correctamente.');
-    else showCfgStatus('vac-status','err',`⚠ ${errors} operación(es) fallaron. Reintenta.`);
-    await loadSettings();
-}
-
-async function desbloquearDia(fecha){
-    try{
-        const r=await fetch(CFG_API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({accion:'desbloquear_dia',fecha})});
-        const j=await r.json();
-        if(j.ok){showCfgStatus('vac-status','ok',`✓ Día ${fecha} desbloqueado.`);await loadSettings();}
-        else showCfgStatus('vac-status','err','✕ '+(j.error||'Error.'));
-    }catch{showCfgStatus('vac-status','err','✕ Sin conexión.');}
-}
-
-function renderBlockedList(){
-    const list=document.getElementById('blocked-list');
-    if(!list) return;
-    if(!cfgState.diasBloqueados.length){list.innerHTML=`<div class="empty-blocked">No hay días bloqueados</div>`;return;}
-    const DIAS=['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
-    list.innerHTML=cfgState.diasBloqueados.map(d=>{
-        const dt=new Date(d.fecha+'T00:00:00');
-        const fmt=`${DIAS[dt.getDay()]} ${dt.getDate()}/${String(dt.getMonth()+1).padStart(2,'0')}/${dt.getFullYear()}`;
-        return `<div class="blocked-item">
-            <div class="blocked-item-info"><span class="blocked-fecha">📅 ${fmt}</span><span class="blocked-motivo">${escHtml(d.motivo)}</span></div>
-            <button class="blocked-del" onclick="desbloquearDia('${d.fecha}')" title="Desbloquear">✕</button>
-        </div>`;
-    }).join('');
-}
-
-function fmtDate(d){return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;}
-function escHtml(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
-function showCfgStatus(id,type,msg){
-    const el=document.getElementById(id);if(!el)return;
-    el.className=`cfg-status ${type} visible`;el.textContent=msg;
-    setTimeout(()=>el.classList.remove('visible'),4000);
-}
 </script>
 
 </body>
