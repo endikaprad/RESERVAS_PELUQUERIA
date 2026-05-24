@@ -72,24 +72,15 @@ try {
     }
 
     // ── Determinar si esta reserva se auto-acepta ─────────────
-    // BUG FIX 2: La lógica anterior comparaba la FECHA DE LA CITA con hoy,
-    // por lo que 'hoy' solo funcionaba si el cliente reservaba para ese mismo día.
-    // La intención correcta es: si el admin activó auto-aceptar y HOY (día en que
-    // se recibe la reserva) está dentro del rango configurado → auto-aceptar.
-    // Para ello usamos auto_aceptar_hasta guardado en BD (calculado en settings.php
-    // con la fecha en que el admin activó el modo) y comparamos con la fecha actual.
     $estadoFinal = 'pendiente';
 
     if ($autoAceptar !== 'no' && $autoAceptarHasta !== '') {
-        $hoyStr   = $ahora->format('Y-m-d'); // fecha actual en Madrid
-        $hastaStr = $autoAceptarHasta;        // fecha límite guardada en BD
-
-        // Si hoy <= hasta → la reserva entra en el periodo de auto-aceptación
+        $hoyStr   = $ahora->format('Y-m-d');
+        $hastaStr = $autoAceptarHasta;
         if ($hoyStr <= $hastaStr) {
             $estadoFinal = 'aceptada';
         }
     } elseif ($autoAceptar === 'siempre') {
-        // Salvaguarda: si por alguna razón el campo hasta no está pero el modo es 'siempre'
         $estadoFinal = 'aceptada';
     }
 
@@ -125,6 +116,26 @@ try {
         ? "<tr><td style='padding:10px 0;color:#7a7880;font-size:13px;'>Notas</td>
            <td style='padding:10px 0;color:#f0ece3;font-size:13px;'>" . htmlspecialchars($notas) . "</td></tr>"
         : '';
+
+    // URL de cancelación (única para este token)
+    $urlCancelar = $baseUrl . '/backend/api/cancel-booking.php?token=' . $token;
+
+    // Bloque HTML reutilizable del botón cancelar
+    $cancelBox = "
+      <div style='background:#18181f;border:1px solid #252530;border-radius:8px;padding:16px;margin-bottom:24px;text-align:center;'>
+        <p style='color:#7a7880;font-size:13px;margin:0 0 12px;'>
+          ¿Necesitas cancelar tu reserva?
+        </p>
+        <a href='{$urlCancelar}'
+           style='display:inline-block;background:#374151;color:#f0ece3;text-decoration:none;
+                  padding:10px 24px;border-radius:6px;font-size:13px;font-weight:600;
+                  letter-spacing:0.08em;text-transform:uppercase;border:1px solid #4b5563;'>
+          Cancelar reserva
+        </a>
+        <p style='color:#52525b;font-size:11px;margin:10px 0 0;'>
+          Solo disponible hasta las 23:59 del día anterior a tu cita.
+        </p>
+      </div>";
 
     // ================================================================
     //  EMAIL AL PELUQUERO
@@ -241,12 +252,7 @@ try {
         <tr><td style='padding:10px 0;color:#7a7880;font-size:13px;'>Hora</td>
             <td style='padding:10px 0;color:#22c55e;font-size:16px;font-weight:700;'>{$hora}</td></tr>
       </table>
-      <div style='background:#18181f;border:1px solid #252530;border-radius:8px;padding:16px;margin-bottom:24px;text-align:center;'>
-        <p style='color:#7a7880;font-size:13px;margin:0;'>
-          ¿Necesitas cancelar? Llámanos al<br>
-          <a href='tel:+34944000000' style='color:#d42b2b;font-size:15px;font-weight:600;text-decoration:none;'>+34 944 000 000</a>
-        </p>
-      </div>
+      {$cancelBox}
     </div>
     <div style='background:#18181f;padding:16px 32px;text-align:center;'>
       <p style='margin:0;color:#7a7880;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;'>
@@ -282,12 +288,7 @@ try {
         <tr><td style='padding:10px 0;color:#7a7880;font-size:13px;'>Hora</td>
             <td style='padding:10px 0;color:#c9a84c;font-size:16px;font-weight:700;'>{$hora}</td></tr>
       </table>
-      <div style='background:#18181f;border:1px solid #252530;border-radius:8px;padding:16px;margin-bottom:24px;text-align:center;'>
-        <p style='color:#7a7880;font-size:13px;margin:0;'>
-          ¿Necesitas cancelar? Llámanos al<br>
-          <a href='tel:+34944000000' style='color:#d42b2b;font-size:15px;font-weight:600;text-decoration:none;'>+34 944 000 000</a>
-        </p>
-      </div>
+      {$cancelBox}
     </div>
     <div style='background:#18181f;padding:16px 32px;text-align:center;'>
       <p style='margin:0;color:#7a7880;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;'>
