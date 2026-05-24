@@ -3690,20 +3690,28 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
             function buildBarChart(items, color) {
                 return buildBarChartTall(items, color);
             }
-
+            
             function buildBarChartTall(items, color) {
                 const maxV = Math.max(...items.map(x => x.value), 1);
-                let html = '<div class="bar-chart">';
-                html += '<div class="bar-chart__baseline" style="position:absolute;bottom:36px;left:0;right:0;height:1px;background:rgba(245,240,232,0.06);"></div>';
+                const chartH = 180;
+                const barMaxH = 120;
+                const padBottom = 32;
+                const padTop = 28;
+
+                let html = `<div style="display:flex;align-items:flex-end;gap:6px;height:${chartH}px;padding:${padTop}px 0 ${padBottom}px;position:relative;box-sizing:border-box;">`;
+                html += `<div style="position:absolute;bottom:${padBottom}px;left:0;right:0;height:1px;background:rgba(245,240,232,0.06);"></div>`;
+
                 items.forEach((item, i) => {
-                    const hPct = Math.max(Math.round(item.value / maxV * 100), 2);
+                    const h = Math.max(Math.round(item.value / maxV * barMaxH), 3);
                     html += `
-        <div class="bar-item" onmouseenter="showTip(event,'','${item.tip||item.value}')" onmouseleave="hideTip()">
-            <div style="font-size:.7rem;color:#a0a0b0;margin-bottom:4px;line-height:1;text-align:center;">${item.value > 0 ? item.value : ''}</div>
-            <div class="bar-fill" style="height:${hPct}%;background:${color};--bar-delay:${i*0.07}s;max-height:130px;"></div>
-            <span class="bar-label">${item.label}</span>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;position:relative;height:100%;justify-content:flex-end;">
+            <div style="font-size:.7rem;color:#a0a0b0;font-weight:500;margin-bottom:4px;line-height:1;">${item.value || ''}</div>
+            <div style="width:80%;border-radius:4px 4px 0 0;background:${color};height:${h}px;min-height:3px;transition:height .4s;"
+                 onmouseenter="showTip(event,'','${item.tip||item.value}')" onmouseleave="hideTip()"></div>
+            <div style="position:absolute;bottom:-${padBottom - 6}px;font-size:.75rem;color:#7a7880;white-space:nowrap;text-align:center;">${item.label}</div>
         </div>`;
                 });
+
                 html += '</div>';
                 return html;
             }
