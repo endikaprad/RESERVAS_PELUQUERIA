@@ -539,7 +539,6 @@ $mesesES = ['','ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov'
 
         /* ================================================================
         STATS FIXES — CSS adicional para admin.php
-        Añadir dentro del bloque <style> existente, antes del cierre </style>
         ================================================================ */
 
         /* FIX 4: Tasa de aceptación — meta items en fila horizontal en PC */
