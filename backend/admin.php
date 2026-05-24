@@ -3949,25 +3949,52 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
 
             function buildServicesCardV2(svcs, kpi) {
                 const maxTotal = Math.max(...svcs.map(s => +s.total), 1);
+                const maxAcept = Math.max(...svcs.map(s => +s.citas_aceptadas || 0), 1);
+                const maxPerd = Math.max(...svcs.map(s => +s.citas_perdidas || 0), 1);
+
                 let items = '';
                 svcs.forEach((s, i) => {
-                    const pct = Math.round(+s.total / maxTotal * 100);
+                    const pctAcept = Math.round((+s.citas_aceptadas || 0) / maxAcept * 100);
+                    const pctPerd = Math.round((+s.citas_perdidas || 0) / maxPerd * 100);
+                    const ingOk = (+s.ingresos || 0).toFixed(0);
+                    const ingLost = (+s.ingresos_perdidos || 0).toFixed(0);
+                    const hasLoss = +ingLost > 0;
+
                     items += `
-                        <div class="svc-stat-item">
-                            <div class="svc-stat-rank">${i + 1}</div>
-                            <div class="svc-stat-info">
-                                <div class="svc-stat-name">${s.nombre}</div>
-                                <div class="svc-stat-bar">
-                                    <div class="svc-stat-bar-fill" style="--svc-w:${pct}%;--svc-delay:${i * 0.1}s;"></div>
-                                </div>
-                            </div>
-                            <div class="svc-stat-meta">
-                                <div class="svc-stat-count">${s.total} citas</div>
-                                <div class="svc-stat-euros">${(+s.ingresos).toFixed(0)} €</div>
-                            </div>
-                        </div>`;
+        <div class="svc-stat-item" style="align-items:flex-start;padding:.85rem 0;border-bottom:1px solid #1c1c26;">
+            <div class="svc-stat-rank">${i + 1}</div>
+            <div class="svc-stat-info" style="flex:1;min-width:0;">
+                <div class="svc-stat-name" style="margin-bottom:.55rem;">${s.nombre}</div>
+                <div style="display:flex;flex-direction:column;gap:.35rem;">
+                    <div style="display:flex;align-items:center;gap:.6rem;">
+                        <span style="font-size:.63rem;letter-spacing:.08em;text-transform:uppercase;color:#22c55e;width:68px;flex-shrink:0;">Aceptadas</span>
+                        <div style="flex:1;height:8px;background:#1c1c26;border-radius:4px;overflow:hidden;">
+                            <div class="svc-stat-bar-fill" style="--svc-w:${pctAcept}%;--svc-delay:${i*0.1}s;height:100%;border-radius:4px;background:#22c55e;"></div>
+                        </div>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:.6rem;">
+                        <span style="font-size:.63rem;letter-spacing:.08em;text-transform:uppercase;color:#d42b2b;width:68px;flex-shrink:0;">Denegadas</span>
+                        <div style="flex:1;height:8px;background:#1c1c26;border-radius:4px;overflow:hidden;">
+                            <div class="svc-stat-bar-fill" style="--svc-w:${pctPerd}%;--svc-delay:${i*0.12+0.05}s;height:100%;border-radius:4px;background:#d42b2b;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div style="flex-shrink:0;text-align:right;min-width:70px;padding-left:.75rem;">
+                <div style="font-size:.82rem;color:#f0ece3;font-weight:500;margin-bottom:.15rem;">${s.total} cita${s.total!=1?'s':''}</div>
+                <div style="font-size:.78rem;color:#22c55e;font-weight:600;">${ingOk} €</div>
+                ${hasLoss
+                    ? `<div style="font-size:.73rem;color:#d42b2b;text-decoration:line-through;opacity:.85;">-${ingLost} €</div>`
+                    : `<div style="font-size:.72rem;color:#3a3a48;">sin pérdidas</div>`
+                }
+            </div>
+        </div>`;
                 });
-                return `<div class="stats-card"><div class="stats-card-title">Servicios más reservados</div><div class="svc-stat-list">${items}</div></div>`;
+
+                return `<div class="stats-card" style="padding-bottom:.25rem;">
+        <div class="stats-card-title">Servicios más reservados</div>
+        <div style="display:flex;flex-direction:column;">${items}</div>
+    </div>`;
             }
 
             // Barber card (igual que antes)

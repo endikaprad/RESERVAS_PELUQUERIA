@@ -102,7 +102,10 @@ try {
     $stmt = $db->query("
         SELECT s.nombre, s.precio,
                COUNT(*) AS total,
-               SUM(CASE WHEN r.estado = 'aceptada' THEN s.precio ELSE 0 END) AS ingresos
+               SUM(CASE WHEN r.estado = 'aceptada' THEN s.precio ELSE 0 END) AS ingresos,
+               SUM(CASE WHEN r.estado IN ('denegada','cancelada') THEN s.precio ELSE 0 END) AS ingresos_perdidos,
+               SUM(CASE WHEN r.estado = 'aceptada' THEN 1 ELSE 0 END) AS citas_aceptadas,
+               SUM(CASE WHEN r.estado IN ('denegada','cancelada') THEN 1 ELSE 0 END) AS citas_perdidas
         FROM reservas r
         JOIN servicios s ON s.id = r.servicio_id
         GROUP BY s.id, s.nombre, s.precio
