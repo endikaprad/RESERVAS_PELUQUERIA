@@ -3947,6 +3947,29 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
                 return html;
             }
 
+            function buildServicesCardV2(svcs, kpi) {
+                const maxTotal = Math.max(...svcs.map(s => +s.total), 1);
+                let items = '';
+                svcs.forEach((s, i) => {
+                    const pct = Math.round(+s.total / maxTotal * 100);
+                    items += `
+                        <div class="svc-stat-item">
+                            <div class="svc-stat-rank">${i + 1}</div>
+                            <div class="svc-stat-info">
+                                <div class="svc-stat-name">${s.nombre}</div>
+                                <div class="svc-stat-bar">
+                                    <div class="svc-stat-bar-fill" style="--svc-w:${pct}%;--svc-delay:${i * 0.1}s;"></div>
+                                </div>
+                            </div>
+                            <div class="svc-stat-meta">
+                                <div class="svc-stat-count">${s.total} citas</div>
+                                <div class="svc-stat-euros">${(+s.ingresos).toFixed(0)} €</div>
+                            </div>
+                        </div>`;
+                });
+                return `<div class="stats-card"><div class="stats-card-title">Servicios más reservados</div><div class="svc-stat-list">${items}</div></div>`;
+            }
+
             // Barber card (igual que antes)
             function barberCard(b, maxIng, i) {
                 const pct = maxIng > 0 ? Math.round(+b.ingresos / maxIng * 100) : 0;
