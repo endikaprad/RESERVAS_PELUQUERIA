@@ -56,10 +56,10 @@ try {
         ]);
     }
 
-    // BUG FIX 1: Se incluye también 'denegada' para que los slots con reservas
-    // denegadas sigan apareciendo como ocupados/tachados en el calendario de reservas.
-    // Antes solo se filtraba 'pendiente' y 'aceptada', lo que liberaba visualmente
-    // el hueco de una reserva denegada aunque el barbero ya no pueda aceptarla.
+    // FIX BUG 1: 'cancelada' se elimina de los estados bloqueantes.
+    // Una reserva cancelada libera el hueco — solo 'pendiente' y 'aceptada'
+    // deben bloquear el slot. 'denegada' también se mantiene bloqueada
+    // para evitar que el barbero acepte huecos que ya gestionó.
     $stmt = $db->prepare(
         "SELECT TIME_FORMAT(hora, '%H:%i') AS hora
          FROM reservas
