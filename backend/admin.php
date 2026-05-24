@@ -155,7 +155,9 @@ $mesesES = ['','ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov'
 
         .header-actions{display:flex;align-items:center;gap:.6rem;}
         .settings-btn{width:36px;height:36px;border-radius:50%;background:transparent;border:1px solid #252530;color:#7a7880;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:1rem;transition:all .3s;flex-shrink:0;}
-        .settings-btn:hover{border-color:#d42b2b;color:#d42b2b;transform:rotate(45deg);background:rgba(212,43,43,.06);}
+        .settings-btn:hover{border-color:#d42b2b;color:#d42b2b;background:rgba(212,43,43,.06);}
+        .stats-trigger-btn{width:36px;height:36px;border-radius:50%;background:transparent;border:1px solid #252530;color:#7a7880;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:.9rem;transition:all .3s;flex-shrink:0;}
+        .stats-trigger-btn:hover{border-color:#c9a84c;color:#c9a84c;background:rgba(201,168,76,.06);}
 
         /* ── BODY ── */
         .admin-body{padding:1rem;max-width:1300px;margin:0 auto;}
@@ -277,7 +279,7 @@ $mesesES = ['','ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov'
 
         /* ================================================================
            CONFIG PANEL
-           ================================================================ */
+        ================================================================ */
         .cfg-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(6px);z-index:999;opacity:0;pointer-events:none;transition:opacity .3s ease;}
         .cfg-overlay.open{opacity:1;pointer-events:all;}
 
@@ -329,7 +331,6 @@ $mesesES = ['','ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov'
         .cfg-save-btn:hover{transform:translateY(-1px);box-shadow:0 8px 24px rgba(212,43,43,.4);}
         .cfg-save-btn:disabled{opacity:.5;cursor:not-allowed;transform:none;}
 
-        /* Mini calendario */
         .mini-cal-wrap{background:#18181f;border:1px solid #252530;border-radius:10px;padding:1.1rem;margin-bottom:1rem;}
         .mini-cal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;}
         .mini-cal-title{font-size:.9rem;font-weight:600;}
@@ -390,6 +391,151 @@ $mesesES = ['','ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov'
         .cfg-status.visible{opacity:1;}
         .cfg-status.ok{background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.25);color:#22c55e;}
         .cfg-status.err{background:rgba(212,43,43,.1);border:1px solid rgba(212,43,43,.25);color:#d42b2b;}
+
+        /* ================================================================
+           STATS PANEL
+        ================================================================ */
+        .stats-overlay{position:fixed;inset:0;background:rgba(0,0,0,.9);backdrop-filter:blur(12px);z-index:1100;opacity:0;pointer-events:none;transition:opacity .4s ease;}
+        .stats-overlay.open{opacity:1;pointer-events:all;}
+
+        .stats-panel{position:fixed;inset:0;overflow-y:auto;z-index:1101;opacity:0;transform:translateY(28px);pointer-events:none;transition:opacity .45s cubic-bezier(.16,1,.3,1),transform .45s cubic-bezier(.16,1,.3,1);}
+        .stats-panel.open{opacity:1;transform:translateY(0);pointer-events:all;}
+
+        .stats-inner{max-width:1200px;margin:0 auto;padding:2rem 1.5rem 4rem;}
+
+        .stats-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:2.5rem;padding-bottom:1.25rem;border-bottom:1px solid rgba(245,240,232,.08);}
+        .stats-title{font-family:'Playfair Display',serif;font-size:clamp(1.4rem,3vw,1.9rem);font-weight:700;display:flex;align-items:center;gap:.75rem;}
+        .stats-title-icon{width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,#d42b2b,#a81e1e);display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0;box-shadow:0 4px 16px rgba(212,43,43,.35);}
+        .stats-close{width:40px;height:40px;border-radius:50%;background:rgba(245,240,232,.06);border:1px solid rgba(245,240,232,.12);color:#f0ece3;cursor:pointer;font-size:1rem;display:flex;align-items:center;justify-content:center;transition:all .2s;}
+        .stats-close:hover{background:rgba(212,43,43,.2);border-color:#d42b2b;color:#d42b2b;}
+
+        .stats-loading{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:50vh;gap:1.5rem;color:#7a7880;font-size:.85rem;letter-spacing:.1em;text-transform:uppercase;}
+        .stats-spinner{width:48px;height:48px;border-radius:50%;border:2px solid rgba(212,43,43,.15);border-top-color:#d42b2b;animation:statsSpin .9s linear infinite;}
+        @keyframes statsSpin{to{transform:rotate(360deg);}}
+
+        .stats-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:1rem;margin-bottom:2rem;}
+        .kpi-card{background:#111119;border:1px solid #252530;border-radius:14px;padding:1.25rem 1.4rem;position:relative;overflow:hidden;transition:transform .25s,border-color .25s,box-shadow .25s;cursor:default;}
+        .kpi-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--kpi-accent,#d42b2b);transform:scaleX(0);transform-origin:left;transition:transform .6s cubic-bezier(.16,1,.3,1);}
+        .kpi-card.visible::before{transform:scaleX(1);}
+        .kpi-card:hover{transform:translateY(-3px);border-color:var(--kpi-accent,#d42b2b);box-shadow:0 8px 32px rgba(0,0,0,.35);}
+        .kpi-label{font-size:.6rem;letter-spacing:.2em;text-transform:uppercase;color:#7a7880;margin-bottom:.5rem;}
+        .kpi-value{font-family:'Playfair Display',serif;font-size:2rem;font-weight:700;color:var(--kpi-accent,#d42b2b);line-height:1;}
+        .kpi-sub{font-size:.7rem;color:#7a7880;margin-top:.35rem;}
+        .kpi-badge{position:absolute;top:.85rem;right:.85rem;font-size:.9rem;opacity:.18;}
+
+        .stats-section{margin-bottom:2rem;}
+        .stats-section-label{font-size:.6rem;letter-spacing:.22em;text-transform:uppercase;color:#d42b2b;margin-bottom:1rem;display:flex;align-items:center;gap:.5rem;}
+        .stats-section-label::before{content:'';width:20px;height:1px;background:#d42b2b;}
+
+        .stats-grid-2{display:grid;grid-template-columns:1fr 1fr;gap:1rem;}
+        .stats-grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;}
+        .stats-card{background:#111119;border:1px solid #252530;border-radius:14px;padding:1.5rem;}
+        .stats-card-title{font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;color:#7a7880;margin-bottom:1.25rem;}
+
+        .bar-chart{display:flex;align-items:flex-end;gap:6px;height:120px;padding-bottom:24px;position:relative;}
+        .bar-chart::after{content:'';position:absolute;bottom:24px;left:0;right:0;height:1px;background:rgba(245,240,232,.06);}
+        .bar-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;position:relative;}
+        .bar-fill{width:100%;border-radius:4px 4px 0 0;min-height:3px;transform:scaleY(0);transform-origin:bottom;transition:transform .7s cubic-bezier(.34,1.56,.64,1);transition-delay:var(--bar-delay,0s);position:relative;overflow:hidden;}
+        .bar-fill::after{content:'';position:absolute;inset:0;background:linear-gradient(to top,rgba(255,255,255,0),rgba(255,255,255,.12));pointer-events:none;}
+        .bar-fill.animated{transform:scaleY(1);}
+        .bar-label{font-size:.55rem;color:#7a7880;text-align:center;position:absolute;bottom:0;white-space:nowrap;}
+        .bar-item:hover .bar-tooltip{opacity:1;}
+        .bar-tooltip{position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);background:#1c1c26;border:1px solid #252530;border-radius:6px;padding:.3rem .6rem;font-size:.7rem;color:#f0ece3;white-space:nowrap;opacity:0;pointer-events:none;transition:opacity .2s;z-index:10;}
+
+        .line-chart-svg{width:100%;overflow:visible;}
+        .line-path{fill:none;stroke:#d42b2b;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:1000;stroke-dashoffset:1000;transition:stroke-dashoffset 1.8s cubic-bezier(.16,1,.3,1);}
+        .line-path.animated{stroke-dashoffset:0;}
+        .line-area{fill:url(#lineGrad);opacity:0;transition:opacity 1s ease .6s;}
+        .line-area.animated{opacity:1;}
+        .line-dot{fill:#d42b2b;stroke:#111119;stroke-width:2;opacity:0;transition:opacity .3s;cursor:pointer;}
+        .line-dot.animated{opacity:1;}
+        .line-dot:hover{r:6;fill:#ff4444;}
+        .line-x-label{font-size:9px;fill:#7a7880;text-anchor:middle;}
+        .line-y-label{font-size:9px;fill:#7a7880;text-anchor:end;}
+        .line-grid{stroke:rgba(245,240,232,.05);stroke-width:1;}
+
+        .chart-tooltip{position:fixed;background:#1c1c26;border:1px solid #d42b2b;border-radius:8px;padding:.5rem .85rem;font-size:.75rem;color:#f0ece3;pointer-events:none;z-index:1200;opacity:0;transition:opacity .15s;transform:translate(-50%,-120%);min-width:100px;text-align:center;}
+        .chart-tooltip.visible{opacity:1;}
+        .chart-tooltip strong{display:block;color:#d42b2b;font-size:.85rem;}
+
+        .donut-wrap{display:flex;align-items:center;gap:1.5rem;flex-wrap:wrap;}
+        .donut-seg{fill:none;stroke-width:18;stroke-linecap:round;stroke-dasharray:0 251;transition:stroke-dasharray 1.2s cubic-bezier(.16,1,.3,1);transition-delay:var(--seg-delay,0s);}
+
+        .conversion-wrap{display:flex;flex-direction:column;align-items:center;gap:1rem;padding:.5rem 0;}
+        .conversion-ring{position:relative;width:140px;height:140px;}
+        .conv-svg{width:100%;height:100%;}
+        .conv-track{fill:none;stroke:#1c1c26;stroke-width:14;}
+        .conv-prog{fill:none;stroke:#22c55e;stroke-width:14;stroke-linecap:round;stroke-dasharray:0 345;transform:rotate(-90deg);transform-origin:50% 50%;transition:stroke-dasharray 1.5s cubic-bezier(.16,1,.3,1) .3s;}
+        .conv-prog.animated{stroke-dasharray:var(--conv-dash,0) 345;}
+        .conv-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+        .conv-pct{font-family:'Playfair Display',serif;font-size:1.75rem;font-weight:700;color:#22c55e;line-height:1;}
+        .conv-sub{font-size:.6rem;color:#7a7880;letter-spacing:.1em;text-transform:uppercase;margin-top:.2rem;}
+        .conversion-meta{display:grid;grid-template-columns:1fr 1fr;gap:.75rem;width:100%;}
+        .conv-meta-item{text-align:center;background:#0d0d14;border-radius:8px;padding:.75rem .5rem;}
+        .conv-meta-num{font-family:'Playfair Display',serif;font-size:1.2rem;font-weight:700;line-height:1;}
+        .conv-meta-lbl{font-size:.58rem;color:#7a7880;letter-spacing:.08em;text-transform:uppercase;margin-top:.2rem;}
+
+        .barbero-stat-card{background:#111119;border:1px solid #252530;border-radius:14px;padding:1.25rem;display:flex;flex-direction:column;gap:.85rem;transition:border-color .25s,transform .25s;}
+        .barbero-stat-card:hover{border-color:rgba(212,43,43,.4);transform:translateY(-2px);}
+        .barbero-stat-header{display:flex;align-items:center;gap:.85rem;}
+        .barbero-avatar-stat{width:48px;height:48px;border-radius:12px;background:linear-gradient(135deg,rgba(212,43,43,.15),rgba(212,43,43,.05));border:1px solid rgba(212,43,43,.25);display:flex;align-items:center;justify-content:center;font-family:'Playfair Display',serif;font-size:1rem;font-weight:700;color:#d42b2b;flex-shrink:0;}
+        .barbero-stat-name{font-weight:600;font-size:.9rem;margin-bottom:.1rem;}
+        .barbero-stat-sub{font-size:.7rem;color:#7a7880;}
+        .barbero-progress-wrap{display:flex;flex-direction:column;gap:.4rem;}
+        .barbero-progress-label{display:flex;justify-content:space-between;font-size:.7rem;color:#7a7880;}
+        .barbero-progress-label span:last-child{color:#c9a84c;font-weight:500;}
+        .progress-track{height:6px;background:#1c1c26;border-radius:3px;overflow:hidden;}
+        .progress-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,#d42b2b,#ff6b6b);width:0;transition:width 1.2s cubic-bezier(.16,1,.3,1);transition-delay:var(--prog-delay,.2s);}
+        .progress-fill.animated{width:var(--prog-w,0%);}
+        .barbero-kpi-row{display:flex;gap:.5rem;}
+        .barbero-kpi{flex:1;background:#0d0d14;border-radius:8px;padding:.6rem .75rem;text-align:center;}
+        .barbero-kpi-num{font-family:'Playfair Display',serif;font-size:1.1rem;color:#d42b2b;font-weight:700;line-height:1;}
+        .barbero-kpi-lbl{font-size:.58rem;color:#7a7880;letter-spacing:.1em;text-transform:uppercase;margin-top:.2rem;}
+
+        .horas-wrap{display:flex;flex-direction:column;gap:.5rem;}
+        .hora-row{display:flex;align-items:center;gap:.75rem;}
+        .hora-lbl{font-size:.72rem;color:#7a7880;width:42px;flex-shrink:0;text-align:right;}
+        .hora-bar-outer{flex:1;height:28px;background:#0d0d14;border-radius:6px;overflow:hidden;position:relative;}
+        .hora-bar-fill{height:100%;border-radius:6px;background:linear-gradient(90deg,rgba(212,43,43,.6),rgba(212,43,43,.9));width:0;transition:width 1s cubic-bezier(.16,1,.3,1);transition-delay:var(--h-delay,0s);display:flex;align-items:center;justify-content:flex-end;padding-right:.5rem;}
+        .hora-bar-fill.animated{width:var(--h-w,0%);}
+        .hora-count{font-size:.65rem;color:rgba(255,255,255,.7);font-weight:600;white-space:nowrap;}
+
+        .svc-stat-list{display:flex;flex-direction:column;gap:.6rem;}
+        .svc-stat-item{display:flex;align-items:center;gap:.75rem;}
+        .svc-stat-rank{width:22px;height:22px;border-radius:6px;background:rgba(212,43,43,.1);border:1px solid rgba(212,43,43,.2);font-size:.65rem;font-weight:700;color:#d42b2b;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+        .svc-stat-info{flex:1;min-width:0;}
+        .svc-stat-name{font-size:.82rem;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+        .svc-stat-bar{height:4px;background:#1c1c26;border-radius:2px;margin-top:.3rem;overflow:hidden;}
+        .svc-stat-bar-fill{height:100%;border-radius:2px;background:linear-gradient(90deg,#d42b2b,#c9a84c);width:0;transition:width 1s cubic-bezier(.16,1,.3,1);transition-delay:var(--svc-delay,0s);}
+        .svc-stat-bar-fill.animated{width:var(--svc-w,0%);}
+        .svc-stat-meta{text-align:right;flex-shrink:0;}
+        .svc-stat-count{font-size:.82rem;color:#f0ece3;font-weight:500;}
+        .svc-stat-euros{font-size:.7rem;color:#c9a84c;}
+
+        .heatmap-wrap{overflow-x:auto;}
+        .heatmap-grid{display:flex;gap:3px;padding:4px 0;}
+        .hm-col{display:flex;flex-direction:column;gap:3px;align-items:center;}
+        .hm-cell{width:20px;height:20px;border-radius:4px;border:1px solid #1c1c26;transition:all .2s;cursor:default;position:relative;flex-shrink:0;}
+        .hm-cell:hover{transform:scale(1.3);z-index:10;}
+        .hm-cell[data-v="0"]{background:#0d0d14;}
+        .hm-cell[data-v="1"]{background:rgba(212,43,43,.2);}
+        .hm-cell[data-v="2"]{background:rgba(212,43,43,.4);}
+        .hm-cell[data-v="3"]{background:rgba(212,43,43,.65);}
+        .hm-cell[data-v="4"]{background:rgba(212,43,43,.85);}
+
+        @keyframes statsNumPop{0%{transform:scale(.5);opacity:0;}70%{transform:scale(1.08);}100%{transform:scale(1);opacity:1;}}
+        .kpi-value.pop{animation:statsNumPop .5s cubic-bezier(.34,1.56,.64,1) both;}
+
+        @media(max-width:700px){
+            .stats-grid-2,.stats-grid-3{grid-template-columns:1fr;}
+            .stats-kpis{grid-template-columns:repeat(2,1fr);}
+            .bar-chart{height:90px;}
+            .stats-inner{padding:1rem 1rem 3rem;}
+        }
+        @media(max-width:420px){
+            .stats-kpis{grid-template-columns:1fr 1fr;}
+            .kpi-value{font-size:1.6rem;}
+        }
     </style>
 </head>
 <body>
@@ -397,6 +543,7 @@ $mesesES = ['','ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov'
 <div class="admin-header">
     <div class="admin-brand">Prado <span>Barber</span> · Admin</div>
     <div class="header-actions">
+        <button class="stats-trigger-btn" onclick="openStats()" title="Estadísticas">📊</button>
         <button class="settings-btn" onclick="openCfg()" title="Configuración">⚙</button>
         <form method="POST" style="margin:0;">
             <button class="logout-btn" name="logout" value="1">Cerrar sesión</button>
@@ -632,34 +779,53 @@ $mesesES = ['','ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov'
 
 
 <!-- ================================================================
-     CONFIG PANEL — HTML
-     ================================================================ -->
+     STATS PANEL — HTML
+================================================================ -->
+<div class="stats-overlay" id="stats-overlay" onclick="closeStats()"></div>
+<div class="stats-panel" id="stats-panel">
+    <div class="stats-inner">
+        <div class="stats-header">
+            <div class="stats-title">
+                <div class="stats-title-icon">📊</div>
+                Estadísticas &amp; Analytics
+            </div>
+            <button class="stats-close" onclick="closeStats()">✕</button>
+        </div>
+        <div id="stats-content">
+            <div class="stats-loading" id="stats-loading">
+                <div class="stats-spinner"></div>
+                <span>Cargando datos…</span>
+            </div>
+        </div>
+    </div>
+</div>
 
+<div class="chart-tooltip" id="chart-tooltip"></div>
+
+
+<!-- ================================================================
+     CONFIG PANEL — HTML
+================================================================ -->
 <div class="cfg-overlay" id="cfg-overlay" onclick="closeCfg()"></div>
 
 <div class="cfg-panel" id="cfg-panel">
-
     <div class="cfg-header">
         <div class="cfg-title">⚙ Configuración</div>
         <button class="cfg-close" onclick="closeCfg()">✕</button>
     </div>
-
     <div class="cfg-tabs">
         <button class="cfg-tab active" onclick="switchTab('auto')">Auto-aceptar</button>
         <button class="cfg-tab"        onclick="switchTab('vac')">Vacaciones</button>
     </div>
-
     <div class="cfg-body">
 
         <!-- ── TAB: AUTO-ACEPTAR ── -->
         <div class="cfg-pane active" id="pane-auto">
-
             <div class="cfg-section-label">Estado actual</div>
             <div class="auto-estado-chip off" id="auto-chip">
                 <span id="auto-chip-dot">●</span>
                 <span id="auto-chip-text">Desactivado</span>
             </div>
-
             <div class="auto-toggle-row">
                 <div class="auto-toggle-info">
                     <h4>Auto-aceptar reservas</h4>
@@ -670,7 +836,6 @@ $mesesES = ['','ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov'
                     <span class="toggle-slider"></span>
                 </label>
             </div>
-
             <div id="alcance-section" style="display:none;">
                 <div class="cfg-section-label">Periodo de auto-aceptación</div>
                 <div class="alcance-grid">
@@ -679,38 +844,20 @@ $mesesES = ['','ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov'
                     <button class="alcance-btn" data-val="mes"    onclick="selectAlcance(this)">Este mes</button>
                     <button class="alcance-btn selected" data-val="siempre" onclick="selectAlcance(this)">Siempre</button>
                 </div>
-                <div class="alcance-desc" id="alcance-desc">
-                    Las reservas se aceptarán automáticamente sin límite de tiempo.
-                </div>
+                <div class="alcance-desc" id="alcance-desc">Las reservas se aceptarán automáticamente sin límite de tiempo.</div>
             </div>
-
-            <button class="cfg-save-btn" id="btn-save-auto" onclick="saveAutoAceptar()">
-                Guardar configuración
-            </button>
+            <button class="cfg-save-btn" id="btn-save-auto" onclick="saveAutoAceptar()">Guardar configuración</button>
             <div class="cfg-status" id="auto-status"></div>
-
         </div>
 
         <!-- ── TAB: VACACIONES ── -->
         <div class="cfg-pane" id="pane-vac">
-
             <div class="cfg-section-label">Seleccionar días no disponibles</div>
-
             <div class="cal-legend">
-                <div class="cal-legend-item">
-                    <div class="cal-legend-dot blocked"></div>
-                    <span>Ya bloqueado (clic para desbloquear)</span>
-                </div>
-                <div class="cal-legend-item">
-                    <div class="cal-legend-dot pending"></div>
-                    <span>Pendiente de guardar</span>
-                </div>
-                <div class="cal-legend-item">
-                    <div class="cal-legend-dot unblocking"></div>
-                    <span>Pendiente de desbloquear</span>
-                </div>
+                <div class="cal-legend-item"><div class="cal-legend-dot blocked"></div><span>Ya bloqueado (clic para desbloquear)</span></div>
+                <div class="cal-legend-item"><div class="cal-legend-dot pending"></div><span>Pendiente de guardar</span></div>
+                <div class="cal-legend-item"><div class="cal-legend-dot unblocking"></div><span>Pendiente de desbloquear</span></div>
             </div>
-
             <div class="mini-cal-wrap">
                 <div class="mini-cal-header">
                     <span class="mini-cal-title" id="mc-title"></span>
@@ -720,67 +867,390 @@ $mesesES = ['','ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov'
                     </div>
                 </div>
                 <div class="mini-cal-days">
-                    <div class="mini-cal-day-label">L</div>
-                    <div class="mini-cal-day-label">M</div>
-                    <div class="mini-cal-day-label">X</div>
-                    <div class="mini-cal-day-label">J</div>
-                    <div class="mini-cal-day-label">V</div>
-                    <div class="mini-cal-day-label">S</div>
+                    <div class="mini-cal-day-label">L</div><div class="mini-cal-day-label">M</div>
+                    <div class="mini-cal-day-label">X</div><div class="mini-cal-day-label">J</div>
+                    <div class="mini-cal-day-label">V</div><div class="mini-cal-day-label">S</div>
                     <div class="mini-cal-day-label">D</div>
                 </div>
                 <div class="mini-cal-grid" id="mc-grid"></div>
             </div>
-
-            <div class="range-hint" id="range-hint">
-                📅 Modo rango: selecciona el <strong>primer día</strong> y luego el <strong>último</strong>.
-            </div>
-
+            <div class="range-hint" id="range-hint">📅 Modo rango: selecciona el <strong>primer día</strong> y luego el <strong>último</strong>.</div>
             <div class="vac-motivo-row">
-                <input class="vac-motivo-input" id="vac-motivo"
-                       type="text" placeholder="Motivo (ej: Vacaciones, Formación…)" maxlength="100">
+                <input class="vac-motivo-input" id="vac-motivo" type="text" placeholder="Motivo (ej: Vacaciones, Formación…)" maxlength="100">
             </div>
-
             <div class="vac-action-row">
-                <button class="vac-btn vac-btn-range" id="btn-rango" onclick="toggleRangeMode()">
-                    ⇔ Rango de días
-                </button>
-                <button class="vac-btn vac-btn-clear" onclick="clearPending()">
-                    Limpiar selección
-                </button>
+                <button class="vac-btn vac-btn-range" id="btn-rango" onclick="toggleRangeMode()">⇔ Rango de días</button>
+                <button class="vac-btn vac-btn-clear" onclick="clearPending()">Limpiar selección</button>
             </div>
-
-            <button class="cfg-save-days-btn" id="btn-save-days" onclick="saveDays()" disabled>
-                Guardar días bloqueados
-            </button>
-
+            <button class="cfg-save-days-btn" id="btn-save-days" onclick="saveDays()" disabled>Guardar días bloqueados</button>
             <div class="cfg-section-label" style="margin-top:1.25rem;">Días bloqueados actualmente</div>
             <div class="blocked-list" id="blocked-list"></div>
             <div class="cfg-status" id="vac-status"></div>
-
         </div>
+
     </div>
 </div>
 
 
 <!-- ================================================================
-     CONFIG PANEL — JavaScript
-     ================================================================ -->
+     STATS JAVASCRIPT
+================================================================ -->
+<script>
+(function(){
+const STATS_API = './api/stats.php';
+let statsLoaded = false;
+
+window.openStats = function() {
+    document.getElementById('stats-overlay').classList.add('open');
+    document.getElementById('stats-panel').classList.add('open');
+    document.body.style.overflow = 'hidden';
+    if (!statsLoaded) fetchStats();
+};
+window.closeStats = function() {
+    document.getElementById('stats-overlay').classList.remove('open');
+    document.getElementById('stats-panel').classList.remove('open');
+    document.body.style.overflow = '';
+};
+
+async function fetchStats() {
+    try {
+        const r = await fetch(STATS_API);
+        const j = await r.json();
+        if (!j.ok) throw new Error(j.error || 'Error al cargar');
+        statsLoaded = true;
+        renderStats(j.data);
+    } catch(e) {
+        document.getElementById('stats-content').innerHTML =
+            `<div class="stats-loading" style="color:#d42b2b;"><div style="font-size:2rem;">⚠</div><span>${e.message}</span></div>`;
+    }
+}
+
+function animNum(el, target, decimals, suffix) {
+    decimals = decimals || 0; suffix = suffix || '';
+    const dur = 1200, start = performance.now();
+    function step(now) {
+        const p = Math.min((now - start) / dur, 1);
+        const ease = 1 - Math.pow(1 - p, 3);
+        const val = ease * target;
+        el.textContent = (decimals ? val.toFixed(decimals) : Math.floor(val)) + suffix;
+        if (p < 1) requestAnimationFrame(step);
+        else { el.textContent = (decimals ? target.toFixed(decimals) : target) + suffix; el.classList.add('pop'); }
+    }
+    requestAnimationFrame(step);
+}
+
+const tooltip = document.getElementById('chart-tooltip');
+window.showTip = function(e, unit, val) {
+    tooltip.innerHTML = `<strong>${val}</strong>${unit ? ' ' + unit : ''}`;
+    tooltip.style.left = e.clientX + 'px';
+    tooltip.style.top  = e.clientY + 'px';
+    tooltip.classList.add('visible');
+};
+window.hideTip = function() { tooltip.classList.remove('visible'); };
+document.addEventListener('mousemove', e => {
+    if (tooltip.classList.contains('visible')) {
+        tooltip.style.left = e.clientX + 'px';
+        tooltip.style.top  = (e.clientY - 10) + 'px';
+    }
+});
+
+function onVisible(el, cb) {
+    if (!el) return;
+    new IntersectionObserver((entries, obs) => {
+        entries.forEach(en => { if (en.isIntersecting) { cb(); obs.unobserve(el); } });
+    }, { threshold: 0.15 }).observe(el);
+}
+
+function renderStats(d) {
+    const kpi   = d.kpi    || {};
+    const hoy   = d.hoy    || {};
+    const mes   = d.mes    || {};
+    const barbs = d.barberos || [];
+    const svcs  = d.servicios_top || [];
+    const meses = d.ingresos_mensual || [];
+    const dow   = d.dias_semana || [];
+    const horas = d.horas_top || [];
+    const hmap  = d.heatmap_30d || [];
+    const tasa  = d.tasa_conversion ?? 0;
+
+    const maxBarbIng = Math.max(...barbs.map(b => +b.ingresos), 1);
+    const maxDow     = Math.max(...dow.map(x => x.count), 1);
+    const maxHora    = Math.max(...horas.map(h => +h.total), 1);
+    const maxSvc     = Math.max(...svcs.map(s => +s.total), 1);
+
+    const html = `
+<div class="stats-kpis">
+    ${kpiCard('Reservas totales', kpi.total_reservas||0, '#d42b2b',   '📋', '')}
+    ${kpiCard('Ingresos totales', kpi.ingresos_totales||0, '#c9a84c', '💶', ' €')}
+    ${kpiCard('Clientes únicos',  kpi.clientes_unicos||0, '#2550a0',  '👥', '')}
+    ${kpiCard('Citas hoy',        hoy.citas_hoy||0, '#22c55e',        '📅', '')}
+    ${kpiCard('Ingresos hoy',     hoy.ingresos_hoy||0, '#f59e0b',     '💰', ' €')}
+    ${kpiCard('Citas este mes',   mes.citas_mes||0, '#a78bfa',         '📆', '')}
+</div>
+
+<div class="stats-section">
+    <div class="stats-section-label">Evolución mensual — últimos 12 meses</div>
+    <div class="stats-grid-2">
+        <div class="stats-card">
+            <div class="stats-card-title">Ingresos por mes (€)</div>
+            ${buildLineChart(meses, 'ingresos', '€')}
+        </div>
+        <div class="stats-card">
+            <div class="stats-card-title">Citas por mes</div>
+            ${buildBarChart(meses.map(m=>({label:m.label,value:m.citas,tip:`${m.citas} citas — ${m.label}`})), '#2550a0')}
+        </div>
+    </div>
+</div>
+
+<div class="stats-section">
+    <div class="stats-section-label">Rendimiento por barbero</div>
+    <div class="stats-grid-3">
+        ${barbs.map((b,i) => barberCard(b, maxBarbIng, i)).join('')}
+    </div>
+</div>
+
+<div class="stats-section">
+    <div class="stats-section-label">Servicios &amp; conversión</div>
+    <div class="stats-grid-2">
+        <div class="stats-card">
+            <div class="stats-card-title">Servicios más solicitados</div>
+            <div class="svc-stat-list">
+                ${svcs.map((s,i) => svcItem(s, maxSvc, i)).join('')}
+            </div>
+        </div>
+        <div class="stats-card" style="display:flex;flex-direction:column;align-items:center;">
+            <div class="stats-card-title" style="width:100%;">Tasa de aceptación</div>
+            ${buildConversionRing(tasa, kpi)}
+        </div>
+    </div>
+</div>
+
+<div class="stats-section">
+    <div class="stats-section-label">Patrones de demanda</div>
+    <div class="stats-grid-2">
+        <div class="stats-card">
+            <div class="stats-card-title">Citas por día de la semana</div>
+            ${buildBarChart(dow.map(d=>({label:d.label,value:d.count,tip:`${d.count} citas los ${d.label}`})), '#d42b2b')}
+        </div>
+        <div class="stats-card">
+            <div class="stats-card-title">Franjas horarias más populares</div>
+            <div class="horas-wrap">
+                ${horas.map((h,i) => `
+                <div class="hora-row">
+                    <span class="hora-lbl">${h.hora_slot}</span>
+                    <div class="hora-bar-outer">
+                        <div class="hora-bar-fill" style="--h-w:${Math.round(+h.total/maxHora*100)}%;--h-delay:${i*0.08}s;">
+                            <span class="hora-count">${h.total}</span>
+                        </div>
+                    </div>
+                </div>`).join('')}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="stats-section">
+    <div class="stats-section-label">Actividad últimos 30 días</div>
+    <div class="stats-card">
+        <div class="stats-card-title">Mapa de calor de reservas</div>
+        ${buildHeatmap(hmap)}
+    </div>
+</div>`;
+
+    document.getElementById('stats-content').innerHTML = html;
+
+    setTimeout(() => {
+        document.querySelectorAll('.kpi-card').forEach((card, i) => {
+            setTimeout(() => {
+                card.classList.add('visible');
+                const valEl = card.querySelector('.kpi-value');
+                const raw   = parseFloat(card.dataset.target || 0);
+                const dec   = parseInt(card.dataset.dec || 0);
+                const suf   = card.dataset.suffix || '';
+                animNum(valEl, raw, dec, suf);
+            }, i * 80);
+        });
+    }, 50);
+
+    setTimeout(() => {
+        document.querySelectorAll('.bar-fill').forEach(el => onVisible(el, () => el.classList.add('animated')));
+        document.querySelectorAll('.line-path,.line-area,.line-dot').forEach(el => onVisible(el, () => el.classList.add('animated')));
+        document.querySelectorAll('.progress-fill').forEach(el => onVisible(el, () => el.classList.add('animated')));
+        document.querySelectorAll('.hora-bar-fill').forEach(el => onVisible(el, () => el.classList.add('animated')));
+        document.querySelectorAll('.svc-stat-bar-fill').forEach(el => onVisible(el, () => el.classList.add('animated')));
+        document.querySelectorAll('.conv-prog').forEach(el => onVisible(el, () => el.classList.add('animated')));
+    }, 100);
+}
+
+function kpiCard(label, value, color, icon, suffix) {
+    const dec = suffix.includes('€') ? 0 : 0;
+    return `<div class="kpi-card" style="--kpi-accent:${color}" data-target="${+value}" data-dec="${dec}" data-suffix="${suffix}">
+        <div class="kpi-badge">${icon}</div>
+        <div class="kpi-label">${label}</div>
+        <div class="kpi-value">0${suffix}</div>
+    </div>`;
+}
+
+function buildBarChart(items, color) {
+    const maxV = Math.max(...items.map(x => x.value), 1);
+    return `<div class="bar-chart">
+        ${items.map((item, i) => `
+        <div class="bar-item" onmouseenter="showTip(event,'','')" onmouseleave="hideTip()">
+            <div class="bar-fill" style="height:${Math.max(item.value/maxV*88,3)}px;background:${color};--bar-delay:${i*0.07}s;"></div>
+            <div class="bar-tooltip">${item.tip || item.value}</div>
+            <span class="bar-label">${item.label}</span>
+        </div>`).join('')}
+    </div>`;
+}
+
+function buildLineChart(meses, field, unit) {
+    const W = 500, H = 130, PAD = {t:12,r:10,b:30,l:42};
+    const vals = meses.map(m => +m[field]);
+    const maxV = Math.max(...vals, 1);
+    const pts  = vals.map((v, i) => [
+        PAD.l + (i / (vals.length - 1 || 1)) * (W - PAD.l - PAD.r),
+        PAD.t + (1 - v / maxV) * (H - PAD.t - PAD.b)
+    ]);
+    const pathD = pts.map((p,i) => (i===0?`M${p[0]},${p[1]}`:`L${p[0]},${p[1]}`)).join(' ');
+    const areaD = `${pathD} L${pts[pts.length-1][0]},${H-PAD.b} L${pts[0][0]},${H-PAD.b} Z`;
+    const grids = [.25,.5,.75,1].map(f => {
+        const yy = PAD.t + (1-f)*(H-PAD.t-PAD.b);
+        const lbl= Math.round(maxV*f);
+        return `<line class="line-grid" x1="${PAD.l}" x2="${W-PAD.r}" y1="${yy}" y2="${yy}"/>
+                <text class="line-y-label" x="${PAD.l-4}" y="${yy+3}">${lbl>999?(lbl/1000).toFixed(1)+'k':lbl}</text>`;
+    }).join('');
+    const xlbls = meses.map((m,i) => {
+        if (i%3!==0 && i!==meses.length-1) return '';
+        return `<text class="line-x-label" x="${pts[i][0]}" y="${H-4}">${m.label}</text>`;
+    }).join('');
+    const dots = pts.map(([x,y],i) => `<circle class="line-dot" cx="${x}" cy="${y}" r="4"
+        onmouseenter="showTip(event,'${unit}','${vals[i]}')" onmouseleave="hideTip()"/>`).join('');
+    return `<svg class="line-chart-svg" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet">
+        <defs><linearGradient id="lineGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#d42b2b" stop-opacity=".25"/>
+            <stop offset="100%" stop-color="#d42b2b" stop-opacity="0"/>
+        </linearGradient></defs>
+        ${grids}${xlbls}
+        <path class="line-area" d="${areaD}"/>
+        <path class="line-path" d="${pathD}"/>
+        ${dots}
+    </svg>`;
+}
+
+function buildConversionRing(tasa, kpi) {
+    const dash = (tasa / 100) * 345;
+    return `<div class="conversion-wrap">
+        <div class="conversion-ring">
+            <svg class="conv-svg" viewBox="0 0 120 120">
+                <circle class="conv-track" cx="60" cy="60" r="55"/>
+                <circle class="conv-prog" cx="60" cy="60" r="55" style="--conv-dash:${dash};"
+                        onmouseenter="showTip(event,'tasa aceptación','${tasa}%')" onmouseleave="hideTip()"/>
+            </svg>
+            <div class="conv-center">
+                <div class="conv-pct">${tasa}%</div>
+                <div class="conv-sub">aceptadas</div>
+            </div>
+        </div>
+        <div class="conversion-meta">
+            <div class="conv-meta-item"><div class="conv-meta-num" style="color:#22c55e;">${kpi.aceptadas||0}</div><div class="conv-meta-lbl">Aceptadas</div></div>
+            <div class="conv-meta-item"><div class="conv-meta-num" style="color:#f59e0b;">${kpi.pendientes||0}</div><div class="conv-meta-lbl">Pendientes</div></div>
+            <div class="conv-meta-item"><div class="conv-meta-num" style="color:#d42b2b;">${kpi.denegadas||0}</div><div class="conv-meta-lbl">Denegadas</div></div>
+            <div class="conv-meta-item"><div class="conv-meta-num">${kpi.total_reservas||0}</div><div class="conv-meta-lbl">Total</div></div>
+        </div>
+    </div>`;
+}
+
+function barberCard(b, maxIng, i) {
+    const pct = maxIng > 0 ? Math.round(+b.ingresos / maxIng * 100) : 0;
+    const ticket = Number(+b.ingresos / Math.max(+b.aceptadas, 1)).toFixed(0);
+    return `<div class="barbero-stat-card">
+        <div class="barbero-stat-header">
+            <div class="barbero-avatar-stat">${b.iniciales}</div>
+            <div>
+                <div class="barbero-stat-name">${b.nombre}</div>
+                <div class="barbero-stat-sub">${b.total_citas} citas totales</div>
+            </div>
+        </div>
+        <div class="barbero-progress-wrap">
+            <div class="barbero-progress-label"><span>Ingresos generados</span><span>${Number(b.ingresos).toFixed(0)} €</span></div>
+            <div class="progress-track"><div class="progress-fill" style="--prog-w:${pct}%;--prog-delay:${.2+i*.15}s;"></div></div>
+        </div>
+        <div class="barbero-kpi-row">
+            <div class="barbero-kpi"><div class="barbero-kpi-num">${b.aceptadas}</div><div class="barbero-kpi-lbl">Aceptadas</div></div>
+            <div class="barbero-kpi"><div class="barbero-kpi-num" style="color:#f59e0b;">${b.pendientes}</div><div class="barbero-kpi-lbl">Pendientes</div></div>
+            <div class="barbero-kpi"><div class="barbero-kpi-num" style="color:#c9a84c;">${ticket}€</div><div class="barbero-kpi-lbl">Ticket medio</div></div>
+        </div>
+    </div>`;
+}
+
+function svcItem(s, maxSvc, i) {
+    const pct = Math.round(+s.total / maxSvc * 100);
+    return `<div class="svc-stat-item">
+        <div class="svc-stat-rank">${i+1}</div>
+        <div class="svc-stat-info">
+            <div class="svc-stat-name">${s.nombre}</div>
+            <div class="svc-stat-bar"><div class="svc-stat-bar-fill" style="--svc-w:${pct}%;--svc-delay:${i*.09}s;"></div></div>
+        </div>
+        <div class="svc-stat-meta">
+            <div class="svc-stat-count">${s.total} citas</div>
+            <div class="svc-stat-euros">${Number(s.ingresos).toFixed(0)} €</div>
+        </div>
+    </div>`;
+}
+
+function buildHeatmap(hmap) {
+    const today = new Date();
+    const map = {};
+    hmap.forEach(h => { map[h.dia] = +h.total; });
+    const maxV = Math.max(...Object.values(map), 1);
+    const cols = [];
+    for (let i = 29; i >= 0; i--) {
+        const d = new Date(today);
+        d.setDate(d.getDate() - i);
+        const iso = d.toISOString().slice(0,10);
+        const dow = (d.getDay() + 6) % 7;
+        const v = map[iso] || 0;
+        const level = v===0?0:v<=maxV*.25?1:v<=maxV*.5?2:v<=maxV*.75?3:4;
+        if (dow===0 || cols.length===0) cols.push([]);
+        cols[cols.length-1].push({iso, v, level, lbl: dow===0?d.getDate():''});
+    }
+    const DAYS = ['L','M','X','J','V','S','D'];
+    return `<div class="heatmap-wrap">
+        <div style="display:flex;gap:4px;align-items:flex-start;">
+            <div style="display:flex;flex-direction:column;gap:3px;margin-top:18px;">
+                ${DAYS.map(d=>`<div style="height:20px;font-size:.5rem;color:#7a7880;display:flex;align-items:center;">${d}</div>`).join('')}
+            </div>
+            <div style="overflow-x:auto;flex:1;">
+                <div class="heatmap-grid">
+                    ${cols.map(col=>`<div class="hm-col">
+                        <div style="height:14px;font-size:.5rem;color:#7a7880;text-align:center;">${col[0]?.lbl||''}</div>
+                        ${col.map(cell=>`<div class="hm-cell" data-v="${cell.level}" title="${cell.iso}: ${cell.v} cita${cell.v!==1?'s':''}"></div>`).join('')}
+                    </div>`).join('')}
+                </div>
+            </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:.4rem;margin-top:.75rem;justify-content:flex-end;">
+            <span style="font-size:.6rem;color:#7a7880;">Menos</span>
+            ${[0,1,2,3,4].map(l=>`<div class="hm-cell" data-v="${l}" style="width:14px;height:14px;flex-shrink:0;border-radius:3px;"></div>`).join('')}
+            <span style="font-size:.6rem;color:#7a7880;">Más</span>
+        </div>
+    </div>`;
+}
+
+})();
+</script>
+
+
+<!-- ================================================================
+     CONFIG JAVASCRIPT
+================================================================ -->
 <script>
 const CFG_API = './api/settings.php';
 
-let cfgState = {
-    autoAceptar:      'no',
-    autoAceptarHasta: '',
-    diasBloqueados:   [],
-};
-
-let mcDate      = new Date();
-let mcSelected  = null;
-let rangeMode   = false;
-let rangeStart  = null;
-
-let pendingDays    = [];
-let pendingUnblock = [];
+let cfgState = { autoAceptar:'no', autoAceptarHasta:'', diasBloqueados:[] };
+let mcDate = new Date();
+let rangeMode = false, rangeStart = null;
+let pendingDays = [], pendingUnblock = [];
 
 function openCfg() {
     document.getElementById('cfg-overlay').classList.add('open');
@@ -792,16 +1262,16 @@ function closeCfg() {
     document.getElementById('cfg-panel').classList.remove('open');
 }
 document.addEventListener('keydown', e => {
-    if (e.key === 'Escape' && document.getElementById('cfg-panel').classList.contains('open'))
-        closeCfg();
+    if (e.key==='Escape') {
+        if (document.getElementById('stats-panel').classList.contains('open')) closeStats();
+        if (document.getElementById('cfg-panel').classList.contains('open')) closeCfg();
+    }
 });
 
 function switchTab(tab) {
-    document.querySelectorAll('.cfg-tab').forEach((t, i) => {
-        t.classList.toggle('active', (i === 0 && tab === 'auto') || (i === 1 && tab === 'vac'));
-    });
-    document.getElementById('pane-auto').classList.toggle('active', tab === 'auto');
-    document.getElementById('pane-vac').classList.toggle('active',  tab === 'vac');
+    document.querySelectorAll('.cfg-tab').forEach((t,i)=>t.classList.toggle('active',(i===0&&tab==='auto')||(i===1&&tab==='vac')));
+    document.getElementById('pane-auto').classList.toggle('active', tab==='auto');
+    document.getElementById('pane-vac').classList.toggle('active',  tab==='vac');
 }
 
 async function loadSettings() {
@@ -812,327 +1282,181 @@ async function loadSettings() {
         cfgState.autoAceptar      = j.data.auto_aceptar;
         cfgState.autoAceptarHasta = j.data.auto_aceptar_hasta;
         cfgState.diasBloqueados   = j.data.dias_bloqueados || [];
-        pendingDays    = [];
-        pendingUnblock = [];
-        applyAutoState();
-        renderBlockedList();
-        renderMiniCal();
-        updateSaveBtn();
-    } catch (e) { console.warn('No se pudo cargar configuración:', e); }
+        pendingDays = []; pendingUnblock = [];
+        applyAutoState(); renderBlockedList(); renderMiniCal(); updateSaveBtn();
+    } catch(e) { console.warn('No se pudo cargar configuración:', e); }
 }
 
 function applyAutoState() {
-    const v      = cfgState.autoAceptar;
-    const toggle = document.getElementById('auto-toggle');
-    const chip   = document.getElementById('auto-chip');
-    const chipTxt= document.getElementById('auto-chip-text');
-    const section= document.getElementById('alcance-section');
-    const isOn   = v !== 'no';
-
-    toggle.checked        = isOn;
-    section.style.display = isOn ? 'block' : 'none';
-
-    if (isOn) {
-        chip.className = 'auto-estado-chip on';
-        const labels   = { hoy:'Activo — solo hoy', semana:'Activo — esta semana', mes:'Activo — este mes', siempre:'Activo — siempre' };
-        chipTxt.textContent = labels[v] || 'Activo';
-        document.querySelectorAll('.alcance-btn').forEach(b => b.classList.toggle('selected', b.dataset.val === v));
+    const v=cfgState.autoAceptar, toggle=document.getElementById('auto-toggle'),
+          chip=document.getElementById('auto-chip'), chipTxt=document.getElementById('auto-chip-text'),
+          section=document.getElementById('alcance-section'), isOn=v!=='no';
+    toggle.checked=isOn; section.style.display=isOn?'block':'none';
+    if(isOn){
+        chip.className='auto-estado-chip on';
+        const labels={hoy:'Activo — solo hoy',semana:'Activo — esta semana',mes:'Activo — este mes',siempre:'Activo — siempre'};
+        chipTxt.textContent=labels[v]||'Activo';
+        document.querySelectorAll('.alcance-btn').forEach(b=>b.classList.toggle('selected',b.dataset.val===v));
         updateAlcanceDesc(v);
-    } else {
-        chip.className      = 'auto-estado-chip off';
-        chipTxt.textContent = 'Desactivado';
-    }
+    } else { chip.className='auto-estado-chip off'; chipTxt.textContent='Desactivado'; }
 }
 
 function onAutoToggle() {
-    const isOn = document.getElementById('auto-toggle').checked;
-    document.getElementById('alcance-section').style.display = isOn ? 'block' : 'none';
-    if (!isOn) {
-        document.getElementById('auto-chip').className        = 'auto-estado-chip off';
-        document.getElementById('auto-chip-text').textContent = 'Desactivado';
-    } else {
-        const sel = document.querySelector('.alcance-btn.selected');
-        updateAlcanceDesc(sel ? sel.dataset.val : 'siempre');
-    }
+    const isOn=document.getElementById('auto-toggle').checked;
+    document.getElementById('alcance-section').style.display=isOn?'block':'none';
+    if(!isOn){document.getElementById('auto-chip').className='auto-estado-chip off';document.getElementById('auto-chip-text').textContent='Desactivado';}
+    else{const sel=document.querySelector('.alcance-btn.selected');updateAlcanceDesc(sel?sel.dataset.val:'siempre');}
 }
 
 function selectAlcance(btn) {
-    document.querySelectorAll('.alcance-btn').forEach(b => b.classList.remove('selected'));
-    btn.classList.add('selected');
-    updateAlcanceDesc(btn.dataset.val);
+    document.querySelectorAll('.alcance-btn').forEach(b=>b.classList.remove('selected'));
+    btn.classList.add('selected'); updateAlcanceDesc(btn.dataset.val);
 }
 
 function updateAlcanceDesc(v) {
-    const descs = {
-        hoy:     'Las reservas de <strong>hoy</strong> se aceptarán automáticamente.',
-        semana:  'Las reservas de <strong>los próximos 7 días</strong> se aceptarán automáticamente.',
-        mes:     'Las reservas del <strong>próximo mes</strong> se aceptarán automáticamente.',
-        siempre: 'Las reservas se aceptarán automáticamente <strong>sin límite de tiempo</strong>.',
-    };
-    document.getElementById('alcance-desc').innerHTML = descs[v] || '';
+    const descs={hoy:'Las reservas de <strong>hoy</strong> se aceptarán automáticamente.',semana:'Las reservas de <strong>los próximos 7 días</strong> se aceptarán automáticamente.',mes:'Las reservas del <strong>próximo mes</strong> se aceptarán automáticamente.',siempre:'Las reservas se aceptarán automáticamente <strong>sin límite de tiempo</strong>.'};
+    document.getElementById('alcance-desc').innerHTML=descs[v]||'';
 }
 
 async function saveAutoAceptar() {
-    const isOn = document.getElementById('auto-toggle').checked;
-    const sel  = document.querySelector('.alcance-btn.selected');
-    const val  = isOn ? (sel ? sel.dataset.val : 'siempre') : 'no';
-    const btn  = document.getElementById('btn-save-auto');
-    btn.disabled = true; btn.textContent = 'Guardando…';
-
+    const isOn=document.getElementById('auto-toggle').checked;
+    const sel=document.querySelector('.alcance-btn.selected');
+    const val=isOn?(sel?sel.dataset.val:'siempre'):'no';
+    const btn=document.getElementById('btn-save-auto');
+    btn.disabled=true; btn.textContent='Guardando…';
     try {
-        const r = await fetch(CFG_API, {
-            method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ accion: 'auto_aceptar', valor: val }),
-        });
-        const j = await r.json();
-        if (j.ok) {
-            cfgState.autoAceptar = val;
-            applyAutoState();
-            showCfgStatus('auto-status', 'ok', '✓ Configuración guardada correctamente.');
-        } else {
-            showCfgStatus('auto-status', 'err', '✕ ' + (j.error || 'Error al guardar.'));
-        }
-    } catch (e) {
-        showCfgStatus('auto-status', 'err', '✕ Sin conexión con el servidor.');
-    }
-    btn.disabled = false; btn.textContent = 'Guardar configuración';
+        const r=await fetch(CFG_API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({accion:'auto_aceptar',valor:val})});
+        const j=await r.json();
+        if(j.ok){cfgState.autoAceptar=val;applyAutoState();showCfgStatus('auto-status','ok','✓ Configuración guardada correctamente.');}
+        else showCfgStatus('auto-status','err','✕ '+(j.error||'Error al guardar.'));
+    } catch(e){showCfgStatus('auto-status','err','✕ Sin conexión con el servidor.');}
+    btn.disabled=false; btn.textContent='Guardar configuración';
 }
 
 function renderMiniCal() {
-    const grid  = document.getElementById('mc-grid');
-    const title = document.getElementById('mc-title');
-    if (!grid) return;
-
-    const MONTHS = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-    const y = mcDate.getFullYear();
-    const m = mcDate.getMonth();
-    title.textContent = `${MONTHS[m]} ${y}`;
-
-    const today  = new Date(); today.setHours(0,0,0,0);
-    const first  = new Date(y, m, 1).getDay();
-    const offset = (first + 6) % 7;
-    const daysInM= new Date(y, m+1, 0).getDate();
-
-    const blockedFechas = cfgState.diasBloqueados.map(d => d.fecha);
-    const pendingFechas = pendingDays.map(d => d.fecha);
-    const unblockFechas = pendingUnblock;
-
-    let html = '';
-    for (let i = 0; i < offset; i++) html += `<div class="mini-cell mc-empty"></div>`;
-
-    for (let d = 1; d <= daysInM; d++) {
-        const dt   = new Date(y, m, d);
-        const iso  = fmtDate(dt);
-        const isPast   = dt < today;
-        const isToday  = dt.getTime() === today.getTime();
-
-        const isBlockedInDB = blockedFechas.includes(iso);
-        const isPending     = pendingFechas.includes(iso);
-        const isUnblocking  = unblockFechas.includes(iso);
-
-        let cls = 'mini-cell';
-        if (isPast)              cls += ' mc-disabled';
-        else if (isPending)      cls += ' mc-pending';
-        else if (isUnblocking)   cls += ' mc-unblocking';
-        else if (isBlockedInDB)  cls += ' mc-blocked';
-        else if (isToday)        cls += ' mc-today';
-
-        const onclick = isPast ? '' : `onclick="mcSelectDay('${iso}')"`;
-        let titleAttr = '';
-        if (isPending)    titleAttr = `title="Pendiente de guardar — haz clic para quitar"`;
-        if (isUnblocking) titleAttr = `title="Se desbloqueará al guardar — haz clic para cancelar"`;
-        if (isBlockedInDB && !isUnblocking) {
-            const mot = cfgState.diasBloqueados.find(x => x.fecha === iso)?.motivo || '';
-            titleAttr = `title="${mot ? mot + ' — ' : ''}Haz clic para marcar como desbloquear"`;
-        }
-
-        html += `<div class="${cls}" ${onclick} ${titleAttr}>${d}</div>`;
+    const grid=document.getElementById('mc-grid'), title=document.getElementById('mc-title');
+    if(!grid) return;
+    const MONTHS=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+    const y=mcDate.getFullYear(), m=mcDate.getMonth();
+    title.textContent=`${MONTHS[m]} ${y}`;
+    const today=new Date(); today.setHours(0,0,0,0);
+    const first=new Date(y,m,1).getDay(), offset=(first+6)%7, daysInM=new Date(y,m+1,0).getDate();
+    const blockedFechas=cfgState.diasBloqueados.map(d=>d.fecha);
+    const pendingFechas=pendingDays.map(d=>d.fecha);
+    const unblockFechas=pendingUnblock;
+    let html='';
+    for(let i=0;i<offset;i++) html+=`<div class="mini-cell mc-empty"></div>`;
+    for(let d=1;d<=daysInM;d++){
+        const dt=new Date(y,m,d), iso=fmtDate(dt);
+        const isPast=dt<today, isToday=dt.getTime()===today.getTime();
+        const isBlockedInDB=blockedFechas.includes(iso);
+        const isPending=pendingFechas.includes(iso);
+        const isUnblocking=unblockFechas.includes(iso);
+        let cls='mini-cell';
+        if(isPast) cls+=' mc-disabled';
+        else if(isPending) cls+=' mc-pending';
+        else if(isUnblocking) cls+=' mc-unblocking';
+        else if(isBlockedInDB) cls+=' mc-blocked';
+        else if(isToday) cls+=' mc-today';
+        const onclick=isPast?'':`onclick="mcSelectDay('${iso}')"`;
+        let title='';
+        if(isPending) title=`title="Pendiente — clic para quitar"`;
+        if(isUnblocking) title=`title="Se desbloqueará al guardar"`;
+        if(isBlockedInDB&&!isUnblocking){const mot=cfgState.diasBloqueados.find(x=>x.fecha===iso)?.motivo||'';title=`title="${mot?mot+' — ':''}Clic para desbloquear"`;}
+        html+=`<div class="${cls}" ${onclick} ${title}>${d}</div>`;
     }
-    grid.innerHTML = html;
+    grid.innerHTML=html;
 }
 
-function mcNav(dir) {
-    mcDate.setMonth(mcDate.getMonth() + dir);
-    renderMiniCal();
-}
+function mcNav(dir){mcDate.setMonth(mcDate.getMonth()+dir);renderMiniCal();}
 
 function mcSelectDay(iso) {
-    const blockedFechas = cfgState.diasBloqueados.map(d => d.fecha);
-    const pendingFechas = pendingDays.map(d => d.fecha);
-    const unblockFechas = pendingUnblock;
-
-    if (rangeMode) {
-        if (!rangeStart) {
-            rangeStart = iso;
-            document.getElementById('range-hint').innerHTML =
-                `📅 Rango activo: <strong>${iso}</strong> → selecciona el día final.`;
-        } else {
-            addRangeToPending(rangeStart, iso);
-            rangeStart = null;
-            toggleRangeMode();
-        }
-        renderMiniCal();
-        updateSaveBtn();
-        return;
+    const blockedFechas=cfgState.diasBloqueados.map(d=>d.fecha);
+    const pendingFechas=pendingDays.map(d=>d.fecha);
+    if(rangeMode){
+        if(!rangeStart){rangeStart=iso;document.getElementById('range-hint').innerHTML=`📅 Rango activo: <strong>${iso}</strong> → selecciona el día final.`;}
+        else{addRangeToPending(rangeStart,iso);rangeStart=null;toggleRangeMode();}
+        renderMiniCal();updateSaveBtn();return;
     }
-
-    if (pendingFechas.includes(iso)) {
-        pendingDays.splice(pendingDays.findIndex(d => d.fecha === iso), 1);
-    } else if (unblockFechas.includes(iso)) {
-        pendingUnblock.splice(pendingUnblock.indexOf(iso), 1);
-    } else if (blockedFechas.includes(iso)) {
-        pendingUnblock.push(iso);
-    } else {
-        const motivo = document.getElementById('vac-motivo').value.trim() || 'Vacaciones';
-        pendingDays.push({ fecha: iso, motivo });
-    }
-
-    renderMiniCal();
-    updateSaveBtn();
+    if(pendingFechas.includes(iso)) pendingDays.splice(pendingDays.findIndex(d=>d.fecha===iso),1);
+    else if(pendingUnblock.includes(iso)) pendingUnblock.splice(pendingUnblock.indexOf(iso),1);
+    else if(blockedFechas.includes(iso)) pendingUnblock.push(iso);
+    else{const motivo=document.getElementById('vac-motivo').value.trim()||'Vacaciones';pendingDays.push({fecha:iso,motivo});}
+    renderMiniCal();updateSaveBtn();
 }
 
-function addRangeToPending(desde, hasta) {
-    const [d, h] = desde <= hasta ? [desde, hasta] : [hasta, desde];
-    const motivo = document.getElementById('vac-motivo').value.trim() || 'Vacaciones';
-    const cur    = new Date(d + 'T00:00:00');
-    const end    = new Date(h + 'T00:00:00');
-    const existingFechas = [
-        ...pendingDays.map(p => p.fecha),
-        ...cfgState.diasBloqueados.map(b => b.fecha),
-    ];
-    while (cur <= end) {
-        const iso = fmtDate(cur);
-        if (!existingFechas.includes(iso)) pendingDays.push({ fecha: iso, motivo });
-        cur.setDate(cur.getDate() + 1);
-    }
+function addRangeToPending(desde,hasta){
+    const [d,h]=desde<=hasta?[desde,hasta]:[hasta,desde];
+    const motivo=document.getElementById('vac-motivo').value.trim()||'Vacaciones';
+    const cur=new Date(d+'T00:00:00'), end=new Date(h+'T00:00:00');
+    const existing=[...pendingDays.map(p=>p.fecha),...cfgState.diasBloqueados.map(b=>b.fecha)];
+    while(cur<=end){const iso=fmtDate(cur);if(!existing.includes(iso))pendingDays.push({fecha:iso,motivo});cur.setDate(cur.getDate()+1);}
 }
 
-function toggleRangeMode() {
-    rangeMode  = !rangeMode;
-    rangeStart = null;
-    const hint = document.getElementById('range-hint');
-    const btn  = document.getElementById('btn-rango');
-    hint.classList.toggle('visible', rangeMode);
-    btn.style.background = rangeMode ? 'rgba(201,168,76,.25)' : '';
-    if (rangeMode) {
-        hint.innerHTML = '📅 Modo rango: selecciona el <strong>primer día</strong> y luego el <strong>último</strong>.';
-    }
+function toggleRangeMode(){
+    rangeMode=!rangeMode;rangeStart=null;
+    const hint=document.getElementById('range-hint'),btn=document.getElementById('btn-rango');
+    hint.classList.toggle('visible',rangeMode);btn.style.background=rangeMode?'rgba(201,168,76,.25)':'';
+    if(rangeMode) hint.innerHTML='📅 Modo rango: selecciona el <strong>primer día</strong> y luego el <strong>último</strong>.';
     renderMiniCal();
 }
 
-function clearPending() {
-    pendingDays    = [];
-    pendingUnblock = [];
-    rangeStart     = null;
-    if (rangeMode) toggleRangeMode();
-    renderMiniCal();
-    updateSaveBtn();
-}
+function clearPending(){pendingDays=[];pendingUnblock=[];rangeStart=null;if(rangeMode)toggleRangeMode();renderMiniCal();updateSaveBtn();}
 
-function updateSaveBtn() {
-    const btn   = document.getElementById('btn-save-days');
-    const total = pendingDays.length + pendingUnblock.length;
-    if (!btn) return;
-    if (total === 0) {
-        btn.textContent = 'Guardar días bloqueados';
-        btn.disabled    = true;
-    } else {
-        const parts = [];
-        if (pendingDays.length)    parts.push(`+${pendingDays.length} bloquear`);
-        if (pendingUnblock.length) parts.push(`-${pendingUnblock.length} desbloquear`);
-        btn.textContent = `Guardar (${parts.join(', ')})`;
-        btn.disabled    = false;
+function updateSaveBtn(){
+    const btn=document.getElementById('btn-save-days');
+    const total=pendingDays.length+pendingUnblock.length;
+    if(!btn) return;
+    if(total===0){btn.textContent='Guardar días bloqueados';btn.disabled=true;}
+    else{
+        const parts=[];
+        if(pendingDays.length) parts.push(`+${pendingDays.length} bloquear`);
+        if(pendingUnblock.length) parts.push(`-${pendingUnblock.length} desbloquear`);
+        btn.textContent=`Guardar (${parts.join(', ')})`;btn.disabled=false;
     }
 }
 
-async function saveDays() {
-    const btn = document.getElementById('btn-save-days');
-    btn.disabled = true; btn.textContent = 'Guardando…';
-
-    let errors = 0;
-
-    for (const { fecha, motivo } of pendingDays) {
-        try {
-            const r = await fetch(CFG_API, {
-                method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ accion: 'bloquear_dia', fecha, motivo }),
-            });
-            if (!(await r.json()).ok) errors++;
-        } catch { errors++; }
-    }
-
-    for (const fecha of pendingUnblock) {
-        try {
-            const r = await fetch(CFG_API, {
-                method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ accion: 'desbloquear_dia', fecha }),
-            });
-            if (!(await r.json()).ok) errors++;
-        } catch { errors++; }
-    }
-
-    if (errors === 0) {
-        showCfgStatus('vac-status', 'ok', '✓ Cambios guardados correctamente.');
-    } else {
-        showCfgStatus('vac-status', 'err', `⚠ ${errors} operación(es) fallaron. Reintenta.`);
-    }
-
+async function saveDays(){
+    const btn=document.getElementById('btn-save-days');
+    btn.disabled=true;btn.textContent='Guardando…';
+    let errors=0;
+    for(const{fecha,motivo}of pendingDays){try{const r=await fetch(CFG_API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({accion:'bloquear_dia',fecha,motivo})});if(!(await r.json()).ok)errors++;}catch{errors++;}}
+    for(const fecha of pendingUnblock){try{const r=await fetch(CFG_API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({accion:'desbloquear_dia',fecha})});if(!(await r.json()).ok)errors++;}catch{errors++;}}
+    if(errors===0) showCfgStatus('vac-status','ok','✓ Cambios guardados correctamente.');
+    else showCfgStatus('vac-status','err',`⚠ ${errors} operación(es) fallaron. Reintenta.`);
     await loadSettings();
 }
 
-async function desbloquearDia(fecha) {
-    try {
-        const r = await fetch(CFG_API, {
-            method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ accion: 'desbloquear_dia', fecha }),
-        });
-        const j = await r.json();
-        if (j.ok) {
-            showCfgStatus('vac-status', 'ok', `✓ Día ${fecha} desbloqueado.`);
-            await loadSettings();
-        } else {
-            showCfgStatus('vac-status', 'err', '✕ ' + (j.error || 'Error.'));
-        }
-    } catch {
-        showCfgStatus('vac-status', 'err', '✕ Sin conexión con el servidor.');
-    }
+async function desbloquearDia(fecha){
+    try{
+        const r=await fetch(CFG_API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({accion:'desbloquear_dia',fecha})});
+        const j=await r.json();
+        if(j.ok){showCfgStatus('vac-status','ok',`✓ Día ${fecha} desbloqueado.`);await loadSettings();}
+        else showCfgStatus('vac-status','err','✕ '+(j.error||'Error.'));
+    }catch{showCfgStatus('vac-status','err','✕ Sin conexión.');}
 }
 
-function renderBlockedList() {
-    const list = document.getElementById('blocked-list');
-    if (!list) return;
-    if (!cfgState.diasBloqueados.length) {
-        list.innerHTML = `<div class="empty-blocked">No hay días bloqueados</div>`;
-        return;
-    }
-    const DIAS = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
-    list.innerHTML = cfgState.diasBloqueados.map(d => {
-        const dt  = new Date(d.fecha + 'T00:00:00');
-        const dia = DIAS[dt.getDay()];
-        const fmt = `${dia} ${dt.getDate()}/${String(dt.getMonth()+1).padStart(2,'0')}/${dt.getFullYear()}`;
-        return `
-        <div class="blocked-item">
-            <div class="blocked-item-info">
-                <span class="blocked-fecha">📅 ${fmt}</span>
-                <span class="blocked-motivo">${escHtml(d.motivo)}</span>
-            </div>
-            <button class="blocked-del" onclick="desbloquearDia('${d.fecha}')" title="Desbloquear ahora">✕</button>
+function renderBlockedList(){
+    const list=document.getElementById('blocked-list');
+    if(!list) return;
+    if(!cfgState.diasBloqueados.length){list.innerHTML=`<div class="empty-blocked">No hay días bloqueados</div>`;return;}
+    const DIAS=['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+    list.innerHTML=cfgState.diasBloqueados.map(d=>{
+        const dt=new Date(d.fecha+'T00:00:00');
+        const fmt=`${DIAS[dt.getDay()]} ${dt.getDate()}/${String(dt.getMonth()+1).padStart(2,'0')}/${dt.getFullYear()}`;
+        return `<div class="blocked-item">
+            <div class="blocked-item-info"><span class="blocked-fecha">📅 ${fmt}</span><span class="blocked-motivo">${escHtml(d.motivo)}</span></div>
+            <button class="blocked-del" onclick="desbloquearDia('${d.fecha}')" title="Desbloquear">✕</button>
         </div>`;
     }).join('');
 }
 
-function fmtDate(d) {
-    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-}
-function escHtml(s) {
-    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-}
-function showCfgStatus(id, type, msg) {
-    const el = document.getElementById(id);
-    if (!el) return;
-    el.className   = `cfg-status ${type} visible`;
-    el.textContent = msg;
-    setTimeout(() => el.classList.remove('visible'), 4000);
+function fmtDate(d){return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;}
+function escHtml(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function showCfgStatus(id,type,msg){
+    const el=document.getElementById(id);if(!el)return;
+    el.className=`cfg-status ${type} visible`;el.textContent=msg;
+    setTimeout(()=>el.classList.remove('visible'),4000);
 }
 </script>
 
