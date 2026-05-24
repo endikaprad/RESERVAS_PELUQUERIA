@@ -49,6 +49,17 @@ jobs:
               return \$pdo;
           }
           PHPEOF
+      
+      - name: Cache busting — inyectar timestamp en scripts
+        run: |
+          TIMESTAMP=$(date +%Y%m%d%H%M%S)
+          for file in index.html servicios.html equipo.html galeria.html contacto.html reservas.html; do
+            sed -i "s/main\.js?v=[0-9]*/main.js?v=$TIMESTAMP/g" $file
+          done
+          sed -i "s/booking\.js?v=[0-9]*/booking.js?v=$TIMESTAMP/g" reservas.html
+          sed -i "s/galery\.js?v=[0-9]*/galery.js?v=$TIMESTAMP/g" galeria.html
+          sed -i "s/contact\.js?v=[0-9]*/contact.js?v=$TIMESTAMP/g" contacto.html
+          echo "Cache busting aplicado con timestamp: $TIMESTAMP"
 
       - name: Deploy via FTP
         uses: SamKirkland/FTP-Deploy-Action@4.3.2
