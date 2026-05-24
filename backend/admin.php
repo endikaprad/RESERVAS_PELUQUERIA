@@ -3044,659 +3044,989 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
      STATS JAVASCRIPT
 ================================================================ -->
     <script>
-// ================================================================
-//  PRADO BARBER CO. — admin_stats.js
-//  Stats panel logic, extracted from admin.php inline script
-// ================================================================
-
-(function () {
-    'use strict';
-
-    const STATS_API = './api/stats.php';
-    let statsLoaded = false;
-
-    // ── Panel open / close ────────────────────────────────────
-    window.openStats = function () {
-        document.getElementById('stats-overlay').classList.add('open');
-        document.getElementById('stats-panel').classList.add('open');
-        document.body.style.overflow = 'hidden';
-        if (!statsLoaded) fetchStats();
-    };
-
-    window.closeStats = function () {
-        document.getElementById('stats-overlay').classList.remove('open');
-        document.getElementById('stats-panel').classList.remove('open');
-        document.body.style.overflow = '';
-    };
-
-    // ── Fetch ─────────────────────────────────────────────────
-    async function fetchStats() {
-        try {
-            const r = await fetch(STATS_API);
-            const j = await r.json();
-            if (!j.ok) throw new Error(j.error || 'Error al cargar');
-            statsLoaded = true;
-            renderStats(j.data);
-        } catch (e) {
-            document.getElementById('stats-content').innerHTML =
-                '<div class="stats-loading" style="color:#d42b2b;">' +
-                '<div style="font-size:2rem;">⚠</div><span>' + e.message + '</span></div>';
-        }
-    }
-
-    // ── Animated number counter ───────────────────────────────
-    function animNum(el, target, decimals, suffix) {
-        decimals = decimals || 0;
-        suffix   = suffix   || '';
-        const dur = 1200, start = performance.now();
-        function step(now) {
-            const p    = Math.min((now - start) / dur, 1);
-            const ease = 1 - Math.pow(1 - p, 3);
-            const val  = ease * target;
-            el.textContent = (decimals ? val.toFixed(decimals) : Math.floor(val)) + suffix;
-            if (p < 1) requestAnimationFrame(step);
-            else {
-                el.textContent = (decimals ? target.toFixed(decimals) : target) + suffix;
-                el.classList.add('pop');
-            }
-        }
-        requestAnimationFrame(step);
-    }
-
-    // ── Tooltip ───────────────────────────────────────────────
-    const tooltip = document.getElementById('chart-tooltip');
-
-    window.showTip = function (e, unit, val) {
-        tooltip.innerHTML = '<strong>' + val + '</strong>' + (unit ? ' ' + unit : '');
-        tooltip.style.left = e.clientX + 'px';
-        tooltip.style.top  = e.clientY + 'px';
-        tooltip.classList.add('visible');
-    };
-
-    window.hideTip = function () {
-        tooltip.classList.remove('visible');
-    };
-
-    document.addEventListener('mousemove', function (e) {
-        if (tooltip.classList.contains('visible')) {
-            tooltip.style.left = e.clientX + 'px';
-            tooltip.style.top  = (e.clientY - 10) + 'px';
-        }
-    });
-
-    // ── Intersection observer helper ──────────────────────────
-    function onVisible(el, cb) {
-        if (!el) return;
-        new IntersectionObserver(function (entries, obs) {
-            entries.forEach(function (en) {
-                if (en.isIntersecting) { cb(); obs.unobserve(el); }
-            });
-        }, { threshold: 0.15 }).observe(el);
-    }
-
-    // ── Barbero modal ─────────────────────────────────────────
-    window._openBarberoModal = function (iniciales) {
-        var barbers = window._statsBarberos || [];
-        var b = barbers.find(function (x) { return x.iniciales === iniciales; });
-        if (b) openBarberoModal(b, barbers);
-    };
-
-    function openBarberoModal(b, allBarbers) {
-        var existing = document.getElementById('barbero-modal-overlay');
-        if (existing) existing.remove();
-
-        var maxIng  = Math.max.apply(null, allBarbers.map(function (x) { return +x.ingresos; }).concat([1]));
-        var pct     = maxIng > 0 ? Math.round(+b.ingresos / maxIng * 100) : 0;
-        var ticket  = (+b.ingresos / Math.max(+(b.aceptadas || b.total_citas) || 1, 1)).toFixed(0);
-
-        var colorMap = { EP: '#d42b2b', MV: '#2550a0', AR: '#c9a84c' };
-        var accent   = colorMap[b.iniciales] || '#d42b2b';
-
-        var overlay = document.createElement('div');
-        overlay.id  = 'barbero-modal-overlay';
-        overlay.style.cssText =
-            'position:fixed;inset:0;background:rgba(0,0,0,0.82);backdrop-filter:blur(10px);' +
-            'z-index:2000;display:flex;align-items:center;justify-content:center;padding:1.5rem;' +
-            'opacity:0;transition:opacity .3s ease;cursor:pointer;';
-
-        var modal = document.createElement('div');
-        modal.style.cssText =
-            'background:#111119;border:1px solid #2f2f3c;border-radius:20px;' +
-            'max-width:440px;width:100%;overflow:hidden;' +
-            'transform:translateY(20px) scale(.97);transition:transform .35s cubic-bezier(.16,1,.3,1),opacity .35s ease;' +
-            'opacity:0;cursor:default;box-shadow:0 24px 80px rgba(0,0,0,.7);';
-        modal.addEventListener('click', function (e) { e.stopPropagation(); });
-
-        var acceptPct = b.total_citas > 0
-            ? Math.round((+(b.aceptadas || 0) / +b.total_citas) * 100)
-            : 0;
-
-        modal.innerHTML =
-            '<div style="background:linear-gradient(135deg,' + accent + '22 0%,' + accent + '08 100%);' +
-            'border-bottom:1px solid ' + accent + '30;padding:2rem 2rem 1.5rem;">' +
-                '<div style="display:flex;align-items:center;gap:1.25rem;">' +
-                    '<div style="width:68px;height:68px;border-radius:16px;' +
-                    'background:linear-gradient(135deg,' + accent + '25,' + accent + '10);' +
-                    'border:2px solid ' + accent + '50;' +
-                    'display:flex;align-items:center;justify-content:center;' +
-                    'font-family:\'Playfair Display\',serif;font-size:1.4rem;font-weight:700;' +
-                    'color:' + accent + ';flex-shrink:0;">' + b.iniciales + '</div>' +
-                    '<div>' +
-                        '<div style="font-family:\'Playfair Display\',serif;font-size:1.3rem;font-weight:700;' +
-                        'color:#f0ece3;margin-bottom:.2rem;">' + b.nombre + '</div>' +
-                        '<div style="font-size:.7rem;letter-spacing:.15em;text-transform:uppercase;' +
-                        'color:' + accent + ';font-weight:600;">' + b.total_citas + ' citas totales</div>' +
-                    '</div>' +
-                '</div>' +
-            '</div>' +
-            '<div style="display:grid;grid-template-columns:repeat(3,1fr);border-bottom:1px solid #252530;">' +
-                kpiCell(b.aceptadas || 0, 'Aceptadas', '#22c55e', true) +
-                kpiCell(b.pendientes || 0, 'Pendientes', '#f59e0b', true) +
-                kpiCell((+b.ingresos).toFixed(0) + '€', 'Ingresos', '#c9a84c', false) +
-            '</div>' +
-            '<div style="padding:1.5rem 2rem;border-bottom:1px solid #252530;">' +
-                '<div style="display:flex;justify-content:space-between;font-size:.72rem;color:#7a7880;margin-bottom:.6rem;">' +
-                    '<span>Rendimiento de ingresos</span>' +
-                    '<span style="color:' + accent + ';font-weight:600;">' + (+b.ingresos).toFixed(0) + '€</span>' +
-                '</div>' +
-                '<div style="height:8px;background:#1c1c26;border-radius:4px;overflow:hidden;">' +
-                    '<div id="bm-prog" style="height:100%;border-radius:4px;width:0;' +
-                    'background:linear-gradient(90deg,' + accent + ',' + accent + '99);' +
-                    'transition:width 1.2s cubic-bezier(.16,1,.3,1) .2s;"></div>' +
-                '</div>' +
-            '</div>' +
-            '<div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;padding:1.5rem 2rem;border-bottom:1px solid #252530;">' +
-                miniKpi(ticket + '€', 'Ticket medio') +
-                miniKpi(acceptPct + '%', 'Tasa aceptación') +
-            '</div>' +
-            '<div style="padding:1.25rem 2rem;display:flex;align-items:center;justify-content:space-between;">' +
-                '<span style="font-size:.72rem;color:#7a7880;">Prado Barber Co. · Admin</span>' +
-                '<button onclick="document.getElementById(\'barbero-modal-overlay\').remove();document.body.style.overflow=\'\';" ' +
-                'style="padding:.5rem 1.25rem;background:transparent;border:1px solid #252530;' +
-                'border-radius:6px;color:#7a7880;font-family:\'DM Sans\',sans-serif;font-size:.72rem;' +
-                'letter-spacing:.1em;text-transform:uppercase;cursor:pointer;" ' +
-                'onmouseover="this.style.borderColor=\'#d42b2b\';this.style.color=\'#d42b2b\';" ' +
-                'onmouseout="this.style.borderColor=\'#252530\';this.style.color=\'#7a7880\';">Cerrar</button>' +
-            '</div>';
-
-        overlay.appendChild(modal);
-        document.body.appendChild(overlay);
-
-        requestAnimationFrame(function () {
-            overlay.style.opacity = '1';
-            modal.style.opacity   = '1';
-            modal.style.transform = 'translateY(0) scale(1)';
-            setTimeout(function () {
-                var fill = document.getElementById('bm-prog');
-                if (fill) fill.style.width = pct + '%';
-            }, 100);
-        });
-
-        overlay.addEventListener('click', function () {
-            overlay.style.opacity   = '0';
-            modal.style.opacity     = '0';
-            modal.style.transform   = 'translateY(10px) scale(.97)';
-            setTimeout(function () { overlay.remove(); document.body.style.overflow = ''; }, 300);
-        });
-
-        document.body.style.overflow = 'hidden';
-    }
-
-    function kpiCell(num, lbl, col, border) {
-        return '<div style="padding:1.25rem 1rem;text-align:center;' +
-            (border ? 'border-right:1px solid #252530;' : '') + '">' +
-            '<div style="font-family:\'Playfair Display\',serif;font-size:1.5rem;font-weight:700;color:' + col + ';line-height:1;">' + num + '</div>' +
-            '<div style="font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;color:#7a7880;margin-top:.3rem;">' + lbl + '</div>' +
-            '</div>';
-    }
-
-    function miniKpi(num, lbl) {
-        return '<div style="background:#0d0d14;border-radius:10px;padding:1rem;text-align:center;border:1px solid #1c1c26;">' +
-            '<div style="font-family:\'Playfair Display\',serif;font-size:1.4rem;font-weight:700;color:#c9a84c;">' + num + '</div>' +
-            '<div style="font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;color:#7a7880;margin-top:.25rem;">' + lbl + '</div>' +
-            '</div>';
-    }
-
-    // ── Main render ───────────────────────────────────────────
-    function renderStats(d) {
-        var kpi   = d.kpi                || {};
-        var hoy   = d.hoy                || {};
-        var mes   = d.mes                || {};
-        var barbs = d.barberos           || [];
-        var svcs  = d.servicios_top      || [];
-        var meses = d.ingresos_mensual   || [];
-        var dow   = d.dias_semana        || [];
-        var horas = d.horas_top          || [];
-        var hmap  = d.heatmap_30d        || [];
-        var tasa  = d.tasa_conversion    != null ? d.tasa_conversion : 0;
-
-        // Ensure all barbers shown even with 0 citas
-        var BASE = [
-            { id:'endika', nombre:'Endika Prado', iniciales:'EP' },
-            { id:'marcos', nombre:'Marcos Vila',  iniciales:'MV' },
-            { id:'alex',   nombre:'Alex Ramos',   iniciales:'AR' },
-        ];
-        var barbsAll = BASE.map(function (base) {
-            var found = barbs.find(function (b) { return b.iniciales === base.iniciales; });
-            return found || Object.assign({}, base, { total_citas:0, ingresos:0, aceptadas:0, pendientes:0 });
-        });
-
-        var maxBarbIng = Math.max.apply(null, barbsAll.map(function (b) { return +b.ingresos; }).concat([1]));
-        var maxHora    = Math.max.apply(null, horas.map(function (h) { return +h.total; }).concat([1]));
-        var maxSvc     = Math.max.apply(null, svcs.map(function (s) { return +s.total; }).concat([1]));
-
-        var html = '';
-
-        // KPI cards row
-        html += '<div class="stats-kpis">';
-        html += kpiCard('Reservas totales',  kpi.total_reservas  || 0, '#d42b2b', '📋', '');
-        html += kpiCard('Ingresos totales',  kpi.ingresos_totales|| 0, '#c9a84c', '💶', ' €');
-        html += kpiCard('Clientes únicos',   kpi.clientes_unicos || 0, '#2550a0', '👥', '');
-        html += kpiCard('Citas hoy',         hoy.citas_hoy       || 0, '#22c55e', '📅', '');
-        html += kpiCard('Ingresos hoy',      hoy.ingresos_hoy    || 0, '#f59e0b', '💰', ' €');
-        html += kpiCard('Citas este mes',    mes.citas_mes       || 0, '#a78bfa', '📆', '');
-        html += '</div>';
-
-        // Monthly charts
-        html += '<div class="stats-section">';
-        html += '<div class="stats-section-label">Evolución mensual — últimos 12 meses</div>';
-        html += '<div class="stats-grid-2">';
-        html += '<div class="stats-card"><div class="stats-card-title">Ingresos por mes (€)</div>';
-        html += buildLineChart(meses, 'ingresos', '€');
-        html += '</div>';
-        html += '<div class="stats-card"><div class="stats-card-title">Citas por mes</div>';
-        html += buildBarChart(meses.map(function (m) {
-            return { label: m.label, value: m.citas, tip: m.citas + ' citas — ' + m.label };
-        }), '#2550a0');
-        html += '</div></div></div>';
-
-        // Barbers
-        html += '<div class="stats-section">';
-        html += '<div class="stats-section-label">Rendimiento por barbero</div>';
-        html += '<div class="stats-grid-3">';
-        barbsAll.forEach(function (b, i) {
-            html += barberCard(b, maxBarbIng, i);
-        });
-        html += '</div></div>';
-
-        // Services + conversion
-        html += '<div class="stats-section">';
-        html += '<div class="stats-section-label">Servicios &amp; conversión</div>';
-        html += '<div class="stats-grid-2">';
-        html += buildServicesCard(svcs);
-        html += '<div class="stats-card" style="display:flex;flex-direction:column;align-items:center;">';
-        html += '<div class="stats-card-title" style="width:100%;">Tasa de aceptación</div>';
-        html += buildConversionRing(tasa, kpi);
-        html += '</div></div></div>';
-
-        // Demand patterns
-        html += '<div class="stats-section">';
-        html += '<div class="stats-section-label">Patrones de demanda</div>';
-        html += '<div class="stats-grid-2">';
-        html += '<div class="stats-card"><div class="stats-card-title">Citas por día de la semana</div>';
-        html += buildBarChart(dow.map(function (d) {
-            return { label: d.label, value: d.count, tip: d.count + ' citas los ' + d.label };
-        }), '#d42b2b');
-        html += '</div>';
-        html += '<div class="stats-card"><div class="stats-card-title">Franjas horarias más populares</div>';
-        html += '<div class="horas-wrap">';
-        horas.forEach(function (h, i) {
-            var pct = Math.round(+h.total / maxHora * 100);
-            html += '<div class="hora-row">' +
-                '<span class="hora-lbl">' + h.hora_slot + '</span>' +
-                '<div class="hora-bar-outer">' +
-                '<div class="hora-bar-fill" style="--h-w:' + pct + '%;--h-delay:' + (i * 0.08) + 's;">' +
-                '<span class="hora-count">' + h.total + '</span>' +
-                '</div></div></div>';
-        });
-        html += '</div></div></div></div>';
-
-        // Heatmap
-        html += '<div class="stats-section">';
-        html += '<div class="stats-section-label">Actividad últimos 30 días</div>';
-        html += '<div class="stats-card"><div class="stats-card-title">Mapa de calor de reservas</div>';
-        html += buildHeatmap(hmap);
-        html += '</div></div>';
-
-        document.getElementById('stats-content').innerHTML = html;
-        window._statsBarberos = barbsAll;
-
-        // Animate on load
-        setTimeout(function () {
-            document.querySelectorAll('.kpi-card').forEach(function (card, i) {
-                setTimeout(function () {
-                    card.classList.add('visible');
-                    var valEl = card.querySelector('.kpi-value');
-                    var raw   = parseFloat(card.dataset.target || 0);
-                    var dec   = parseInt(card.dataset.dec || 0);
-                    var suf   = card.dataset.suffix || '';
-                    animNum(valEl, raw, dec, suf);
-                }, i * 80);
-            });
-        }, 50);
-
-        setTimeout(function () {
-            document.querySelectorAll('.bar-fill,.line-path,.line-area,.line-dot,' +
-                '.progress-fill,.hora-bar-fill,.svc-stat-bar-fill,.conv-prog').forEach(function (el) {
-                onVisible(el, function () { el.classList.add('animated'); });
-            });
-        }, 100);
-    }
-
-    // ── Chart builders ────────────────────────────────────────
-
-    function kpiCard(label, value, color, icon, suffix) {
-        return '<div class="kpi-card" style="--kpi-accent:' + color + '" ' +
-            'data-target="' + (+value) + '" data-dec="0" data-suffix="' + suffix + '">' +
-            '<div class="kpi-badge">' + icon + '</div>' +
-            '<div class="kpi-label">' + label + '</div>' +
-            '<div class="kpi-value">0' + suffix + '</div>' +
-            '</div>';
-    }
-
-    function buildBarChart(items, color) {
-        var maxV = Math.max.apply(null, items.map(function (x) { return x.value; }).concat([1]));
-        var html = '<div class="bar-chart">';
-        items.forEach(function (item, i) {
-            var h = Math.max(Math.round(item.value / maxV * 88), 3);
-            html += '<div class="bar-item" ' +
-                'onmouseenter="showTip(event,\'\',\'' + (item.tip || item.value) + '\')" ' +
-                'onmouseleave="hideTip()">' +
-                '<div class="bar-fill" style="height:' + h + 'px;background:' + color +
-                ';--bar-delay:' + (i * 0.07) + 's;"></div>' +
-                '<span class="bar-label">' + item.label + '</span>' +
-                '</div>';
-        });
-        html += '</div>';
-        return html;
-    }
-
-    function buildLineChart(meses, field, unit) {
-        var W = 500, H = 130;
-        var PAD = { t: 12, r: 10, b: 30, l: 42 };
-        var vals = meses.map(function (m) { return +m[field]; });
-        var maxV = Math.max.apply(null, vals.concat([1]));
-
-        var pts = vals.map(function (v, i) {
-            return [
-                PAD.l + (i / Math.max(vals.length - 1, 1)) * (W - PAD.l - PAD.r),
-                PAD.t + (1 - v / maxV) * (H - PAD.t - PAD.b)
-            ];
-        });
-
-        var pathD = pts.map(function (p, i) {
-            return (i === 0 ? 'M' : 'L') + p[0].toFixed(1) + ',' + p[1].toFixed(1);
-        }).join(' ');
-
-        var areaD = pathD +
-            ' L' + pts[pts.length - 1][0].toFixed(1) + ',' + (H - PAD.b) +
-            ' L' + pts[0][0].toFixed(1) + ',' + (H - PAD.b) + ' Z';
-
-        var grids = [0.25, 0.5, 0.75, 1].map(function (f) {
-            var yy  = PAD.t + (1 - f) * (H - PAD.t - PAD.b);
-            var lbl = Math.round(maxV * f);
-            var lblStr = lbl > 999 ? (lbl / 1000).toFixed(1) + 'k' : lbl;
-            return '<line class="line-grid" x1="' + PAD.l + '" x2="' + (W - PAD.r) +
-                '" y1="' + yy.toFixed(1) + '" y2="' + yy.toFixed(1) + '"/>' +
-                '<text class="line-y-label" x="' + (PAD.l - 4) + '" y="' + (yy + 3).toFixed(1) + '">' + lblStr + '</text>';
-        }).join('');
-
-        var xlbls = meses.map(function (m, i) {
-            if (i % 3 !== 0 && i !== meses.length - 1) return '';
-            return '<text class="line-x-label" x="' + pts[i][0].toFixed(1) +
-                '" y="' + (H - 4) + '">' + m.label + '</text>';
-        }).join('');
-
-        var dots = pts.map(function (p, i) {
-            return '<circle class="line-dot" cx="' + p[0].toFixed(1) + '" cy="' + p[1].toFixed(1) + '" r="4" ' +
-                'onmouseenter="showTip(event,\'' + unit + '\',\'' + vals[i] + '\')" onmouseleave="hideTip()"/>';
-        }).join('');
-
-        return '<svg class="line-chart-svg" viewBox="0 0 ' + W + ' ' + H +
-            '" preserveAspectRatio="xMidYMid meet">' +
-            '<defs><linearGradient id="lineGrad" x1="0" y1="0" x2="0" y2="1">' +
-            '<stop offset="0%" stop-color="#d42b2b" stop-opacity=".25"/>' +
-            '<stop offset="100%" stop-color="#d42b2b" stop-opacity="0"/>' +
-            '</linearGradient></defs>' +
-            grids + xlbls +
-            '<path class="line-area" d="' + areaD + '"/>' +
-            '<path class="line-path" d="' + pathD + '"/>' +
-            dots + '</svg>';
-    }
-
-    function buildConversionRing(tasa, kpi) {
-        var dash = (tasa / 100) * 345;
-        return '<div class="conversion-wrap">' +
-            '<div class="conversion-ring">' +
-            '<svg class="conv-svg" viewBox="0 0 120 120">' +
-            '<circle class="conv-track" cx="60" cy="60" r="55"/>' +
-            '<circle class="conv-prog" cx="60" cy="60" r="55" style="--conv-dash:' + dash.toFixed(1) + ';" ' +
-            'onmouseenter="showTip(event,\'tasa\',\'' + tasa + '%\')" onmouseleave="hideTip()"/>' +
-            '</svg>' +
-            '<div class="conv-center">' +
-            '<div class="conv-pct">' + tasa + '%</div>' +
-            '<div class="conv-sub">aceptadas</div>' +
-            '</div></div>' +
-            '<div class="conversion-meta conversion-meta-row">' +
-            convMeta(kpi.aceptadas  || 0, 'Aceptadas',  '#22c55e') +
-            convMeta(kpi.pendientes || 0, 'Pendientes', '#f59e0b') +
-            convMeta(kpi.denegadas  || 0, 'Denegadas',  '#d42b2b') +
-            convMeta(kpi.total_reservas || 0, 'Total', '#f0ece3') +
-            '</div></div>';
-    }
-
-    function convMeta(num, lbl, col) {
-        return '<div class="conv-meta-item">' +
-            '<div class="conv-meta-num" style="color:' + col + ';">' + num + '</div>' +
-            '<div class="conv-meta-lbl">' + lbl + '</div>' +
-            '</div>';
-    }
-
-    function barberCard(b, maxIng, i) {
-        var pct    = maxIng > 0 ? Math.round(+b.ingresos / maxIng * 100) : 0;
-        var ticket = (+b.ingresos / Math.max(+(b.aceptadas || b.total_citas) || 1, 1)).toFixed(0);
-        var isEmpty = +b.total_citas === 0;
-        var colorMap = { EP: '#d42b2b', MV: '#2550a0', AR: '#c9a84c' };
-        var accent   = colorMap[b.iniciales] || '#d42b2b';
-
-        return '<div class="barbero-stat-card" style="cursor:pointer;' + (isEmpty ? 'opacity:.65;' : '') + '" ' +
-            'onclick="window._openBarberoModal(\'' + b.iniciales + '\')" ' +
-            'title="Ver detalles de ' + b.nombre + '">' +
-            '<div class="barbero-stat-header">' +
-                '<div class="barbero-avatar-stat" style="background:linear-gradient(135deg,' + accent + '25,' + accent + '08);' +
-                'border-color:' + accent + '40;color:' + accent + ';">' + b.iniciales + '</div>' +
-                '<div>' +
-                    '<div class="barbero-stat-name">' + b.nombre + '</div>' +
-                    '<div class="barbero-stat-sub">' + b.total_citas + ' citas totales</div>' +
-                '</div>' +
-                '<div style="margin-left:auto;width:28px;height:28px;border-radius:50%;' +
-                'background:rgba(245,240,232,.04);border:1px solid #252530;' +
-                'display:flex;align-items:center;justify-content:center;' +
-                'font-size:.7rem;color:#7a7880;flex-shrink:0;">→</div>' +
-            '</div>' +
-            '<div class="barbero-progress-wrap">' +
-                '<div class="barbero-progress-label">' +
-                    '<span>Ingresos generados</span>' +
-                    '<span style="color:' + accent + ';">' + (+b.ingresos).toFixed(0) + ' €</span>' +
-                '</div>' +
-                '<div class="progress-track">' +
-                    '<div class="progress-fill" style="--prog-w:' + pct + '%;--prog-delay:' + (0.2 + i * 0.15) + 's;' +
-                    'background:linear-gradient(90deg,' + accent + ',' + accent + '99);"></div>' +
-                '</div>' +
-            '</div>' +
-            '<div class="barbero-kpi-row">' +
-                '<div class="barbero-kpi"><div class="barbero-kpi-num" style="color:#22c55e;">' + (b.aceptadas || 0) + '</div>' +
-                '<div class="barbero-kpi-lbl">Aceptadas</div></div>' +
-                '<div class="barbero-kpi"><div class="barbero-kpi-num" style="color:#f59e0b;">' + (b.pendientes || 0) + '</div>' +
-                '<div class="barbero-kpi-lbl">Pendientes</div></div>' +
-                '<div class="barbero-kpi"><div class="barbero-kpi-num" style="color:#c9a84c;">' +
-                (isEmpty ? '—' : ticket + '€') + '</div>' +
-                '<div class="barbero-kpi-lbl">Ticket medio</div></div>' +
-            '</div>' +
-            '</div>';
-    }
-
-    function buildServicesCard(svcs) {
-        if (!svcs || !svcs.length) {
-            return '<div class="stats-card"><div class="stats-card-title">Servicios más solicitados</div>' +
-                '<div style="color:#7a7880;font-size:.82rem;text-align:center;padding:2rem;">Sin datos</div></div>';
-        }
-        var maxTotal = Math.max.apply(null, svcs.map(function (s) { return +s.total; }).concat([1]));
-
-        var html = '<div class="stats-card">';
-        html += '<div class="stats-card-title">Servicios más solicitados</div>';
-
-        html += '<div style="margin-bottom:1rem;">';
-        html += '<div style="font-size:.6rem;letter-spacing:.15em;text-transform:uppercase;' +
-            'color:#22c55e;margin-bottom:.65rem;">' +
-            '<span style="display:inline-block;width:6px;height:6px;border-radius:50%;' +
-            'background:#22c55e;margin-right:.4rem;vertical-align:middle;"></span>Citas aceptadas</div>';
-        html += '<div class="svc-stat-list">';
-        svcs.forEach(function (s, i) { html += svcItemAccepted(s, maxTotal, i); });
-        html += '</div></div>';
-
-        html += '<div style="border-top:1px solid #1c1c26;padding-top:1rem;">';
-        html += '<div style="font-size:.6rem;letter-spacing:.15em;text-transform:uppercase;' +
-            'color:#d42b2b;margin-bottom:.65rem;">' +
-            '<span style="display:inline-block;width:6px;height:6px;border-radius:50%;' +
-            'background:#d42b2b;margin-right:.4rem;vertical-align:middle;"></span>No confirmadas / denegadas</div>';
-        html += '<div class="svc-stat-list">';
-        svcs.forEach(function (s, i) { html += svcItemDenied(s, maxTotal, i); });
-        html += '</div></div>';
-
-        html += '</div>';
-        return html;
-    }
-
-    function svcItemAccepted(s, maxSvc, i) {
-        var aceptadas = s.ingresos > 0 ? Math.round(+s.ingresos / +s.precio) : 0;
-        var barPct    = maxSvc > 0 ? Math.round(aceptadas / maxSvc * 100) : 0;
-        var opacity   = aceptadas === 0 ? 'opacity:.4;' : '';
-
-        return '<div class="svc-stat-item" style="' + opacity + '">' +
-            '<div class="svc-stat-rank">' + (i + 1) + '</div>' +
-            '<div class="svc-stat-info">' +
-                '<div class="svc-stat-name">' + s.nombre + '</div>' +
-                '<div class="svc-stat-bar"><div class="svc-stat-bar-fill" ' +
-                'style="--svc-w:' + barPct + '%;--svc-delay:' + (i * 0.09) + 's;' +
-                'background:linear-gradient(90deg,#22c55e,#16a34a);"></div></div>' +
-            '</div>' +
-            '<div class="svc-stat-meta">' +
-                '<div class="svc-stat-count">' + aceptadas + ' citas</div>' +
-                '<div class="svc-stat-euros" style="color:#22c55e;">' + (+s.ingresos).toFixed(0) + ' €</div>' +
-            '</div></div>';
-    }
-
-    function svcItemDenied(s, maxSvc, i) {
-        var aceptadas  = s.ingresos > 0 ? Math.round(+s.ingresos / +s.precio) : 0;
-        var noAceptadas = +s.total - aceptadas;
-        var barPct     = noAceptadas > 0 ? Math.round(noAceptadas / maxSvc * 100) : 0;
-        var opacity    = noAceptadas <= 0 ? 'opacity:.35;' : '';
-
-        return '<div class="svc-stat-item" style="' + opacity + '">' +
-            '<div class="svc-stat-rank" style="background:rgba(212,43,43,.08);' +
-            'border-color:rgba(212,43,43,.2);color:#d42b2b;">' + (i + 1) + '</div>' +
-            '<div class="svc-stat-info">' +
-                '<div class="svc-stat-name">' + s.nombre + '</div>' +
-                '<div class="svc-stat-bar"><div class="svc-stat-bar-fill" ' +
-                'style="--svc-w:' + barPct + '%;--svc-delay:' + (i * 0.09) + 's;' +
-                'background:linear-gradient(90deg,#d42b2b,#a81e1e);"></div></div>' +
-            '</div>' +
-            '<div class="svc-stat-meta">' +
-                '<div class="svc-stat-count">' + noAceptadas + ' citas</div>' +
-                '<div class="svc-stat-euros" style="color:#d42b2b;">0 €</div>' +
-            '</div></div>';
-    }
-
-    function buildHeatmap(hmap) {
-        var today  = new Date();
-        var map    = {};
-        hmap.forEach(function (h) { map[h.dia] = +h.total; });
-        var maxV   = Math.max.apply(null, Object.values(map).concat([1]));
-
-        var DAYS_LABEL = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
-        var entries    = [];
-
-        for (var i = 29; i >= 0; i--) {
-            var d = new Date(today);
-            d.setDate(d.getDate() - i);
-            var iso   = d.toISOString().slice(0, 10);
-            var dow   = (d.getDay() + 6) % 7;
-            var v     = map[iso] || 0;
-            var level = v === 0 ? 0 : v <= maxV * 0.25 ? 1 : v <= maxV * 0.5 ? 2 : v <= maxV * 0.75 ? 3 : 4;
-            entries.push({ iso: iso, dow: dow, v: v, level: level, date: d });
-        }
-
-        var weeks = [];
-        var week  = new Array(7).fill(null);
-        entries.forEach(function (entry) {
-            week[entry.dow] = entry;
-            if (entry.dow === 6) { weeks.push(week); week = new Array(7).fill(null); }
-        });
-        if (week.some(function (x) { return x !== null; })) weeks.push(week);
-
-        var weekLabels = weeks.map(function (w) {
-            var first = w.find(function (x) { return x !== null; });
-            if (!first) return '';
-            var mon = new Date(first.date);
-            mon.setDate(first.date.getDate() - first.dow);
-            return mon.getDate() + '/' + String(mon.getMonth() + 1).padStart(2, '0');
-        });
-
-        var BG  = ['#0d0d14', 'rgba(212,43,43,.2)', 'rgba(212,43,43,.42)', 'rgba(212,43,43,.68)', '#d42b2b'];
-        var BD  = ['#1c1c26', 'rgba(212,43,43,.15)', 'rgba(212,43,43,.3)', 'rgba(212,43,43,.5)', 'rgba(212,43,43,.8)'];
-
-        var html = '<div style="overflow-x:auto;padding-bottom:4px;">';
-        html += '<div style="display:inline-flex;gap:0;min-width:max-content;">';
-
-        // Day labels column
-        html += '<div style="display:flex;flex-direction:column;justify-content:flex-end;' +
-            'margin-right:6px;gap:3px;margin-top:20px;">';
-        DAYS_LABEL.forEach(function (l) {
-            html += '<div style="height:20px;width:16px;display:flex;align-items:center;' +
-                'justify-content:flex-end;font-size:.52rem;color:#4a4a5a;">' + l + '</div>';
-        });
-        html += '</div>';
-
-        // Week columns
-        html += '<div style="display:flex;gap:3px;align-items:flex-end;">';
-        weeks.forEach(function (w, wi) {
-            html += '<div style="display:flex;flex-direction:column;gap:0;">';
-            html += '<div style="height:18px;font-size:.52rem;color:#4a4a5a;' +
-                'white-space:nowrap;margin-bottom:2px;display:flex;align-items:center;">' +
-                (wi % 2 === 0 ? weekLabels[wi] : '') + '</div>';
-            for (var di = 0; di < 7; di++) {
-                var cell = w[di];
-                if (!cell) {
-                    html += '<div style="width:20px;height:20px;margin-bottom:3px;opacity:0;"></div>';
-                    continue;
+        // ================================================================
+        //  PRADO BARBER CO. — Script completo corregido para admin.php
+        //  Sustituye el bloque <script> al final del body en admin.php
+        //
+        //  CORRECCIONES:
+        //  1. Panel de configuración (openCfg/closeCfg/switchTab/etc.) — AÑADIDO
+        //  2. Heatmap rediseñado: más compacto y claro
+        //  3. Bar chart: espacio vertical corregido
+        //  4. Servicios: muestra dinero perdido con tachado + canceladas
+        //  5. Donut conversión: multicolor (verde/rojo/naranja), sin recorte
+        // ================================================================
+
+        // ── CONFIG PANEL ────────────────────────────────────────────────
+        (function initCfgPanel() {
+            'use strict';
+            const CFG_API = './api/settings.php';
+            let mcDate = new Date();
+            let blockedDates = {};
+            let pendingAdd = [];
+            let pendingDel = [];
+            let rangeMode = false;
+            let rangeStart = null;
+
+            window.openCfg = function() {
+                document.getElementById('cfg-overlay').classList.add('open');
+                document.getElementById('cfg-panel').classList.add('open');
+                document.body.style.overflow = 'hidden';
+                loadCfg();
+            };
+            window.closeCfg = function() {
+                document.getElementById('cfg-overlay').classList.remove('open');
+                document.getElementById('cfg-panel').classList.remove('open');
+                document.body.style.overflow = '';
+            };
+            window.switchTab = function(tab) {
+                document.querySelectorAll('.cfg-tab').forEach(t => {
+                    t.classList.toggle('active', t.getAttribute('onclick').includes("'" + tab + "'"));
+                });
+                document.querySelectorAll('.cfg-pane').forEach(p => p.classList.remove('active'));
+                const pane = document.getElementById('pane-' + tab);
+                if (pane) pane.classList.add('active');
+            };
+
+            async function loadCfg() {
+                try {
+                    const res = await fetch(CFG_API);
+                    const json = await res.json();
+                    if (!json.ok) return;
+                    const d = json.data;
+
+                    const isOn = d.auto_aceptar && d.auto_aceptar !== 'no';
+                    const toggle = document.getElementById('auto-toggle');
+                    const chip = document.getElementById('auto-chip');
+                    const text = document.getElementById('auto-chip-text');
+                    const alcSec = document.getElementById('alcance-section');
+
+                    if (toggle) toggle.checked = isOn;
+                    if (chip) chip.className = 'auto-estado-chip ' + (isOn ? 'on' : 'off');
+                    if (text) text.textContent = isOn ? 'Activado' : 'Desactivado';
+                    if (alcSec) alcSec.style.display = isOn ? 'block' : 'none';
+
+                    if (isOn && d.auto_aceptar) {
+                        document.querySelectorAll('.alcance-btn').forEach(b =>
+                            b.classList.toggle('selected', b.dataset.val === d.auto_aceptar));
+                        updateAlcanceDesc(d.auto_aceptar);
+                    }
+
+                    blockedDates = {};
+                    (d.dias_bloqueados || []).forEach(item => {
+                        blockedDates[item.fecha] = item.motivo;
+                    });
+                    pendingAdd = [];
+                    pendingDel = [];
+                    renderMiniCal();
+                    renderBlockedList();
+                } catch (e) {
+                    console.error('loadCfg', e);
                 }
-                var tipTxt = cell.v + ' cita' + (cell.v !== 1 ? 's' : '') + ' — ' + cell.iso;
-                html += '<div title="' + cell.iso + ': ' + cell.v + ' cita' + (cell.v !== 1 ? 's' : '') + '" ' +
-                    'onmouseenter="showTip(event,\'\',\'' + tipTxt + '\')" onmouseleave="hideTip()" ' +
-                    'style="width:20px;height:20px;margin-bottom:3px;border-radius:4px;' +
-                    'background:' + BG[cell.level] + ';border:1px solid ' + BD[cell.level] + ';' +
-                    'transition:transform .15s;cursor:default;" ' +
-                    'onmouseover="this.style.transform=\'scale(1.35)\'" ' +
-                    'onmouseout="this.style.transform=\'\'"></div>';
             }
-            html += '</div>';
-        });
-        html += '</div></div>';
 
-        // Legend
-        html += '<div style="display:flex;align-items:center;gap:.5rem;margin-top:.85rem;justify-content:flex-end;">';
-        html += '<span style="font-size:.6rem;color:#4a4a5a;">Menos</span>';
-        for (var l = 0; l < 5; l++) {
-            html += '<div style="width:14px;height:14px;border-radius:3px;background:' + BG[l] +
-                ';border:1px solid ' + BD[l] + ';flex-shrink:0;"></div>';
-        }
-        html += '<span style="font-size:.6rem;color:#4a4a5a;">Más</span>';
-        html += '</div></div>';
-        return html;
-    }
+            window.onAutoToggle = function() {
+                const toggle = document.getElementById('auto-toggle');
+                const chip = document.getElementById('auto-chip');
+                const text = document.getElementById('auto-chip-text');
+                const alcSec = document.getElementById('alcance-section');
+                const isOn = toggle.checked;
+                if (chip) chip.className = 'auto-estado-chip ' + (isOn ? 'on' : 'off');
+                if (text) text.textContent = isOn ? 'Activado' : 'Desactivado';
+                if (alcSec) alcSec.style.display = isOn ? 'block' : 'none';
+            };
+            window.selectAlcance = function(btn) {
+                document.querySelectorAll('.alcance-btn').forEach(b => b.classList.remove('selected'));
+                btn.classList.add('selected');
+                updateAlcanceDesc(btn.dataset.val);
+            };
 
-})();
+            function updateAlcanceDesc(val) {
+                const desc = document.getElementById('alcance-desc');
+                if (!desc) return;
+                const map = {
+                    hoy: 'Las reservas se aceptarán automáticamente solo hoy.',
+                    semana: 'Las reservas se aceptarán automáticamente durante los próximos 7 días.',
+                    mes: 'Las reservas se aceptarán automáticamente durante el próximo mes.',
+                    siempre: 'Las reservas se aceptarán automáticamente sin límite de tiempo.',
+                };
+                desc.textContent = map[val] || '';
+            }
+            window.saveAutoAceptar = async function() {
+                const toggle = document.getElementById('auto-toggle');
+                const isOn = toggle && toggle.checked;
+                let alcance = 'no';
+                if (isOn) {
+                    const sel = document.querySelector('.alcance-btn.selected');
+                    alcance = sel ? sel.dataset.val : 'siempre';
+                }
+                const btn = document.getElementById('btn-save-auto');
+                if (btn) {
+                    btn.disabled = true;
+                    btn.textContent = 'Guardando…';
+                }
+                try {
+                    const res = await fetch(CFG_API, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            accion: 'auto_aceptar',
+                            valor: alcance
+                        })
+                    });
+                    const json = await res.json();
+                    showCfgStatus('auto-status', json.ok, json.ok ? 'Configuración guardada.' : (json.error || 'Error'));
+                } catch (e) {
+                    showCfgStatus('auto-status', false, 'Error de conexión.');
+                } finally {
+                    if (btn) {
+                        btn.disabled = false;
+                        btn.textContent = 'Guardar configuración';
+                    }
+                }
+            };
+
+            const MONTHS_ES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+            window.mcNav = function(dir) {
+                mcDate.setMonth(mcDate.getMonth() + dir);
+                renderMiniCal();
+            };
+
+            function renderMiniCal() {
+                const title = document.getElementById('mc-title');
+                if (title) title.textContent = MONTHS_ES[mcDate.getMonth()] + ' ' + mcDate.getFullYear();
+                const grid = document.getElementById('mc-grid');
+                if (!grid) return;
+                const year = mcDate.getFullYear(),
+                    month = mcDate.getMonth();
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                const firstDay = new Date(year, month, 1).getDay();
+                const offset = (firstDay + 6) % 7;
+                const daysIn = new Date(year, month + 1, 0).getDate();
+                let html = '';
+                for (let i = 0; i < offset; i++) html += "<div class='mini-cell mc-empty'></div>";
+                for (let d = 1; d <= daysIn; d++) {
+                    const dt = new Date(year, month, d);
+                    const iso = isoDate(year, month, d);
+                    const isPast = dt < today,
+                        isSun = dt.getDay() === 0;
+                    const isBlocked = Object.prototype.hasOwnProperty.call(blockedDates, iso);
+                    const isPendAdd = pendingAdd.includes(iso);
+                    const isPendDel = pendingDel.includes(iso);
+                    const isToday = dt.getTime() === today.getTime();
+                    let cls = 'mini-cell';
+                    if (isPast || isSun) cls += ' mc-disabled';
+                    else if (isPendDel) cls += ' mc-unblocking';
+                    else if (isBlocked) cls += ' mc-blocked';
+                    else if (isPendAdd) cls += ' mc-pending';
+                    else if (isToday) cls += ' mc-today';
+                    const disabled = isPast || isSun;
+                    const onclick = disabled ? '' : `onclick="mcCellClick('${iso}')"`;
+                    const motivo = isBlocked ? (blockedDates[iso] || 'Bloqueado') : '';
+                    const title2 = motivo ? `title="${motivo}"` : '';
+                    html += `<div class="${cls}" ${onclick} ${title2}>${d}</div>`;
+                }
+                grid.innerHTML = html;
+            }
+
+            window.mcCellClick = function(iso) {
+                const isBlocked = Object.prototype.hasOwnProperty.call(blockedDates, iso);
+                const iPendAdd = pendingAdd.indexOf(iso);
+                const iPendDel = pendingDel.indexOf(iso);
+                if (rangeMode) {
+                    if (!rangeStart) {
+                        rangeStart = iso;
+                        const hint = document.getElementById('range-hint');
+                        if (hint) hint.innerHTML = `📅 Rango: <strong>${iso}</strong> → selecciona el día final.`;
+                    } else {
+                        const [start, end] = rangeStart < iso ? [rangeStart, iso] : [iso, rangeStart];
+                        expandRange(start, end);
+                        rangeStart = null;
+                        const hint = document.getElementById('range-hint');
+                        if (hint) hint.innerHTML = '📅 Modo rango: selecciona el <strong>primer día</strong> y luego el <strong>último</strong>.';
+                    }
+                } else {
+                    if (isBlocked) {
+                        if (iPendDel !== -1) pendingDel.splice(iPendDel, 1);
+                        else pendingDel.push(iso);
+                    } else {
+                        if (iPendAdd !== -1) pendingAdd.splice(iPendAdd, 1);
+                        else pendingAdd.push(iso);
+                    }
+                }
+                updateSaveDaysBtn();
+                renderMiniCal();
+            };
+
+            function expandRange(start, end) {
+                const cur = new Date(start + 'T00:00:00');
+                const fin = new Date(end + 'T00:00:00');
+                while (cur <= fin) {
+                    const iso = cur.toISOString().slice(0, 10);
+                    if (cur.getDay() !== 0 && !Object.prototype.hasOwnProperty.call(blockedDates, iso) && !pendingAdd.includes(iso))
+                        pendingAdd.push(iso);
+                    cur.setDate(cur.getDate() + 1);
+                }
+                updateSaveDaysBtn();
+                renderMiniCal();
+            }
+            window.toggleRangeMode = function() {
+                rangeMode = !rangeMode;
+                rangeStart = null;
+                const btn = document.getElementById('btn-rango');
+                const hint = document.getElementById('range-hint');
+                if (btn) btn.textContent = rangeMode ? '✕ Cancelar rango' : '⇔ Rango de días';
+                if (hint) hint.className = 'range-hint' + (rangeMode ? ' visible' : '');
+            };
+            window.clearPending = function() {
+                pendingAdd = [];
+                pendingDel = [];
+                rangeStart = null;
+                rangeMode = false;
+                const btn = document.getElementById('btn-rango');
+                const hint = document.getElementById('range-hint');
+                if (btn) btn.textContent = '⇔ Rango de días';
+                if (hint) hint.className = 'range-hint';
+                updateSaveDaysBtn();
+                renderMiniCal();
+            };
+
+            function updateSaveDaysBtn() {
+                const btn = document.getElementById('btn-save-days');
+                if (btn) btn.disabled = (pendingAdd.length === 0 && pendingDel.length === 0);
+            }
+            window.saveDays = async function() {
+                const motivo = (document.getElementById('vac-motivo').value.trim()) || 'Vacaciones';
+                const btn = document.getElementById('btn-save-days');
+                if (btn) {
+                    btn.disabled = true;
+                    btn.textContent = 'Guardando…';
+                }
+                try {
+                    for (const f of pendingAdd)
+                        await fetch(CFG_API, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                accion: 'bloquear_dia',
+                                fecha: f,
+                                motivo
+                            })
+                        });
+                    for (const f of pendingDel)
+                        await fetch(CFG_API, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                accion: 'desbloquear_dia',
+                                fecha: f
+                            })
+                        });
+                    pendingAdd = [];
+                    pendingDel = [];
+                    await loadCfg();
+                    showCfgStatus('vac-status', true, 'Días guardados correctamente.');
+                } catch (e) {
+                    showCfgStatus('vac-status', false, 'Error al guardar.');
+                } finally {
+                    if (btn) {
+                        btn.textContent = 'Guardar días bloqueados';
+                        updateSaveDaysBtn();
+                    }
+                }
+            };
+            window.deleteBlocked = async function(fecha) {
+                try {
+                    await fetch(CFG_API, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            accion: 'desbloquear_dia',
+                            fecha
+                        })
+                    });
+                    await loadCfg();
+                    showCfgStatus('vac-status', true, 'Día desbloqueado.');
+                } catch (e) {
+                    showCfgStatus('vac-status', false, 'Error.');
+                }
+            };
+
+            function renderBlockedList() {
+                const el = document.getElementById('blocked-list');
+                if (!el) return;
+                const keys = Object.keys(blockedDates).sort();
+                if (!keys.length) {
+                    el.innerHTML = "<div class='empty-blocked'>No hay días bloqueados actualmente.</div>";
+                    return;
+                }
+                el.innerHTML = keys.map(f =>
+                    `<div class='blocked-item'>
+               <div class='blocked-item-info'>
+                 <span class='blocked-fecha'>${f}</span>
+                 <span class='blocked-motivo'>${blockedDates[f]||''}</span>
+               </div>
+               <button class='blocked-del' onclick="deleteBlocked('${f}')">✕</button>
+             </div>`
+                ).join('');
+            }
+
+            function showCfgStatus(id, ok, msg) {
+                const el = document.getElementById(id);
+                if (!el) return;
+                el.className = 'cfg-status visible ' + (ok ? 'ok' : 'err');
+                el.textContent = (ok ? '✓ ' : '✕ ') + msg;
+                setTimeout(() => el.classList.remove('visible'), 3500);
+            }
+
+            function isoDate(y, m, d) {
+                return `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+            }
+        })();
+
+
+        // ── STATS PANEL ─────────────────────────────────────────────────
+        (function() {
+            'use strict';
+
+            const STATS_API = './api/stats.php';
+            let statsLoaded = false;
+
+            window.openStats = function() {
+                document.getElementById('stats-overlay').classList.add('open');
+                document.getElementById('stats-panel').classList.add('open');
+                document.body.style.overflow = 'hidden';
+                if (!statsLoaded) fetchStats();
+            };
+            window.closeStats = function() {
+                document.getElementById('stats-overlay').classList.remove('open');
+                document.getElementById('stats-panel').classList.remove('open');
+                document.body.style.overflow = '';
+            };
+
+            async function fetchStats() {
+                try {
+                    const r = await fetch(STATS_API);
+                    const j = await r.json();
+                    if (!j.ok) throw new Error(j.error || 'Error al cargar');
+                    statsLoaded = true;
+                    renderStats(j.data);
+                } catch (e) {
+                    document.getElementById('stats-content').innerHTML =
+                        `<div class="stats-loading" style="color:#d42b2b;"><div style="font-size:2rem;">⚠</div><span>${e.message}</span></div>`;
+                }
+            }
+
+            function animNum(el, target, decimals, suffix) {
+                decimals = decimals || 0;
+                suffix = suffix || '';
+                const dur = 1200,
+                    start = performance.now();
+
+                function step(now) {
+                    const p = Math.min((now - start) / dur, 1),
+                        ease = 1 - Math.pow(1 - p, 3),
+                        val = ease * target;
+                    el.textContent = (decimals ? val.toFixed(decimals) : Math.floor(val)) + suffix;
+                    if (p < 1) requestAnimationFrame(step);
+                    else {
+                        el.textContent = (decimals ? target.toFixed(decimals) : target) + suffix;
+                        el.classList.add('pop');
+                    }
+                }
+                requestAnimationFrame(step);
+            }
+
+            const tooltip = document.getElementById('chart-tooltip');
+            window.showTip = function(e, unit, val) {
+                tooltip.innerHTML = `<strong>${val}</strong>${unit?' '+unit:''}`;
+                tooltip.style.left = e.clientX + 'px';
+                tooltip.style.top = e.clientY + 'px';
+                tooltip.classList.add('visible');
+            };
+            window.hideTip = function() {
+                tooltip.classList.remove('visible');
+            };
+            document.addEventListener('mousemove', e => {
+                if (tooltip.classList.contains('visible')) {
+                    tooltip.style.left = e.clientX + 'px';
+                    tooltip.style.top = (e.clientY - 10) + 'px';
+                }
+            });
+
+            function onVisible(el, cb) {
+                if (!el) return;
+                new IntersectionObserver((entries, obs) => {
+                    entries.forEach(en => {
+                        if (en.isIntersecting) {
+                            cb();
+                            obs.unobserve(el);
+                        }
+                    });
+                }, {
+                    threshold: 0.15
+                }).observe(el);
+            }
+
+            // ── Barbero modal ─────────────────────────────────────────────
+            window._openBarberoModal = function(iniciales) {
+                const b = (window._statsBarberos || []).find(x => x.iniciales === iniciales);
+                if (b) openBarberoModal(b, window._statsBarberos || []);
+            };
+
+            function openBarberoModal(b, allBarbers) {
+                const existing = document.getElementById('barbero-modal-overlay');
+                if (existing) existing.remove();
+                const maxIng = Math.max(...allBarbers.map(x => +x.ingresos), 1);
+                const pct = maxIng > 0 ? Math.round(+b.ingresos / maxIng * 100) : 0;
+                const ticket = (+b.ingresos / Math.max(+(b.aceptadas || b.total_citas) || 1, 1)).toFixed(0);
+                const colorMap = {
+                    EP: '#d42b2b',
+                    MV: '#2550a0',
+                    AR: '#c9a84c'
+                };
+                const accent = colorMap[b.iniciales] || '#d42b2b';
+                const acceptPct = b.total_citas > 0 ? Math.round((+(b.aceptadas || 0) / +b.total_citas) * 100) : 0;
+
+                const overlay = document.createElement('div');
+                overlay.id = 'barbero-modal-overlay';
+                overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.82);backdrop-filter:blur(10px);z-index:2000;display:flex;align-items:center;justify-content:center;padding:1.5rem;opacity:0;transition:opacity .3s ease;cursor:pointer;';
+                const modal = document.createElement('div');
+                modal.style.cssText = 'background:#111119;border:1px solid #2f2f3c;border-radius:20px;max-width:440px;width:100%;overflow:hidden;transform:translateY(20px) scale(.97);transition:transform .35s cubic-bezier(.16,1,.3,1),opacity .35s ease;opacity:0;cursor:default;box-shadow:0 24px 80px rgba(0,0,0,.7);';
+                modal.addEventListener('click', e => e.stopPropagation());
+                modal.innerHTML = `
+          <div style="background:linear-gradient(135deg,${accent}22 0%,${accent}08 100%);border-bottom:1px solid ${accent}30;padding:2rem 2rem 1.5rem;">
+            <div style="display:flex;align-items:center;gap:1.25rem;">
+              <div style="width:68px;height:68px;border-radius:16px;background:linear-gradient(135deg,${accent}25,${accent}10);border:2px solid ${accent}50;display:flex;align-items:center;justify-content:center;font-family:'Playfair Display',serif;font-size:1.4rem;font-weight:700;color:${accent};flex-shrink:0;">${b.iniciales}</div>
+              <div>
+                <div style="font-family:'Playfair Display',serif;font-size:1.3rem;font-weight:700;color:#f0ece3;margin-bottom:.2rem;">${b.nombre}</div>
+                <div style="font-size:.7rem;letter-spacing:.15em;text-transform:uppercase;color:${accent};font-weight:600;">${b.total_citas} citas totales</div>
+              </div>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);border-bottom:1px solid #252530;">
+            ${kpiCell(b.aceptadas||0,'Aceptadas','#22c55e',true)}
+            ${kpiCell(b.pendientes||0,'Pendientes','#f59e0b',true)}
+            ${kpiCell((+b.ingresos).toFixed(0)+'€','Ingresos','#c9a84c',false)}
+          </div>
+          <div style="padding:1.5rem 2rem;border-bottom:1px solid #252530;">
+            <div style="display:flex;justify-content:space-between;font-size:.72rem;color:#7a7880;margin-bottom:.6rem;"><span>Rendimiento de ingresos</span><span style="color:${accent};font-weight:600;">${(+b.ingresos).toFixed(0)}€</span></div>
+            <div style="height:8px;background:#1c1c26;border-radius:4px;overflow:hidden;">
+              <div id="bm-prog" style="height:100%;border-radius:4px;width:0;background:linear-gradient(90deg,${accent},${accent}99);transition:width 1.2s cubic-bezier(.16,1,.3,1) .2s;"></div>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;padding:1.5rem 2rem;border-bottom:1px solid #252530;">
+            ${miniKpi(ticket+'€','Ticket medio')}${miniKpi(acceptPct+'%','Tasa aceptación')}
+          </div>
+          <div style="padding:1.25rem 2rem;display:flex;align-items:center;justify-content:space-between;">
+            <span style="font-size:.72rem;color:#7a7880;">Prado Barber Co. · Admin</span>
+            <button onclick="document.getElementById('barbero-modal-overlay').remove();document.body.style.overflow='';" style="padding:.5rem 1.25rem;background:transparent;border:1px solid #252530;border-radius:6px;color:#7a7880;font-family:'DM Sans',sans-serif;font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;" onmouseover="this.style.borderColor='#d42b2b';this.style.color='#d42b2b';" onmouseout="this.style.borderColor='#252530';this.style.color='#7a7880';">Cerrar</button>
+          </div>`;
+                overlay.appendChild(modal);
+                document.body.appendChild(overlay);
+                requestAnimationFrame(() => {
+                    overlay.style.opacity = '1';
+                    modal.style.opacity = '1';
+                    modal.style.transform = 'translateY(0) scale(1)';
+                    setTimeout(() => {
+                        const f = document.getElementById('bm-prog');
+                        if (f) f.style.width = pct + '%';
+                    }, 100);
+                });
+                overlay.addEventListener('click', () => {
+                    overlay.style.opacity = '0';
+                    modal.style.opacity = '0';
+                    modal.style.transform = 'translateY(10px) scale(.97)';
+                    setTimeout(() => {
+                        overlay.remove();
+                        document.body.style.overflow = '';
+                    }, 300);
+                });
+                document.body.style.overflow = 'hidden';
+            }
+
+            function kpiCell(num, lbl, col, border) {
+                return `<div style="padding:1.25rem 1rem;text-align:center;${border?'border-right:1px solid #252530;':''}"><div style="font-family:'Playfair Display',serif;font-size:1.5rem;font-weight:700;color:${col};line-height:1;">${num}</div><div style="font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;color:#7a7880;margin-top:.3rem;">${lbl}</div></div>`;
+            }
+
+            function miniKpi(num, lbl) {
+                return `<div style="background:#0d0d14;border-radius:10px;padding:1rem;text-align:center;border:1px solid #1c1c26;"><div style="font-family:'Playfair Display',serif;font-size:1.4rem;font-weight:700;color:#c9a84c;">${num}</div><div style="font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;color:#7a7880;margin-top:.25rem;">${lbl}</div></div>`;
+            }
+
+            // ── RENDER STATS ─────────────────────────────────────────────
+            function renderStats(d) {
+                const kpi = d.kpi || {};
+                const hoy = d.hoy || {};
+                const mes = d.mes || {};
+                const barbs = d.barberos || [];
+                const svcs = d.servicios_top || [];
+                const meses = d.ingresos_mensual || [];
+                const dow = d.dias_semana || [];
+                const horas = d.horas_top || [];
+                const hmap = d.heatmap_30d || [];
+                const tasa = d.tasa_conversion != null ? d.tasa_conversion : 0;
+
+                const BASE = [{
+                        id: 'endika',
+                        nombre: 'Endika Prado',
+                        iniciales: 'EP'
+                    },
+                    {
+                        id: 'marcos',
+                        nombre: 'Marcos Vila',
+                        iniciales: 'MV'
+                    },
+                    {
+                        id: 'alex',
+                        nombre: 'Alex Ramos',
+                        iniciales: 'AR'
+                    },
+                ];
+                const barbsAll = BASE.map(base => barbs.find(b => b.iniciales === base.iniciales) || {
+                    ...base,
+                    total_citas: 0,
+                    ingresos: 0,
+                    aceptadas: 0,
+                    pendientes: 0
+                });
+                const maxBarbIng = Math.max(...barbsAll.map(b => +b.ingresos), 1);
+                const maxHora = Math.max(...horas.map(h => +h.total), 1);
+
+                let html = '';
+
+                // KPIs
+                html += '<div class="stats-kpis">';
+                html += kpiCard('Reservas totales', kpi.total_reservas || 0, '#d42b2b', '📋', '');
+                html += kpiCard('Ingresos totales', kpi.ingresos_totales || 0, '#c9a84c', '💶', ' €');
+                html += kpiCard('Clientes únicos', kpi.clientes_unicos || 0, '#2550a0', '👥', '');
+                html += kpiCard('Citas hoy', hoy.citas_hoy || 0, '#22c55e', '📅', '');
+                html += kpiCard('Ingresos hoy', hoy.ingresos_hoy || 0, '#f59e0b', '💰', ' €');
+                html += kpiCard('Citas este mes', mes.citas_mes || 0, '#a78bfa', '📆', '');
+                html += '</div>';
+
+                // Monthly charts
+                html += '<div class="stats-section"><div class="stats-section-label">Evolución mensual — últimos 12 meses</div>';
+                html += '<div class="stats-grid-2">';
+                html += '<div class="stats-card"><div class="stats-card-title">Ingresos por mes (€)</div>' + buildLineChart(meses, 'ingresos', '€') + '</div>';
+                html += '<div class="stats-card"><div class="stats-card-title">Citas por mes</div>' + buildBarChart(meses.map(m => ({
+                    label: m.label,
+                    value: m.citas,
+                    tip: m.citas + ' citas — ' + m.label
+                })), '#2550a0') + '</div>';
+                html += '</div></div>';
+
+                // Barbers
+                html += '<div class="stats-section"><div class="stats-section-label">Rendimiento por barbero</div><div class="stats-grid-3">';
+                barbsAll.forEach((b, i) => {
+                    html += barberCard(b, maxBarbIng, i);
+                });
+                html += '</div></div>';
+
+                // Servicios + conversión  ← MEJORADO
+                html += '<div class="stats-section"><div class="stats-section-label">Servicios &amp; conversión</div>';
+                html += '<div class="stats-grid-2">';
+                html += buildServicesCardV2(svcs, kpi);
+                html += '<div class="stats-card" style="display:flex;flex-direction:column;align-items:center;">';
+                html += '<div class="stats-card-title" style="width:100%;">Tasa de aceptación</div>';
+                html += buildConversionDonut(tasa, kpi);
+                html += '</div></div></div>';
+
+                // Demand patterns
+                html += '<div class="stats-section"><div class="stats-section-label">Patrones de demanda</div><div class="stats-grid-2">';
+                html += '<div class="stats-card"><div class="stats-card-title">Citas por día de la semana</div>' + buildBarChartTall(dow.map(d => ({
+                    label: d.label,
+                    value: d.count,
+                    tip: d.count + ' citas los ' + d.label
+                })), '#d42b2b') + '</div>';
+                html += '<div class="stats-card"><div class="stats-card-title">Franjas horarias más populares</div><div class="horas-wrap">';
+                horas.forEach((h, i) => {
+                    const pct = Math.round(+h.total / maxHora * 100);
+                    html += `<div class="hora-row"><span class="hora-lbl">${h.hora_slot}</span><div class="hora-bar-outer"><div class="hora-bar-fill" style="--h-w:${pct}%;--h-delay:${i*0.08}s;"><span class="hora-count">${h.total}</span></div></div></div>`;
+                });
+                html += '</div></div></div></div>';
+
+                // Heatmap rediseñado ← MEJORADO
+                html += '<div class="stats-section"><div class="stats-section-label">Actividad últimos 30 días</div>';
+                html += '<div class="stats-card"><div class="stats-card-title">Mapa de calor de reservas</div>';
+                html += buildHeatmapV2(hmap);
+                html += '</div></div>';
+
+                document.getElementById('stats-content').innerHTML = html;
+                window._statsBarberos = barbsAll;
+
+                // Animate
+                setTimeout(() => {
+                    document.querySelectorAll('.kpi-card').forEach((card, i) => {
+                        setTimeout(() => {
+                            card.classList.add('visible');
+                            const valEl = card.querySelector('.kpi-value');
+                            animNum(valEl, parseFloat(card.dataset.target || 0), parseInt(card.dataset.dec || 0), card.dataset.suffix || '');
+                        }, i * 80);
+                    });
+                }, 50);
+                setTimeout(() => {
+                    document.querySelectorAll('.bar-fill,.line-path,.line-area,.line-dot,.progress-fill,.hora-bar-fill,.svc-stat-bar-fill,.conv-prog-seg').forEach(el => {
+                        onVisible(el, () => el.classList.add('animated'));
+                    });
+                }, 100);
+            }
+
+            function kpiCard(label, value, color, icon, suffix) {
+                return `<div class="kpi-card" style="--kpi-accent:${color}" data-target="${+value}" data-dec="0" data-suffix="${suffix}"><div class="kpi-badge">${icon}</div><div class="kpi-label">${label}</div><div class="kpi-value">0${suffix}</div></div>`;
+            }
+
+            // ── Bar chart con altura correcta ────────────────────────────
+            function buildBarChart(items, color) {
+                const maxV = Math.max(...items.map(x => x.value), 1);
+                let html = '<div class="bar-chart">';
+                items.forEach((item, i) => {
+                    const h = Math.max(Math.round(item.value / maxV * 88), 3);
+                    html += `<div class="bar-item" onmouseenter="showTip(event,'','${item.tip||item.value}')" onmouseleave="hideTip()"><div class="bar-fill" style="height:${h}px;background:${color};--bar-delay:${i*0.07}s;"></div><span class="bar-label">${item.label}</span></div>`;
+                });
+                html += '</div>';
+                return html;
+            }
+
+            // Bar chart más alto para el día de la semana
+            function buildBarChartTall(items, color) {
+                const maxV = Math.max(...items.map(x => x.value), 1);
+                let html = '<div class="bar-chart" style="height:160px;">';
+                items.forEach((item, i) => {
+                    const h = Math.max(Math.round(item.value / maxV * 130), 3);
+                    html += `<div class="bar-item" onmouseenter="showTip(event,'','${item.tip||item.value}')" onmouseleave="hideTip()"><div class="bar-fill" style="height:${h}px;background:${color};--bar-delay:${i*0.07}s;"></div><span class="bar-label">${item.label}</span></div>`;
+                });
+                html += '</div>';
+                return html;
+            }
+
+            function buildLineChart(meses, field, unit) {
+                const W = 500,
+                    H = 130,
+                    PAD = {
+                        t: 12,
+                        r: 10,
+                        b: 30,
+                        l: 42
+                    };
+                const vals = meses.map(m => +m[field]);
+                const maxV = Math.max(...vals, 1);
+                const pts = vals.map((v, i) => [
+                    PAD.l + (i / Math.max(vals.length - 1, 1)) * (W - PAD.l - PAD.r),
+                    PAD.t + (1 - v / maxV) * (H - PAD.t - PAD.b)
+                ]);
+                const pathD = pts.map((p, i) => (i === 0 ? 'M' : 'L') + p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ');
+                const areaD = pathD + ` L${pts[pts.length-1][0].toFixed(1)},${H-PAD.b} L${pts[0][0].toFixed(1)},${H-PAD.b} Z`;
+                const grids = [0.25, 0.5, 0.75, 1].map(f => {
+                    const yy = PAD.t + (1 - f) * (H - PAD.t - PAD.b),
+                        lbl = Math.round(maxV * f);
+                    return `<line class="line-grid" x1="${PAD.l}" x2="${W-PAD.r}" y1="${yy.toFixed(1)}" y2="${yy.toFixed(1)}"/><text class="line-y-label" x="${PAD.l-4}" y="${(yy+3).toFixed(1)}">${lbl>999?(lbl/1000).toFixed(1)+'k':lbl}</text>`;
+                }).join('');
+                const xlbls = meses.map((m, i) => {
+                    if (i % 3 !== 0 && i !== meses.length - 1) return '';
+                    return `<text class="line-x-label" x="${pts[i][0].toFixed(1)}" y="${H-4}">${m.label}</text>`;
+                }).join('');
+                const dots = pts.map((p, i) => `<circle class="line-dot" cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="4" onmouseenter="showTip(event,'${unit}','${vals[i]}')" onmouseleave="hideTip()"/>`).join('');
+                return `<svg class="line-chart-svg" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet"><defs><linearGradient id="lineGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#d42b2b" stop-opacity=".25"/><stop offset="100%" stop-color="#d42b2b" stop-opacity="0"/></linearGradient></defs>${grids}${xlbls}<path class="line-area" d="${areaD}"/><path class="line-path" d="${pathD}"/>${dots}</svg>`;
+            }
+
+            // ── DONUT MULTICOLOR (FIX 5) ─────────────────────────────────
+            // Radio más pequeño para que no se corte, con segmentos coloreados
+            function buildConversionDonut(tasa, kpi) {
+                const aceptadas = +(kpi.aceptadas || 0);
+                const pendientes = +(kpi.pendientes || 0);
+                const denegadas = +(kpi.denegadas || 0);
+                const canceladas = +((kpi.total_reservas || 0) - aceptadas - pendientes - denegadas);
+                const total = aceptadas + pendientes + denegadas + Math.max(canceladas, 0);
+
+                // SVG donut con viewBox holgado para no cortar
+                const cx = 90,
+                    cy = 90,
+                    r = 62,
+                    strokeW = 16;
+                const circ = 2 * Math.PI * r;
+
+                function seg(value, color, offset, delay) {
+                    if (!value || total === 0) return '';
+                    const dash = (value / total) * circ;
+                    return `<circle class="conv-prog-seg" cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${color}" stroke-width="${strokeW}" stroke-linecap="butt"
+              stroke-dasharray="${dash.toFixed(2)} ${circ.toFixed(2)}"
+              stroke-dashoffset="${(-offset).toFixed(2)}"
+              transform="rotate(-90 ${cx} ${cy})"
+              style="transition:opacity .6s ease ${delay}s;"
+              onmouseenter="showTip(event,'','${value} ${color==='#22c55e'?'aceptadas':color==='#f59e0b'?'pendientes':color==='#d42b2b'?'denegadas':'canceladas'}')"
+              onmouseleave="hideTip()"/>`;
+                }
+
+                // Calcular offsets acumulados
+                const o1 = 0;
+                const o2 = total > 0 ? (aceptadas / total) * circ : 0;
+                const o3 = o2 + (total > 0 ? (pendientes / total) * circ : 0);
+                const o4 = o3 + (total > 0 ? (denegadas / total) * circ : 0);
+
+                const svgHtml = `
+          <svg viewBox="0 0 180 180" style="width:160px;height:160px;flex-shrink:0;">
+            <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#1c1c26" stroke-width="${strokeW}"/>
+            ${seg(aceptadas,  '#22c55e', o1, 0.1)}
+            ${seg(pendientes, '#f59e0b', o2, 0.25)}
+            ${seg(denegadas,  '#d42b2b', o3, 0.4)}
+            ${seg(Math.max(canceladas,0), '#6b7280', o4, 0.55)}
+            <text x="${cx}" y="${cy-6}" text-anchor="middle" font-family="'Playfair Display',serif" font-size="20" font-weight="700" fill="#22c55e">${tasa}%</text>
+            <text x="${cx}" y="${cy+12}" text-anchor="middle" font-family="'DM Sans',sans-serif" font-size="8.5" fill="#7a7880" letter-spacing="1">ACEPTADAS</text>
+          </svg>`;
+
+                return `
+          <div style="display:flex;flex-direction:column;align-items:center;gap:1.25rem;padding:.5rem 0;width:100%;">
+            ${svgHtml}
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:.6rem;width:100%;">
+              ${convMeta(aceptadas, 'Aceptadas', '#22c55e')}
+              ${convMeta(pendientes,'Pendientes','#f59e0b')}
+              ${convMeta(denegadas, 'Denegadas', '#d42b2b')}
+              ${convMeta(total,     'Total',     '#f0ece3')}
+            </div>
+          </div>`;
+            }
+
+            function convMeta(num, lbl, col) {
+                return `<div class="conv-meta-item"><div class="conv-meta-num" style="color:${col};">${num}</div><div class="conv-meta-lbl">${lbl}</div></div>`;
+            }
+
+            // ── SERVICIOS MEJORADO (FIX 4) ───────────────────────────────
+            function buildServicesCardV2(svcs, kpi) {
+                if (!svcs || !svcs.length) return '<div class="stats-card"><div class="stats-card-title">Servicios más solicitados</div><div style="color:#7a7880;font-size:.82rem;text-align:center;padding:2rem;">Sin datos</div></div>';
+
+                const maxTotal = Math.max(...svcs.map(s => +s.total), 1);
+                const maxAcept = Math.max(...svcs.map(s => {
+                    const ac = s.ingresos > 0 ? Math.round(+s.ingresos / +s.precio) : 0;
+                    return ac;
+                }), 1);
+
+                let html = '<div class="stats-card">';
+                html += '<div class="stats-card-title">Servicios más solicitados</div>';
+
+                // Tabla de resumen rápida
+                html += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:.4rem;margin-bottom:1.25rem;">';
+                html += statPill('Aceptadas', svcs.reduce((a, s) => a + Math.round(s.ingresos > 0 ? +s.ingresos / +s.precio : 0), 0), '#22c55e');
+                html += statPill('Denegadas', svcs.reduce((a, s) => a + (+s.total - Math.round(s.ingresos > 0 ? +s.ingresos / +s.precio : 0)), 0), '#d42b2b');
+                html += statPill('Dinero perdido', svcs.reduce((a, s) => {
+                    const ac = Math.round(s.ingresos > 0 ? +s.ingresos / +s.precio : 0);
+                    return a + (+s.total - ac) * +s.precio;
+                }, 0) + '€', '#f59e0b');
+                html += '</div>';
+
+                // Por servicio
+                html += '<div class="svc-stat-list">';
+                svcs.forEach((s, i) => {
+                    const aceptadas = s.ingresos > 0 ? Math.round(+s.ingresos / +s.precio) : 0;
+                    const noAcept = +s.total - aceptadas;
+                    const perdido = noAcept * +s.precio;
+                    const ganado = aceptadas * +s.precio;
+                    const barAcPct = Math.round(aceptadas / maxTotal * 100);
+                    const barNoPct = Math.round(noAcept / maxTotal * 100);
+                    const delay = i * 0.08;
+
+                    html += `<div style="margin-bottom:1rem;padding-bottom:1rem;border-bottom:1px solid #1c1c26;">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.5rem;">
+                <div style="display:flex;align-items:center;gap:.6rem;">
+                  <div class="svc-stat-rank">${i+1}</div>
+                  <div style="font-size:.88rem;font-weight:500;">${s.nombre}</div>
+                </div>
+                <div style="font-size:.72rem;color:#7a7880;">${s.precio}€/cita</div>
+              </div>
+              <div style="display:flex;gap:1.5rem;margin-bottom:.5rem;">
+                <div style="font-size:.75rem;color:#22c55e;">✓ ${aceptadas} citas · <strong style="color:#22c55e;">${ganado.toFixed(0)}€</strong></div>
+                <div style="font-size:.75rem;color:#d42b2b;text-decoration-color:#d42b2b;">✕ ${noAcept} citas · <span style="text-decoration:line-through;opacity:.7;">${perdido.toFixed(0)}€</span></div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:3px;">
+                <div style="display:flex;align-items:center;gap:.4rem;">
+                  <span style="font-size:.55rem;color:#22c55e;width:12px;">✓</span>
+                  <div style="flex:1;height:5px;background:#1c1c26;border-radius:3px;overflow:hidden;">
+                    <div class="svc-stat-bar-fill" style="--svc-w:${barAcPct}%;--svc-delay:${delay}s;background:linear-gradient(90deg,#22c55e,#16a34a);height:100%;border-radius:3px;"></div>
+                  </div>
+                </div>
+                <div style="display:flex;align-items:center;gap:.4rem;">
+                  <span style="font-size:.55rem;color:#d42b2b;width:12px;">✕</span>
+                  <div style="flex:1;height:5px;background:#1c1c26;border-radius:3px;overflow:hidden;">
+                    <div class="svc-stat-bar-fill" style="--svc-w:${barNoPct}%;--svc-delay:${delay+0.1}s;background:linear-gradient(90deg,#d42b2b,#a81e1e);height:100%;border-radius:3px;"></div>
+                  </div>
+                </div>
+              </div>
+            </div>`;
+                });
+                html += '</div></div>';
+                return html;
+            }
+
+            function statPill(label, value, color) {
+                return `<div style="background:#0d0d14;border:1px solid #1c1c26;border-radius:8px;padding:.6rem .5rem;text-align:center;">
+          <div style="font-size:.78rem;font-weight:700;color:${color};">${typeof value==='number'&&value>999?(value/1000).toFixed(1)+'k':value}</div>
+          <div style="font-size:.58rem;color:#7a7880;letter-spacing:.08em;text-transform:uppercase;margin-top:.15rem;">${label}</div>
+        </div>`;
+            }
+
+            // ── HEATMAP REDISEÑADO (FIX 2) ───────────────────────────────
+            // Diseño tipo GitHub: compacto, cuadrículas por semana en columnas
+            // con etiquetas de mes arriba y día de semana a la izquierda
+            function buildHeatmapV2(hmap) {
+                const today = new Date();
+                const map = {};
+                hmap.forEach(h => {
+                    map[h.dia] = +h.total;
+                });
+                const maxV = Math.max(...Object.values(map), 1);
+
+                // Colores por nivel
+                const BG = ['#0d0d14', 'rgba(212,43,43,.18)', 'rgba(212,43,43,.4)', 'rgba(212,43,43,.68)', '#d42b2b'];
+                const BD = ['#1c1c26', 'rgba(212,43,43,.15)', 'rgba(212,43,43,.3)', 'rgba(212,43,43,.5)', 'rgba(212,43,43,.9)'];
+
+                // Construir array de 30 días
+                const days = [];
+                for (let i = 29; i >= 0; i--) {
+                    const d = new Date(today);
+                    d.setDate(d.getDate() - i);
+                    const iso = d.toISOString().slice(0, 10);
+                    const dow = (d.getDay() + 6) % 7; // 0=Lun…6=Dom
+                    const v = map[iso] || 0;
+                    const lvl = v === 0 ? 0 : v <= maxV * .25 ? 1 : v <= maxV * .5 ? 2 : v <= maxV * .75 ? 3 : 4;
+                    days.push({
+                        iso,
+                        dow,
+                        v,
+                        lvl,
+                        d
+                    });
+                }
+
+                // Agrupar en semanas (columnas)
+                const DOW_LABELS = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
+                // Encontrar el lunes inicial
+                const firstDow = days[0].dow;
+                const paddedDays = [...Array(firstDow).fill(null), ...days];
+
+                const weeks = [];
+                for (let i = 0; i < paddedDays.length; i += 7) {
+                    weeks.push(paddedDays.slice(i, i + 7));
+                }
+
+                // Etiquetas de mes sobre las semanas
+                const monthLabels = weeks.map(w => {
+                    const first = w.find(x => x !== null);
+                    if (!first) return '';
+                    return first.d.toLocaleDateString('es-ES', {
+                        day: 'numeric',
+                        month: 'short'
+                    });
+                });
+
+                const CELL = 18; // px cuadrado
+                const GAP = 3;
+                const LEFT = 22; // ancho para etiquetas día
+                const TOP = 24; // alto para etiquetas mes
+
+                const totalW = LEFT + weeks.length * (CELL + GAP);
+                const totalH = TOP + 7 * (CELL + GAP);
+
+                let svg = `<svg viewBox="0 0 ${totalW} ${totalH}" style="width:100%;max-width:${Math.min(totalW*1.5,700)}px;display:block;margin:0 auto;" xmlns="http://www.w3.org/2000/svg">`;
+
+                // Etiquetas mes (cada 2 semanas para no saturar)
+                weeks.forEach((w, wi) => {
+                    if (wi % 2 === 0 && monthLabels[wi]) {
+                        const x = LEFT + wi * (CELL + GAP) + CELL / 2;
+                        svg += `<text x="${x}" y="14" text-anchor="middle" font-size="7" fill="#4a4a5a" font-family="DM Sans,sans-serif">${monthLabels[wi]}</text>`;
+                    }
+                });
+
+                // Etiquetas día
+                DOW_LABELS.forEach((l, di) => {
+                    if (di % 2 === 1) return; // solo L,X,V,D
+                    const y = TOP + di * (CELL + GAP) + CELL / 2 + 3.5;
+                    svg += `<text x="${LEFT-4}" y="${y}" text-anchor="end" font-size="7" fill="#4a4a5a" font-family="DM Sans,sans-serif">${l}</text>`;
+                });
+
+                // Celdas
+                weeks.forEach((w, wi) => {
+                    w.forEach((cell, di) => {
+                        if (!cell) return;
+                        const x = LEFT + wi * (CELL + GAP);
+                        const y = TOP + di * (CELL + GAP);
+                        const tip = `${cell.iso}: ${cell.v} cita${cell.v!==1?'s':''}`;
+                        svg += `<rect x="${x}" y="${y}" width="${CELL}" height="${CELL}" rx="3" fill="${BG[cell.lvl]}" stroke="${BD[cell.lvl]}" stroke-width="1">
+                  <title>${tip}</title>
+                </rect>`;
+                    });
+                });
+
+                // Leyenda
+                const legY = totalH + 12;
+                svg += `<text x="${totalW-80}" y="${legY+9}" font-size="7" fill="#4a4a5a" font-family="DM Sans,sans-serif">Menos</text>`;
+                for (let l = 0; l < 5; l++) {
+                    const lx = totalW - 42 + l * (CELL / 1.5 + 2);
+                    svg += `<rect x="${lx}" y="${legY}" width="11" height="11" rx="2" fill="${BG[l]}" stroke="${BD[l]}" stroke-width="1"/>`;
+                }
+                svg += `<text x="${totalW+3}" y="${legY+9}" font-size="7" fill="#4a4a5a" font-family="DM Sans,sans-serif">Más</text>`;
+
+                svg += '</svg>';
+
+                // Stats rápidas debajo del heatmap
+                const totalCitas = Object.values(map).reduce((a, b) => a + b, 0);
+                const diasActivos = Object.keys(map).filter(k => map[k] > 0).length;
+                const maxDia = Object.entries(map).sort((a, b) => b[1] - a[1])[0];
+
+                return `
+          <div style="overflow-x:auto;padding:4px 0 12px;">
+            ${svg}
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:.6rem;margin-top:.75rem;">
+            ${hmStat(totalCitas,'Total (30d)','#d42b2b')}
+            ${hmStat(diasActivos,'Días activos','#c9a84c')}
+            ${hmStat(maxDia?maxDia[1]:0,'Máx. en un día','#22c55e')}
+          </div>`;
+            }
+
+            function hmStat(val, lbl, col) {
+                return `<div style="background:#0d0d14;border:1px solid #1c1c26;border-radius:8px;padding:.6rem;text-align:center;">
+          <div style="font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:700;color:${col};">${val}</div>
+          <div style="font-size:.58rem;color:#7a7880;letter-spacing:.08em;text-transform:uppercase;margin-top:.1rem;">${lbl}</div>
+        </div>`;
+            }
+
+            // Barber card (igual que antes)
+            function barberCard(b, maxIng, i) {
+                const pct = maxIng > 0 ? Math.round(+b.ingresos / maxIng * 100) : 0;
+                const ticket = (+b.ingresos / Math.max(+(b.aceptadas || b.total_citas) || 1, 1)).toFixed(0);
+                const isEmpty = +b.total_citas === 0;
+                const colorMap = {
+                    EP: '#d42b2b',
+                    MV: '#2550a0',
+                    AR: '#c9a84c'
+                };
+                const accent = colorMap[b.iniciales] || '#d42b2b';
+                return `<div class="barbero-stat-card" style="cursor:pointer;${isEmpty?'opacity:.65;':''}" onclick="window._openBarberoModal('${b.iniciales}')" title="Ver detalles de ${b.nombre}">
+          <div class="barbero-stat-header">
+            <div class="barbero-avatar-stat" style="background:linear-gradient(135deg,${accent}25,${accent}08);border-color:${accent}40;color:${accent};">${b.iniciales}</div>
+            <div><div class="barbero-stat-name">${b.nombre}</div><div class="barbero-stat-sub">${b.total_citas} citas totales</div></div>
+            <div style="margin-left:auto;width:28px;height:28px;border-radius:50%;background:rgba(245,240,232,.04);border:1px solid #252530;display:flex;align-items:center;justify-content:center;font-size:.7rem;color:#7a7880;flex-shrink:0;">→</div>
+          </div>
+          <div class="barbero-progress-wrap">
+            <div class="barbero-progress-label"><span>Ingresos generados</span><span style="color:${accent};">${(+b.ingresos).toFixed(0)} €</span></div>
+            <div class="progress-track"><div class="progress-fill" style="--prog-w:${pct}%;--prog-delay:${0.2+i*0.15}s;background:linear-gradient(90deg,${accent},${accent}99);"></div></div>
+          </div>
+          <div class="barbero-kpi-row">
+            <div class="barbero-kpi"><div class="barbero-kpi-num" style="color:#22c55e;">${b.aceptadas||0}</div><div class="barbero-kpi-lbl">Aceptadas</div></div>
+            <div class="barbero-kpi"><div class="barbero-kpi-num" style="color:#f59e0b;">${b.pendientes||0}</div><div class="barbero-kpi-lbl">Pendientes</div></div>
+            <div class="barbero-kpi"><div class="barbero-kpi-num" style="color:#c9a84c;">${isEmpty?'—':ticket+'€'}</div><div class="barbero-kpi-lbl">Ticket medio</div></div>
+          </div>
+        </div>`;
+            }
+
+        })();
     </script>
 
 </body>
