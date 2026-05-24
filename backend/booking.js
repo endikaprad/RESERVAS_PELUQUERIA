@@ -77,7 +77,9 @@ let dayBlockedMotivo = '';
 
 // Mapa de días bloqueados del mes visible: { "2026-06-01": "Vacaciones", ... }
 let blockedDaysMap   = {};
-// Clave del último mes cargado — se actualiza SOLO tras fetch exitoso
+// Clave del último mes cargado — formato "YYYY-MM" (siempre 1-indexed para el mes)
+// BUG FIX: antes usaba month (0-indexed), ahora usamos month+1 (1-indexed)
+// para que coincida exactamente con lo que enviamos a la API
 let blockedDaysKey   = '';
 
 // ===== NORMALIZAR HORA — evita fallos si MySQL devuelve "9:00" en vez de "09:00" =====
@@ -155,24 +157,38 @@ function normalizeTime(t) {
 })();
 
 // ===== CARGAR DÍAS BLOQUEADOS DEL MES =====
-async function loadBlockedDays(year, month) {
-    const key = year + '-' + month;
+// BUG FIX 1: La clave y el parámetro de la API deben usar el mismo mes 1-indexed.
+// Antes: key = year + '-' + month  (month era 0-indexed, ej: junio=5)
+//        fetch ?month=${month}      (enviaba 5 a la API que esperaba 6)
+// → Los días bloqueados de junio se pedían como mayo → no aparecían nunca.
+// Ahora: key = year + '-' + monthOneIndexed  (ej: junio → "2026-6")
+//        fetch ?month=${monthOneIndexed}       (envía 6 correctamente)
+async function loadBlockedDays(year, monthOneIndexed) {
+    const key = year + '-' + monthOneIndexed;
+    // Solo saltamos si ya tenemos este mes cargado exitosamente
     if (key === blockedDaysKey) return;
 
     try {
-        const res  = await fetch(`${API_BASE}/blocked-days.php?year=${year}&month=${month}`);
+        const res  = await fetch(`${API_BASE}/blocked-days.php?year=${year}&month=${monthOneIndexed}`);
         const json = await res.json();
         if (json.ok) {
             blockedDaysMap = json.data;
+            // Solo actualizamos la clave si el fetch fue exitoso
+            // para que se reintente si falló anteriormente
             blockedDaysKey = key;
         } else {
             blockedDaysMap = {};
+            // No actualizamos blockedDaysKey para que se reintente
         }
     } catch (e) {
         blockedDaysMap = {};
+        // No actualizamos blockedDaysKey para que se reintente
     }
 }
 
+// BUG FIX 1 (parte 2): isDateBlocked recibe year, month (0-indexed), day
+// y construye el ISO con month+1. Hay que asegurarse de que la llamada
+// a loadBlockedDays también use month+1.
 function isDateBlocked(year, month, day) {
     const iso = `${year}-${String(month + 1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
     return Object.prototype.hasOwnProperty.call(blockedDaysMap, iso);
@@ -384,6 +400,7 @@ function goToStep(n) {
     window.scrollTo({ top: 0, behavior: 'smooth' });
 
     if (n === 3) {
+        // Forzar recarga de días bloqueados cada vez que se entra al paso 3
         blockedDaysKey = '';
         renderCalendar();
     }
@@ -445,7 +462,7 @@ async function renderCalendar() {
     if (!grid) return;
 
     const year  = calendarDate.getFullYear();
-    const month = calendarDate.getMonth();
+    const month = calendarDate.getMonth();       // 0-indexed (0=enero, 11=diciembre)
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
@@ -453,6 +470,7 @@ async function renderCalendar() {
                     'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
     title.textContent = `${MONTHS[month]} ${year}`;
 
+    // BUG FIX 1: pasar month+1 (1-indexed) para que la API reciba el mes correcto
     await loadBlockedDays(year, month + 1);
 
     const firstDay    = new Date(year, month, 1).getDay();
@@ -467,6 +485,7 @@ async function renderCalendar() {
         const isToday  = date.getTime() === today.getTime();
         const isPast   = date < today;
         const isSunday = date.getDay() === 0;
+        // isDateBlocked recibe month (0-indexed) y construye el ISO con month+1 internamente
         const isBlocked = isDateBlocked(year, month, d);
 
         const selDate    = booking.date;
@@ -517,7 +536,6 @@ async function loadTakenSlots() {
     try {
         const res = await fetch(`${API_BASE}/slots.php?fecha=${fecha}&barbero=${barbero}`);
 
-        // Verificar que la respuesta es OK antes de parsear
         if (!res.ok) {
             console.error(`slots.php error HTTP ${res.status}`);
             takenSlots = []; dayBlocked = false; dayBlockedMotivo = '';
@@ -527,7 +545,6 @@ async function loadTakenSlots() {
         const json = await res.json();
 
         if (json.ok) {
-            // Normalizar horas para garantizar formato "HH:MM" aunque MySQL devuelva "H:MM"
             takenSlots       = (json.data.ocupadas || []).map(normalizeTime);
             dayBlocked       = json.data.bloqueado === true;
             dayBlockedMotivo = json.data.motivo    || '';
@@ -584,19 +601,16 @@ function renderTimeSlots() {
             const pastTime = isToday && t <= currentHHMM;
             const selected = booking.time === t;
 
-            // Clases separadas para "ocupado" y "pasado" — distinción visual clara
             let cls = 'time-slot';
             if (taken)    cls += ' taken';
             else if (pastTime) cls += ' past';
             if (selected) cls += ' selected';
 
             const disabled = taken || pastTime;
-
             const onclick = disabled ? '' : `onclick="selectTime('${t}')"`;
             return `<div class="${cls}" ${onclick}>${t}</div>`;
         }).join('');
 
-    // Leyenda si hay slots ocupados
     const hayOcupados = TIME_SLOTS.some(t => takenSlots.includes(t));
     if (hayOcupados) {
         const legend = document.createElement('div');

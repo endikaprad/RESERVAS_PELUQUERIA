@@ -33,8 +33,15 @@ if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
     jsonError('Email inválido');
 }
 
-$ahora     = new DateTime('now');
-$fechaHora = new DateTime($fecha . ' ' . $hora . ':00');
+// BUG FIX 2: Usar timezone explícita en todos los objetos DateTime
+// para garantizar que "hoy" sea siempre la fecha correcta en Madrid
+// independientemente del servidor de hosting.
+// Antes: new DateTime('now') podía usar UTC en algunos entornos,
+// haciendo que la comparación de 'hoy' fallase con diferencia horaria.
+$tz    = new DateTimeZone('Europe/Madrid');
+$ahora = new DateTime('now', $tz);
+
+$fechaHora = new DateTime($fecha . ' ' . $hora . ':00', $tz);
 if ($fechaHora <= $ahora) {
     jsonError('No puedes reservar en el pasado ni en la hora actual');
 }
@@ -61,7 +68,6 @@ try {
         $cfgRow = $cfgStmt->fetch();
         if ($cfgRow) $autoAceptar = $cfgRow['valor'];
     } catch (Exception $e) {
-        // Si la tabla no existe aún, seguimos con 'no'
         $autoAceptar = 'no';
     }
 
@@ -69,21 +75,30 @@ try {
     $estadoFinal = 'pendiente';
 
     if ($autoAceptar !== 'no') {
-        $hoyDt  = new DateTime('now');
-        $fechaDt = new DateTime($fecha);
+        // BUG FIX 2: usar la misma timezone explícita para calcular
+        // la fecha de hoy y los rangos. Antes $hoyDt = new DateTime('now')
+        // sin timezone podía devolver la fecha UTC (ej: a las 23:30 en Madrid
+        // ya es "mañana" en UTC), haciendo que 'hoy' no coincidiera nunca.
+        $hoyDt   = new DateTime('now', $tz);
+        $fechaDt = new DateTime($fecha . ' 00:00:00', $tz);
+
+        // Normalizar $hoyDt a medianoche para comparar solo fechas
+        $hoyMedianoche = new DateTime($hoyDt->format('Y-m-d') . ' 00:00:00', $tz);
 
         $dentroDelRango = false;
         switch ($autoAceptar) {
             case 'hoy':
+                // BUG FIX 2: comparar la fecha formateada de ambos objetos
+                // con la misma timezone garantiza que "hoy" == "hoy"
                 $dentroDelRango = ($fechaDt->format('Y-m-d') === $hoyDt->format('Y-m-d'));
                 break;
             case 'semana':
-                $limite = (clone $hoyDt)->modify('+7 days');
-                $dentroDelRango = ($fechaDt >= $hoyDt && $fechaDt <= $limite);
+                $limite = (clone $hoyMedianoche)->modify('+7 days');
+                $dentroDelRango = ($fechaDt >= $hoyMedianoche && $fechaDt <= $limite);
                 break;
             case 'mes':
-                $limite = (clone $hoyDt)->modify('+1 month');
-                $dentroDelRango = ($fechaDt >= $hoyDt && $fechaDt <= $limite);
+                $limite = (clone $hoyMedianoche)->modify('+1 month');
+                $dentroDelRango = ($fechaDt >= $hoyMedianoche && $fechaDt <= $limite);
                 break;
             case 'siempre':
                 $dentroDelRango = true;
@@ -113,7 +128,7 @@ try {
     $dias  = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
     $meses = ['enero','febrero','marzo','abril','mayo','junio',
               'julio','agosto','septiembre','octubre','noviembre','diciembre'];
-    $dt    = new DateTime($fecha);
+    $dt    = new DateTime($fecha, $tz);
     $fechaFormateada = $dias[$dt->format('w')] . ', ' .
                        $dt->format('j') . ' de ' .
                        $meses[(int)$dt->format('n') - 1] . ' de ' .
@@ -131,7 +146,6 @@ try {
     // ================================================================
     if ($estadoFinal === 'aceptada') {
 
-        // Auto-aceptada: solo notificación informativa, sin botones
         $htmlPeluquero = "<!DOCTYPE html><html lang='es'><head><meta charset='UTF-8'></head>
 <body style='margin:0;padding:0;background:#09080f;font-family:Arial,sans-serif;'>
   <div style='max-width:560px;margin:0 auto;background:#111119;border:1px solid #252530;border-radius:12px;overflow:hidden;'>
@@ -166,7 +180,6 @@ try {
 
     } else {
 
-        // Pendiente: email con botones aceptar/denegar (comportamiento original)
         $urlAceptar = $baseUrl . '/backend/api/reserva-action.php?token=' . $token . '&accion=aceptar';
         $urlDenegar = $baseUrl . '/backend/api/reserva-action.php?token=' . $token . '&accion=denegar';
 
@@ -221,7 +234,6 @@ try {
     // ================================================================
     if ($estadoFinal === 'aceptada') {
 
-        // Confirmación directa
         $htmlCliente = "<!DOCTYPE html><html lang='es'><head><meta charset='UTF-8'></head>
 <body style='margin:0;padding:0;background:#09080f;font-family:Arial,sans-serif;'>
   <div style='max-width:560px;margin:0 auto;background:#111119;border:1px solid #252530;border-radius:12px;overflow:hidden;'>
@@ -263,7 +275,6 @@ try {
 
     } else {
 
-        // Pendiente de confirmación (comportamiento original)
         $htmlCliente = "<!DOCTYPE html><html lang='es'><head><meta charset='UTF-8'></head>
 <body style='margin:0;padding:0;background:#09080f;font-family:Arial,sans-serif;'>
   <div style='max-width:560px;margin:0 auto;background:#111119;border:1px solid #252530;border-radius:12px;overflow:hidden;'>
