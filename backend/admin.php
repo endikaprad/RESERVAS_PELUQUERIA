@@ -190,7 +190,6 @@ $mesesES = ['','ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov'
             .frow{flex-direction:row;align-items:center;flex:1;min-width:120px;gap:.5rem;}
             select,input[type=date]{width:100%;}
             .filter-submit{width:auto;padding:.6rem 1.25rem;flex-shrink:0;margin-top:0;align-self:flex-end;}
-            .section-header{display: none;}
         }
 
         /* ── SECTION HEADER ── */
