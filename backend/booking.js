@@ -80,8 +80,10 @@ let blockedDaysMap   = {};
 // Clave del último mes cargado — formato "YYYY-MM" (1-indexed)
 let blockedDaysKey   = '';
 
-// BUG FIX 3: AbortController para cancelar fetches de días bloqueados en vuelo
-// cuando se disparan múltiples renders rápidos (ej: resize de ventana).
+// FIX 1: Flag para saber si el calendario está cargando días bloqueados.
+// Mientras esté en true, selectDate rechaza cualquier clic aunque el onclick esté en el DOM.
+let blockedDaysLoading = false;
+
 let blockedDaysAbortController = null;
 
 // ===== NORMALIZAR HORA =====
@@ -116,6 +118,11 @@ function normalizeTime(t) {
                 rgba(212,43,43,0.3) 0px, rgba(212,43,43,0.3) 1px,
                 transparent 1px, transparent 4px
             );
+            pointer-events: none;
+        }
+        /* FIX 1: Mientras carga, el calendario completo muestra cursor de espera */
+        .cal-grid.loading .cal-cell:not(.disabled):not(.empty) {
+            cursor: wait !important;
             pointer-events: none;
         }
         .time-slot.taken {
@@ -159,11 +166,9 @@ async function loadBlockedDays(year, monthOneIndexed) {
     const key = year + '-' + monthOneIndexed;
     if (key === blockedDaysKey) return;
 
-    // BUG FIX 3: Cancelar cualquier fetch anterior en vuelo para este mismo
-    // recurso. Esto evita race conditions cuando el usuario redimensiona la
-    // ventana y el calendario se re-renderiza varias veces en ráfaga, lo que
-    // podía dejar blockedDaysMap vacío si una respuesta tardía sobreescribía
-    // una respuesta ya correcta con datos de un mes diferente.
+    // FIX 1: Marcar que estamos cargando para bloquear clics en el calendario
+    blockedDaysLoading = true;
+
     if (blockedDaysAbortController) {
         blockedDaysAbortController.abort();
     }
@@ -184,12 +189,27 @@ async function loadBlockedDays(year, monthOneIndexed) {
             // No actualizamos blockedDaysKey para que se reintente
         }
     } catch (e) {
-        // AbortError es normal (fetch cancelado por redimensionado rápido), no limpiar el mapa
+        // AbortError: fetch cancelado — NO limpiar el mapa ni actualizar la clave
+        // para que el próximo renderCalendar lo reintente
         if (e.name !== 'AbortError') {
             blockedDaysMap = {};
-            // No actualizamos blockedDaysKey para que se reintente
+        }
+        // FIX 1: Si fue AbortError otro renderCalendar vendrá, no desbloquear aún
+        if (e.name === 'AbortError') {
+            blockedDaysLoading = false;
+            return;
         }
     }
+
+    // FIX 1: Carga terminada — desbloquear interacción y re-renderizar el calendario
+    // para que los días bloqueados se pinten correctamente con los datos ya disponibles
+    blockedDaysLoading = false;
+    // Re-render del grid para aplicar el estado correcto tras la carga
+    const grid = document.getElementById('cal-grid');
+    if (grid) grid.classList.remove('loading');
+    // Volver a renderizar solo el grid de celdas (sin recurrir a renderCalendar completo
+    // para evitar bucle infinito)
+    _renderCalGrid(year, monthOneIndexed - 1);
 }
 
 function isDateBlocked(year, month, day) {
@@ -459,22 +479,15 @@ function selectBarber(id) {
 
 // ===== STEP 3: DATE & TIME =====
 
-async function renderCalendar() {
+// FIX 2: Función interna que renderiza solo el grid de celdas del calendario.
+// renderCalendar llama a esta función después de asegurarse de que los datos están listos.
+// También se llama desde loadBlockedDays cuando el fetch termina para actualizar el grid.
+function _renderCalGrid(year, month) {
     const grid  = document.getElementById('cal-grid');
-    const title = document.getElementById('cal-title');
     if (!grid) return;
 
-    const year  = calendarDate.getFullYear();
-    const month = calendarDate.getMonth();       // 0-indexed
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-
-    const MONTHS = ['Enero','Febrero','Marzo','Abril','Mayo','Junio',
-                    'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-    title.textContent = `${MONTHS[month]} ${year}`;
-
-    // month + 1 → 1-indexed para la API
-    await loadBlockedDays(year, month + 1);
 
     const firstDay    = new Date(year, month, 1).getDay();
     const offset      = (firstDay + 6) % 7;
@@ -488,6 +501,7 @@ async function renderCalendar() {
         const isToday  = date.getTime() === today.getTime();
         const isPast   = date < today;
         const isSunday = date.getDay() === 0;
+        // FIX 2: isBlocked consulta blockedDaysMap que en este punto ya está cargado
         const isBlocked = isDateBlocked(year, month, d);
 
         const selDate    = booking.date;
@@ -507,21 +521,60 @@ async function renderCalendar() {
         const iso       = formatISO(year, month, d);
         const motivo    = isBlocked ? (blockedDaysMap[iso] || 'No disponible') : '';
         const titleAttr = isBlocked ? `title="${motivo}"` : '';
+        // FIX 2: Solo añadir onclick si NO está bloqueado/disabled
         const onclick   = disabled ? '' : `onclick="selectDate(${year},${month},${d})"`;
 
         html += `<div class="${cls}" ${onclick} ${titleAttr}>${d}</div>`;
     }
     grid.innerHTML = html;
+    // FIX 1: Quitar clase loading una vez el grid está pintado con datos reales
+    grid.classList.remove('loading');
+}
+
+async function renderCalendar() {
+    const grid  = document.getElementById('cal-grid');
+    const title = document.getElementById('cal-title');
+    if (!grid) return;
+
+    const year  = calendarDate.getFullYear();
+    const month = calendarDate.getMonth();       // 0-indexed
+
+    const MONTHS = ['Enero','Febrero','Marzo','Abril','Mayo','Junio',
+                    'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+    title.textContent = `${MONTHS[month]} ${year}`;
+
+    // FIX 1: Marcar el grid como "loading" antes del fetch para bloquear clics
+    // a través del CSS .cal-grid.loading .cal-cell { pointer-events: none }
+    const needsFetch = (year + '-' + (month + 1)) !== blockedDaysKey;
+    if (needsFetch) {
+        grid.classList.add('loading');
+    }
+
+    // month + 1 → 1-indexed para la API
+    await loadBlockedDays(year, month + 1);
+
+    // FIX 2: Renderizar el grid DESPUÉS de que los datos estén disponibles
+    _renderCalGrid(year, month);
 }
 
 function selectDate(y, m, d) {
+    // FIX 3: Verificación defensiva en tiempo de ejecución.
+    // Aunque el onclick solo se genera para días no bloqueados,
+    // verificamos de nuevo aquí para cubrir cualquier edge case en móvil
+    // (tap que llega tarde después de un re-render, etc.)
+    if (blockedDaysLoading) return;
     if (isDateBlocked(y, m, d)) return;
+
+    // FIX 3: Verificar también domingo y pasado como segunda línea de defensa
+    const date = new Date(y, m, d);
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    if (date < today || date.getDay() === 0) return;
 
     booking.date     = new Date(y, m, d);
     booking.time     = null;
     dayBlocked       = false;
     dayBlockedMotivo = '';
-    renderCalendar();
+    _renderCalGrid(y, m);
     loadTakenSlots();
 }
 
@@ -559,6 +612,13 @@ async function loadTakenSlots() {
         takenSlots = []; dayBlocked = false; dayBlockedMotivo = '';
     } finally {
         loadingSlots = false;
+        // FIX 3: Si slots.php confirma que el día está bloqueado, limpiar la selección
+        // y re-renderizar el calendario para que el día aparezca como bloqueado
+        if (dayBlocked) {
+            booking.date = null;
+            booking.time = null;
+            _renderCalGrid(calendarDate.getFullYear(), calendarDate.getMonth());
+        }
         renderTimeSlots();
     }
 }
@@ -790,19 +850,18 @@ document.addEventListener('DOMContentLoaded', () => {
     if (btnBack3) btnBack3.addEventListener('click', () => goToStep(2));
     if (btnBack4) btnBack4.addEventListener('click', () => goToStep(3));
 
-    // BUG FIX 3: Re-renderizar el calendario si el usuario redimensiona la ventana
-    // mientras está en el paso 3. Esto ocurre especialmente en DevTools al alternar
-    // entre vistas móvil/escritorio, lo que puede provocar que el layout cambie pero
-    // el JS no re-aplique los días bloqueados sobre el nuevo grid.
-    // Se usa un debounce de 150ms para no saturar con renders durante el resize.
     let resizeTimer = null;
     window.addEventListener('resize', () => {
         if (booking.step !== 3) return;
         clearTimeout(resizeTimer);
         resizeTimer = setTimeout(() => {
-            // Forzar re-render sin limpiar blockedDaysKey para no repetir el fetch
-            // (los datos del mapa ya están en memoria)
-            renderCalendar();
+            // FIX: Al redimensionar, si los datos ya están en memoria no re-fetchar,
+            // solo re-pintar el grid con los datos actuales
+            if (blockedDaysKey === calendarDate.getFullYear() + '-' + (calendarDate.getMonth() + 1)) {
+                _renderCalGrid(calendarDate.getFullYear(), calendarDate.getMonth());
+            } else {
+                renderCalendar();
+            }
         }, 150);
     });
 });
