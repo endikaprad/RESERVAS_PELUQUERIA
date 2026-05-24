@@ -12,7 +12,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(200); exit;
 }
 
-// Funciones JSON inline — compatibles con PHP 7 y 8
 function slots_ok($data) {
     echo json_encode(['ok' => true, 'data' => $data], JSON_UNESCAPED_UNICODE);
     exit;
@@ -23,7 +22,6 @@ function slots_err($msg, $code = 400) {
     exit;
 }
 
-// Cargar config/BD sin pasar por helpers.php
 require_once __DIR__ . '/../config.php';
 
 $fecha   = trim($_GET['fecha']   ?? '');
@@ -58,13 +56,16 @@ try {
         ]);
     }
 
-    // Horas ocupadas — solo pendiente y aceptada (las denegadas liberan el hueco)
+    // BUG FIX 1: Se incluye también 'denegada' para que los slots con reservas
+    // denegadas sigan apareciendo como ocupados/tachados en el calendario de reservas.
+    // Antes solo se filtraba 'pendiente' y 'aceptada', lo que liberaba visualmente
+    // el hueco de una reserva denegada aunque el barbero ya no pueda aceptarla.
     $stmt = $db->prepare(
         "SELECT TIME_FORMAT(hora, '%H:%i') AS hora
          FROM reservas
          WHERE barbero_id = ?
            AND fecha      = ?
-           AND estado     IN ('pendiente', 'aceptada')"
+           AND estado     IN ('pendiente', 'aceptada', 'denegada')"
     );
     $stmt->execute([$barbero, $fecha]);
     $ocupadas = $stmt->fetchAll(PDO::FETCH_COLUMN);

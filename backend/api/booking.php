@@ -33,11 +33,6 @@ if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
     jsonError('Email inválido');
 }
 
-// BUG FIX 2: Usar timezone explícita en todos los objetos DateTime
-// para garantizar que "hoy" sea siempre la fecha correcta en Madrid
-// independientemente del servidor de hosting.
-// Antes: new DateTime('now') podía usar UTC en algunos entornos,
-// haciendo que la comparación de 'hoy' fallase con diferencia horaria.
 $tz    = new DateTimeZone('Europe/Madrid');
 $ahora = new DateTime('now', $tz);
 
@@ -61,51 +56,41 @@ try {
     if (!$barberoRow) jsonError('Barbero no encontrado');
 
     // ── Leer configuración de auto-aceptar ───────────────────
-    $autoAceptar = 'no';
+    $autoAceptar      = 'no';
+    $autoAceptarHasta = '';
     try {
-        $cfgStmt = $db->prepare("SELECT valor FROM configuracion WHERE clave = 'auto_aceptar'");
+        $cfgStmt = $db->prepare(
+            "SELECT clave, valor FROM configuracion WHERE clave IN ('auto_aceptar', 'auto_aceptar_hasta')"
+        );
         $cfgStmt->execute();
-        $cfgRow = $cfgStmt->fetch();
-        if ($cfgRow) $autoAceptar = $cfgRow['valor'];
+        foreach ($cfgStmt->fetchAll() as $row) {
+            if ($row['clave'] === 'auto_aceptar')       $autoAceptar      = $row['valor'];
+            if ($row['clave'] === 'auto_aceptar_hasta') $autoAceptarHasta = $row['valor'];
+        }
     } catch (Exception $e) {
         $autoAceptar = 'no';
     }
 
-    // ── Determinar si esta reserva entra en el rango ──────────
+    // ── Determinar si esta reserva se auto-acepta ─────────────
+    // BUG FIX 2: La lógica anterior comparaba la FECHA DE LA CITA con hoy,
+    // por lo que 'hoy' solo funcionaba si el cliente reservaba para ese mismo día.
+    // La intención correcta es: si el admin activó auto-aceptar y HOY (día en que
+    // se recibe la reserva) está dentro del rango configurado → auto-aceptar.
+    // Para ello usamos auto_aceptar_hasta guardado en BD (calculado en settings.php
+    // con la fecha en que el admin activó el modo) y comparamos con la fecha actual.
     $estadoFinal = 'pendiente';
 
-    if ($autoAceptar !== 'no') {
-        // BUG FIX 2: usar la misma timezone explícita para calcular
-        // la fecha de hoy y los rangos. Antes $hoyDt = new DateTime('now')
-        // sin timezone podía devolver la fecha UTC (ej: a las 23:30 en Madrid
-        // ya es "mañana" en UTC), haciendo que 'hoy' no coincidiera nunca.
-        $hoyDt   = new DateTime('now', $tz);
-        $fechaDt = new DateTime($fecha . ' 00:00:00', $tz);
+    if ($autoAceptar !== 'no' && $autoAceptarHasta !== '') {
+        $hoyStr   = $ahora->format('Y-m-d'); // fecha actual en Madrid
+        $hastaStr = $autoAceptarHasta;        // fecha límite guardada en BD
 
-        // Normalizar $hoyDt a medianoche para comparar solo fechas
-        $hoyMedianoche = new DateTime($hoyDt->format('Y-m-d') . ' 00:00:00', $tz);
-
-        $dentroDelRango = false;
-        switch ($autoAceptar) {
-            case 'hoy':
-                // BUG FIX 2: comparar la fecha formateada de ambos objetos
-                // con la misma timezone garantiza que "hoy" == "hoy"
-                $dentroDelRango = ($fechaDt->format('Y-m-d') === $hoyDt->format('Y-m-d'));
-                break;
-            case 'semana':
-                $limite = (clone $hoyMedianoche)->modify('+7 days');
-                $dentroDelRango = ($fechaDt >= $hoyMedianoche && $fechaDt <= $limite);
-                break;
-            case 'mes':
-                $limite = (clone $hoyMedianoche)->modify('+1 month');
-                $dentroDelRango = ($fechaDt >= $hoyMedianoche && $fechaDt <= $limite);
-                break;
-            case 'siempre':
-                $dentroDelRango = true;
-                break;
+        // Si hoy <= hasta → la reserva entra en el periodo de auto-aceptación
+        if ($hoyStr <= $hastaStr) {
+            $estadoFinal = 'aceptada';
         }
-
-        if ($dentroDelRango) $estadoFinal = 'aceptada';
+    } elseif ($autoAceptar === 'siempre') {
+        // Salvaguarda: si por alguna razón el campo hasta no está pero el modo es 'siempre'
+        $estadoFinal = 'aceptada';
     }
 
     // ── Insertar reserva ─────────────────────────────────────

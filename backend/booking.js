@@ -77,19 +77,21 @@ let dayBlockedMotivo = '';
 
 // Mapa de días bloqueados del mes visible: { "2026-06-01": "Vacaciones", ... }
 let blockedDaysMap   = {};
-// Clave del último mes cargado — formato "YYYY-MM" (siempre 1-indexed para el mes)
-// BUG FIX: antes usaba month (0-indexed), ahora usamos month+1 (1-indexed)
-// para que coincida exactamente con lo que enviamos a la API
+// Clave del último mes cargado — formato "YYYY-MM" (1-indexed)
 let blockedDaysKey   = '';
 
-// ===== NORMALIZAR HORA — evita fallos si MySQL devuelve "9:00" en vez de "09:00" =====
+// BUG FIX 3: AbortController para cancelar fetches de días bloqueados en vuelo
+// cuando se disparan múltiples renders rápidos (ej: resize de ventana).
+let blockedDaysAbortController = null;
+
+// ===== NORMALIZAR HORA =====
 function normalizeTime(t) {
     if (!t) return '';
     const parts = t.split(':');
     return parts[0].padStart(2, '0') + ':' + (parts[1] || '00').padStart(2, '0');
 }
 
-// ===== CSS para días bloqueados y slots ocupados inyectado una sola vez =====
+// ===== CSS INJECTION =====
 (function injectStyles() {
     const style = document.createElement('style');
     style.textContent = `
@@ -116,8 +118,6 @@ function normalizeTime(t) {
             );
             pointer-events: none;
         }
-
-        /* Horario ocupado — visualmente claro y no clicable */
         .time-slot.taken {
             opacity: 1 !important;
             background: rgba(212,43,43,0.06) !important;
@@ -141,8 +141,6 @@ function normalizeTime(t) {
             color: rgba(240,236,227,0.3) !important;
             transform: none !important;
         }
-
-        /* Horario pasado (hoy) */
         .time-slot.past {
             opacity: 0.3 !important;
             cursor: not-allowed !important;
@@ -157,38 +155,43 @@ function normalizeTime(t) {
 })();
 
 // ===== CARGAR DÍAS BLOQUEADOS DEL MES =====
-// BUG FIX 1: La clave y el parámetro de la API deben usar el mismo mes 1-indexed.
-// Antes: key = year + '-' + month  (month era 0-indexed, ej: junio=5)
-//        fetch ?month=${month}      (enviaba 5 a la API que esperaba 6)
-// → Los días bloqueados de junio se pedían como mayo → no aparecían nunca.
-// Ahora: key = year + '-' + monthOneIndexed  (ej: junio → "2026-6")
-//        fetch ?month=${monthOneIndexed}       (envía 6 correctamente)
 async function loadBlockedDays(year, monthOneIndexed) {
     const key = year + '-' + monthOneIndexed;
-    // Solo saltamos si ya tenemos este mes cargado exitosamente
     if (key === blockedDaysKey) return;
 
+    // BUG FIX 3: Cancelar cualquier fetch anterior en vuelo para este mismo
+    // recurso. Esto evita race conditions cuando el usuario redimensiona la
+    // ventana y el calendario se re-renderiza varias veces en ráfaga, lo que
+    // podía dejar blockedDaysMap vacío si una respuesta tardía sobreescribía
+    // una respuesta ya correcta con datos de un mes diferente.
+    if (blockedDaysAbortController) {
+        blockedDaysAbortController.abort();
+    }
+    blockedDaysAbortController = new AbortController();
+    const signal = blockedDaysAbortController.signal;
+
     try {
-        const res  = await fetch(`${API_BASE}/blocked-days.php?year=${year}&month=${monthOneIndexed}`);
+        const res  = await fetch(
+            `${API_BASE}/blocked-days.php?year=${year}&month=${monthOneIndexed}`,
+            { signal }
+        );
         const json = await res.json();
         if (json.ok) {
             blockedDaysMap = json.data;
-            // Solo actualizamos la clave si el fetch fue exitoso
-            // para que se reintente si falló anteriormente
             blockedDaysKey = key;
         } else {
             blockedDaysMap = {};
             // No actualizamos blockedDaysKey para que se reintente
         }
     } catch (e) {
-        blockedDaysMap = {};
-        // No actualizamos blockedDaysKey para que se reintente
+        // AbortError es normal (fetch cancelado por redimensionado rápido), no limpiar el mapa
+        if (e.name !== 'AbortError') {
+            blockedDaysMap = {};
+            // No actualizamos blockedDaysKey para que se reintente
+        }
     }
 }
 
-// BUG FIX 1 (parte 2): isDateBlocked recibe year, month (0-indexed), day
-// y construye el ISO con month+1. Hay que asegurarse de que la llamada
-// a loadBlockedDays también use month+1.
 function isDateBlocked(year, month, day) {
     const iso = `${year}-${String(month + 1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
     return Object.prototype.hasOwnProperty.call(blockedDaysMap, iso);
@@ -400,7 +403,7 @@ function goToStep(n) {
     window.scrollTo({ top: 0, behavior: 'smooth' });
 
     if (n === 3) {
-        // Forzar recarga de días bloqueados cada vez que se entra al paso 3
+        // Forzar recarga de días bloqueados al entrar al paso 3
         blockedDaysKey = '';
         renderCalendar();
     }
@@ -462,7 +465,7 @@ async function renderCalendar() {
     if (!grid) return;
 
     const year  = calendarDate.getFullYear();
-    const month = calendarDate.getMonth();       // 0-indexed (0=enero, 11=diciembre)
+    const month = calendarDate.getMonth();       // 0-indexed
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
@@ -470,7 +473,7 @@ async function renderCalendar() {
                     'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
     title.textContent = `${MONTHS[month]} ${year}`;
 
-    // BUG FIX 1: pasar month+1 (1-indexed) para que la API reciba el mes correcto
+    // month + 1 → 1-indexed para la API
     await loadBlockedDays(year, month + 1);
 
     const firstDay    = new Date(year, month, 1).getDay();
@@ -485,7 +488,6 @@ async function renderCalendar() {
         const isToday  = date.getTime() === today.getTime();
         const isPast   = date < today;
         const isSunday = date.getDay() === 0;
-        // isDateBlocked recibe month (0-indexed) y construye el ISO con month+1 internamente
         const isBlocked = isDateBlocked(year, month, d);
 
         const selDate    = booking.date;
@@ -787,6 +789,22 @@ document.addEventListener('DOMContentLoaded', () => {
     if (btnBack2) btnBack2.addEventListener('click', () => goToStep(1));
     if (btnBack3) btnBack3.addEventListener('click', () => goToStep(2));
     if (btnBack4) btnBack4.addEventListener('click', () => goToStep(3));
+
+    // BUG FIX 3: Re-renderizar el calendario si el usuario redimensiona la ventana
+    // mientras está en el paso 3. Esto ocurre especialmente en DevTools al alternar
+    // entre vistas móvil/escritorio, lo que puede provocar que el layout cambie pero
+    // el JS no re-aplique los días bloqueados sobre el nuevo grid.
+    // Se usa un debounce de 150ms para no saturar con renders durante el resize.
+    let resizeTimer = null;
+    window.addEventListener('resize', () => {
+        if (booking.step !== 3) return;
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(() => {
+            // Forzar re-render sin limpiar blockedDaysKey para no repetir el fetch
+            // (los datos del mapa ya están en memoria)
+            renderCalendar();
+        }, 150);
+    });
 });
 
 window.selectService = selectService;
