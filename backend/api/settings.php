@@ -52,12 +52,29 @@ try {
         $cfg  = [];
         foreach ($rows as $r) $cfg[$r['clave']] = $r['valor'];
 
+        $autoAceptar      = $cfg['auto_aceptar']       ?? 'no';
+        $autoAceptarHasta = $cfg['auto_aceptar_hasta'] ?? '';
+
+        // ── FIX: si la fecha límite ya pasó, resetear a 'no' en BD y en respuesta ──
+        if ($autoAceptar !== 'no' && $autoAceptarHasta !== '' && $autoAceptarHasta !== '9999-12-31') {
+            $hoy = (new DateTime('now', new DateTimeZone('Europe/Madrid')))->format('Y-m-d');
+            if ($hoy > $autoAceptarHasta) {
+                // Caducado — persistir el reset en BD para que no haya que recalcular cada vez
+                $db->prepare("INSERT INTO configuracion (clave,valor) VALUES ('auto_aceptar','no')
+                              ON DUPLICATE KEY UPDATE valor='no'")->execute();
+                $db->prepare("INSERT INTO configuracion (clave,valor) VALUES ('auto_aceptar_hasta','')
+                              ON DUPLICATE KEY UPDATE valor=''")->execute();
+                $autoAceptar      = 'no';
+                $autoAceptarHasta = '';
+            }
+        }
+
         // Leer días bloqueados
         $dias = $db->query("SELECT fecha, motivo FROM dias_bloqueados ORDER BY fecha ASC")->fetchAll();
 
         jsonOkS([
-            'auto_aceptar'       => $cfg['auto_aceptar']       ?? 'no',
-            'auto_aceptar_hasta' => $cfg['auto_aceptar_hasta'] ?? '',
+            'auto_aceptar'       => $autoAceptar,
+            'auto_aceptar_hasta' => $autoAceptarHasta,
             'dias_bloqueados'    => $dias,
         ]);
 
@@ -69,16 +86,16 @@ try {
 
         // ── Guardar auto-aceptar ──────────────────────────────
         if ($accion === 'auto_aceptar') {
-            $valor = $body['valor'] ?? 'no';   // 'no' | 'hoy' | 'semana' | 'mes' | 'siempre'
+            $valor = $body['valor'] ?? 'no';
             if (!in_array($valor, ['no','hoy','semana','mes','siempre'], true))
                 jsonErrorS('Valor inválido');
 
             $hasta = '';
-            $hoy   = new DateTime('now');
+            $hoy   = new DateTime('now', new DateTimeZone('Europe/Madrid'));
             switch ($valor) {
                 case 'hoy':    $hasta = $hoy->format('Y-m-d'); break;
-                case 'semana': $hasta = $hoy->modify('+7 days')->format('Y-m-d'); break;
-                case 'mes':    $hasta = $hoy->modify('+1 month')->format('Y-m-d'); break;
+                case 'semana': $hasta = (clone $hoy)->modify('+7 days')->format('Y-m-d'); break;
+                case 'mes':    $hasta = (clone $hoy)->modify('+1 month')->format('Y-m-d'); break;
                 case 'siempre':$hasta = '9999-12-31'; break;
             }
 
@@ -92,7 +109,7 @@ try {
             jsonOkS(['auto_aceptar' => $valor, 'auto_aceptar_hasta' => $hasta]);
         }
 
-        // ── Añadir día(s) bloqueado(s) ────────────────────────
+        // ── Añadir día bloqueado ──────────────────────────────
         if ($accion === 'bloquear_dia') {
             $fecha  = trim($body['fecha']  ?? '');
             $motivo = trim($body['motivo'] ?? 'Vacaciones');
