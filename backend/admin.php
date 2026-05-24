@@ -238,6 +238,7 @@ $mesesES = ['','ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov'
         .table-desktop{display:none;}
 
         @media(min-width:900px){
+            .section-header{display:none;}
             .admin-header{padding:1rem 2rem;}
             .admin-body{padding:2rem;}
             .stats-row{grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:1.5rem;}
@@ -344,17 +345,13 @@ $mesesES = ['','ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov'
         .mini-cell.mc-disabled{color:#2a2a38;cursor:not-allowed;}
         .mini-cell.mc-empty{cursor:default;}
         .mini-cell.mc-selected{background:rgba(212,43,43,.15);border-color:rgba(212,43,43,.5);color:#d42b2b;}
-        /* Bloqueado en BD */
         .mini-cell.mc-blocked{background:rgba(212,43,43,.25);border-color:#d42b2b;color:#fff;cursor:pointer;}
         .mini-cell.mc-blocked::after{content:'';position:absolute;inset:0;background:repeating-linear-gradient(-45deg,rgba(212,43,43,.15) 0,rgba(212,43,43,.15) 2px,transparent 2px,transparent 6px);border-radius:5px;pointer-events:none;}
         .mini-cell.mc-blocked:hover{background:rgba(212,43,43,.4);border-color:#ff4444;}
-        /* Pendiente de guardar (naranja) */
         .mini-cell.mc-pending{background:rgba(245,158,11,.2);border-color:rgba(245,158,11,.6);color:#f59e0b;cursor:pointer;}
         .mini-cell.mc-pending::after{content:'';position:absolute;inset:3px;border-radius:4px;border:1px dashed rgba(245,158,11,.5);pointer-events:none;}
-        /* Pendiente de desbloquear (gris tachado) */
         .mini-cell.mc-unblocking{background:rgba(122,120,128,.15);border-color:rgba(122,120,128,.4);color:#7a7880;text-decoration:line-through;cursor:pointer;}
 
-        /* Leyenda */
         .cal-legend{display:flex;flex-wrap:wrap;gap:.5rem;margin-bottom:1rem;}
         .cal-legend-item{display:flex;align-items:center;gap:.35rem;font-size:.65rem;color:#7a7880;}
         .cal-legend-dot{width:10px;height:10px;border-radius:2px;flex-shrink:0;}
@@ -362,7 +359,6 @@ $mesesES = ['','ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov'
         .cal-legend-dot.pending{background:rgba(245,158,11,.3);border:1px dashed rgba(245,158,11,.7);}
         .cal-legend-dot.unblocking{background:rgba(122,120,128,.2);border:1px solid #7a7880;}
 
-        /* Motivo + acciones */
         .vac-motivo-row{display:flex;gap:.5rem;margin-bottom:.75rem;}
         .vac-motivo-input{flex:1;background:#18181f;border:1px solid #252530;border-radius:6px;padding:.55rem .75rem;color:#f0ece3;font-family:'DM Sans',sans-serif;font-size:.82rem;}
         .vac-motivo-input:focus{outline:none;border-color:#d42b2b;}
@@ -375,12 +371,10 @@ $mesesES = ['','ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov'
         .range-hint{font-size:.72rem;color:#c9a84c;padding:.5rem .7rem;background:rgba(201,168,76,.06);border:1px solid rgba(201,168,76,.2);border-radius:6px;margin-bottom:.75rem;display:none;}
         .range-hint.visible{display:block;}
 
-        /* Botón guardar días */
         .cfg-save-days-btn{width:100%;background:linear-gradient(135deg,#c9a84c 0%,#a17c2d 100%);color:#000;border:none;border-radius:6px;padding:.85rem 1rem;font-family:'DM Sans',sans-serif;font-size:.78rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;cursor:pointer;transition:all .25s;box-shadow:0 4px 16px rgba(201,168,76,.2);margin-top:.25rem;}
         .cfg-save-days-btn:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 8px 24px rgba(201,168,76,.35);}
         .cfg-save-days-btn:disabled{opacity:.4;cursor:not-allowed;transform:none;}
 
-        /* Lista bloqueados */
         .blocked-list{display:flex;flex-direction:column;gap:.4rem;max-height:220px;overflow-y:auto;}
         .blocked-list::-webkit-scrollbar{width:3px;}
         .blocked-list::-webkit-scrollbar-thumb{background:#252530;}
@@ -392,7 +386,6 @@ $mesesES = ['','ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov'
         .blocked-del:hover{border-color:#d42b2b;color:#d42b2b;background:rgba(212,43,43,.08);}
         .empty-blocked{text-align:center;color:#7a7880;font-size:.78rem;padding:1.5rem;border:1px dashed #252530;border-radius:8px;}
 
-        /* Status */
         .cfg-status{display:flex;align-items:center;gap:.5rem;padding:.65rem 1rem;border-radius:8px;font-size:.78rem;margin-top:1rem;opacity:0;transition:opacity .3s;}
         .cfg-status.visible{opacity:1;}
         .cfg-status.ok{background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.25);color:#22c55e;}
@@ -703,7 +696,6 @@ $mesesES = ['','ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov'
 
             <div class="cfg-section-label">Seleccionar días no disponibles</div>
 
-            <!-- Leyenda -->
             <div class="cal-legend">
                 <div class="cal-legend-item">
                     <div class="cal-legend-dot blocked"></div>
@@ -757,7 +749,6 @@ $mesesES = ['','ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov'
                 </button>
             </div>
 
-            <!-- BOTÓN GUARDAR (dorado, deshabilitado hasta que haya cambios) -->
             <button class="cfg-save-days-btn" id="btn-save-days" onclick="saveDays()" disabled>
                 Guardar días bloqueados
             </button>
@@ -788,11 +779,9 @@ let mcSelected  = null;
 let rangeMode   = false;
 let rangeStart  = null;
 
-// Cambios pendientes (aún no enviados al servidor)
-let pendingDays    = [];   // [{ fecha: "2026-06-10", motivo: "..." }] — a bloquear
-let pendingUnblock = [];   // ["2026-06-05"] — a desbloquear
+let pendingDays    = [];
+let pendingUnblock = [];
 
-// ── Abrir / Cerrar panel ──────────────────────────────────────
 function openCfg() {
     document.getElementById('cfg-overlay').classList.add('open');
     document.getElementById('cfg-panel').classList.add('open');
@@ -807,7 +796,6 @@ document.addEventListener('keydown', e => {
         closeCfg();
 });
 
-// ── Tabs ──────────────────────────────────────────────────────
 function switchTab(tab) {
     document.querySelectorAll('.cfg-tab').forEach((t, i) => {
         t.classList.toggle('active', (i === 0 && tab === 'auto') || (i === 1 && tab === 'vac'));
@@ -816,7 +804,6 @@ function switchTab(tab) {
     document.getElementById('pane-vac').classList.toggle('active',  tab === 'vac');
 }
 
-// ── Cargar configuración desde BD ────────────────────────────
 async function loadSettings() {
     try {
         const r = await fetch(CFG_API);
@@ -834,7 +821,6 @@ async function loadSettings() {
     } catch (e) { console.warn('No se pudo cargar configuración:', e); }
 }
 
-// ── Auto-aceptar ──────────────────────────────────────────────
 function applyAutoState() {
     const v      = cfgState.autoAceptar;
     const toggle = document.getElementById('auto-toggle');
@@ -912,7 +898,6 @@ async function saveAutoAceptar() {
     btn.disabled = false; btn.textContent = 'Guardar configuración';
 }
 
-// ── Mini calendario ───────────────────────────────────────────
 function renderMiniCal() {
     const grid  = document.getElementById('mc-grid');
     const title = document.getElementById('mc-title');
@@ -928,9 +913,9 @@ function renderMiniCal() {
     const offset = (first + 6) % 7;
     const daysInM= new Date(y, m+1, 0).getDate();
 
-    const blockedFechas   = cfgState.diasBloqueados.map(d => d.fecha);
-    const pendingFechas   = pendingDays.map(d => d.fecha);
-    const unblockFechas   = pendingUnblock;
+    const blockedFechas = cfgState.diasBloqueados.map(d => d.fecha);
+    const pendingFechas = pendingDays.map(d => d.fecha);
+    const unblockFechas = pendingUnblock;
 
     let html = '';
     for (let i = 0; i < offset; i++) html += `<div class="mini-cell mc-empty"></div>`;
@@ -941,25 +926,19 @@ function renderMiniCal() {
         const isPast   = dt < today;
         const isToday  = dt.getTime() === today.getTime();
 
-        const isBlockedInDB   = blockedFechas.includes(iso);
-        const isPending       = pendingFechas.includes(iso);
-        const isUnblocking    = unblockFechas.includes(iso);
-
-        // Estado visual final
-        // - isPending: naranja (pendiente de bloquear)
-        // - isBlockedInDB && !isUnblocking: rojo (bloqueado en BD)
-        // - isUnblocking: gris tachado (pendiente de desbloquear)
-        // - ninguno: disponible
+        const isBlockedInDB = blockedFechas.includes(iso);
+        const isPending     = pendingFechas.includes(iso);
+        const isUnblocking  = unblockFechas.includes(iso);
 
         let cls = 'mini-cell';
-        if (isPast)                                 cls += ' mc-disabled';
-        else if (isPending)                         cls += ' mc-pending';
-        else if (isUnblocking)                      cls += ' mc-unblocking';
-        else if (isBlockedInDB)                     cls += ' mc-blocked';
-        else if (isToday)                           cls += ' mc-today';
+        if (isPast)              cls += ' mc-disabled';
+        else if (isPending)      cls += ' mc-pending';
+        else if (isUnblocking)   cls += ' mc-unblocking';
+        else if (isBlockedInDB)  cls += ' mc-blocked';
+        else if (isToday)        cls += ' mc-today';
 
-        const onclick    = isPast ? '' : `onclick="mcSelectDay('${iso}')"`;
-        let titleAttr    = '';
+        const onclick = isPast ? '' : `onclick="mcSelectDay('${iso}')"`;
+        let titleAttr = '';
         if (isPending)    titleAttr = `title="Pendiente de guardar — haz clic para quitar"`;
         if (isUnblocking) titleAttr = `title="Se desbloqueará al guardar — haz clic para cancelar"`;
         if (isBlockedInDB && !isUnblocking) {
@@ -998,16 +977,12 @@ function mcSelectDay(iso) {
     }
 
     if (pendingFechas.includes(iso)) {
-        // Quitar de pendientes de bloquear
         pendingDays.splice(pendingDays.findIndex(d => d.fecha === iso), 1);
     } else if (unblockFechas.includes(iso)) {
-        // Cancelar el desbloqueo pendiente
         pendingUnblock.splice(pendingUnblock.indexOf(iso), 1);
     } else if (blockedFechas.includes(iso)) {
-        // Marcar para desbloquear
         pendingUnblock.push(iso);
     } else {
-        // Añadir a pendientes de bloquear
         const motivo = document.getElementById('vac-motivo').value.trim() || 'Vacaciones';
         pendingDays.push({ fecha: iso, motivo });
     }
@@ -1054,7 +1029,6 @@ function clearPending() {
     updateSaveBtn();
 }
 
-// ── Botón guardar — se habilita cuando hay cambios pendientes ─
 function updateSaveBtn() {
     const btn   = document.getElementById('btn-save-days');
     const total = pendingDays.length + pendingUnblock.length;
@@ -1103,10 +1077,9 @@ async function saveDays() {
         showCfgStatus('vac-status', 'err', `⚠ ${errors} operación(es) fallaron. Reintenta.`);
     }
 
-    await loadSettings(); // recarga desde BD y limpia pendientes
+    await loadSettings();
 }
 
-// ── Desbloquear directamente desde la lista ───────────────────
 async function desbloquearDia(fecha) {
     try {
         const r = await fetch(CFG_API, {
@@ -1125,7 +1098,6 @@ async function desbloquearDia(fecha) {
     }
 }
 
-// ── Lista de bloqueados ───────────────────────────────────────
 function renderBlockedList() {
     const list = document.getElementById('blocked-list');
     if (!list) return;
@@ -1149,7 +1121,6 @@ function renderBlockedList() {
     }).join('');
 }
 
-// ── Helpers ───────────────────────────────────────────────────
 function fmtDate(d) {
     return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 }
