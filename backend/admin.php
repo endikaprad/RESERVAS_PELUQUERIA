@@ -3701,6 +3701,10 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
                 return html;
             }
 
+            function buildBarChart(items, color) {
+                return buildBarChartTall(items, color);
+            }
+
             // Bar chart más alto para el día de la semana
             function buildBarChartTall(items, color) {
                 const maxV = Math.max(...items.map(x => x.value), 1);
