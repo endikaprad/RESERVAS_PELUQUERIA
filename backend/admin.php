@@ -3882,17 +3882,13 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
                 });
                 const maxV = Math.max(...Object.values(map), 1);
 
-                // Colores por nivel
-                const BG = ['#0d0d14', 'rgba(212,43,43,.18)', 'rgba(212,43,43,.4)', 'rgba(212,43,43,.68)', '#d42b2b'];
-                const BD = ['#1c1c26', 'rgba(212,43,43,.15)', 'rgba(212,43,43,.3)', 'rgba(212,43,43,.5)', 'rgba(212,43,43,.9)'];
-
-                // Construir array de 30 días
+                // Generar array de 30 días hacia atrás desde hoy
                 const days = [];
                 for (let i = 29; i >= 0; i--) {
                     const d = new Date(today);
                     d.setDate(d.getDate() - i);
                     const iso = d.toISOString().slice(0, 10);
-                    const dow = (d.getDay() + 6) % 7; // 0=Lun…6=Dom
+                    const dow = (d.getDay() + 6) % 7; // 0=Lun … 6=Dom
                     const v = map[iso] || 0;
                     const lvl = v === 0 ? 0 : v <= maxV * .25 ? 1 : v <= maxV * .5 ? 2 : v <= maxV * .75 ? 3 : 4;
                     days.push({
@@ -3900,101 +3896,139 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
                         dow,
                         v,
                         lvl,
-                        d
+                        day: d.getDate(),
+                        month: d.getMonth()
                     });
                 }
 
-                // Agrupar en semanas (columnas)
-                const DOW_LABELS = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
-                // Encontrar el lunes inicial
+                // Construir columnas (semanas): la primera columna empieza el lunes de la semana del día más antiguo
+                // Rellenar con nulls al inicio hasta llegar al dow correcto del primer día
                 const firstDow = days[0].dow;
-                const paddedDays = [...Array(firstDow).fill(null), ...days];
-
-                const weeks = [];
-                for (let i = 0; i < paddedDays.length; i += 7) {
-                    weeks.push(paddedDays.slice(i, i + 7));
+                const grid = []; // grid[col][row] — col = semana, row = día semana
+                let col = [];
+                for (let pad = 0; pad < firstDow; pad++) col.push(null);
+                for (const d of days) {
+                    col.push(d);
+                    if (col.length === 7) {
+                        grid.push(col);
+                        col = [];
+                    }
+                }
+                if (col.length > 0) {
+                    while (col.length < 7) col.push(null);
+                    grid.push(col);
                 }
 
-                // Etiquetas de mes sobre las semanas
-                const monthLabels = weeks.map(w => {
-                    const first = w.find(x => x !== null);
+                const MONTHS_ES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+                const DOW_LABELS = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
+                const COLORS = [{
+                        bg: 'rgba(255,255,255,0.04)',
+                        border: 'rgba(255,255,255,0.06)'
+                    },
+                    {
+                        bg: 'rgba(212,43,43,0.20)',
+                        border: 'rgba(212,43,43,0.25)'
+                    },
+                    {
+                        bg: 'rgba(212,43,43,0.42)',
+                        border: 'rgba(212,43,43,0.50)'
+                    },
+                    {
+                        bg: 'rgba(212,43,43,0.68)',
+                        border: 'rgba(212,43,43,0.75)'
+                    },
+                    {
+                        bg: 'rgba(212,43,43,0.92)',
+                        border: '#d42b2b'
+                    },
+                ];
+
+                // Construir etiquetas de mes (aparece en la primera columna de cada mes)
+                const monthLabels = grid.map((wcol) => {
+                    const first = wcol.find(c => c !== null);
                     if (!first) return '';
-                    return first.d.toLocaleDateString('es-ES', {
-                        day: 'numeric',
-                        month: 'short'
+                    // Solo mostrar si es el día 1-7 del mes (primera semana del mes)
+                    return first.day <= 7 ? MONTHS_ES[first.month] : '';
+                });
+
+                // HTML
+                let html = `
+    <style>
+      .hm2-wrap { display:flex; gap:0; align-items:flex-start; width:100%; overflow-x:auto; padding-bottom:4px; }
+      .hm2-yaxis { display:flex; flex-direction:column; gap:0; margin-right:6px; flex-shrink:0; padding-top:22px; }
+      .hm2-ylabel { height:18px; width:14px; font-size:10px; color:#4a4a5a; display:flex; align-items:center; justify-content:flex-end; line-height:1; }
+      .hm2-cols-wrap { display:flex; flex-direction:column; gap:0; }
+      .hm2-months-row { display:flex; gap:4px; height:20px; align-items:center; margin-bottom:2px; }
+      .hm2-month-label { width:18px; font-size:10px; color:#4a4a5a; text-align:center; overflow:visible; white-space:nowrap; margin-left:-10px; }
+      .hm2-cols { display:flex; gap:4px; }
+      .hm2-col { display:flex; flex-direction:column; gap:4px; }
+      .hm2-cell { width:18px; height:18px; border-radius:4px; cursor:default; position:relative; transition:transform .15s; flex-shrink:0; }
+      .hm2-cell:hover { transform:scale(1.3); z-index:10; }
+      .hm2-cell-empty { width:18px; height:18px; flex-shrink:0; }
+      .hm2-legend { display:flex; align-items:center; gap:6px; margin-top:12px; }
+      .hm2-legend-lbl { font-size:10px; color:#4a4a5a; }
+      .hm2-legend-cell { width:14px; height:14px; border-radius:3px; }
+      .hm2-stats { display:grid; grid-template-columns:1fr 1fr 1fr; gap:.6rem; margin-top:.75rem; }
+      .hm2-stat { background:#0d0d14; border:1px solid #1c1c26; border-radius:8px; padding:.6rem; text-align:center; }
+      .hm2-stat-num { font-family:'Playfair Display',serif; font-size:1.2rem; font-weight:700; line-height:1; }
+      .hm2-stat-lbl { font-size:.6rem; color:#7a7880; letter-spacing:.1em; text-transform:uppercase; margin-top:.2rem; }
+    </style>
+    <div class="hm2-wrap">
+      <div class="hm2-yaxis">`;
+
+                DOW_LABELS.forEach((l, i) => {
+                    // Solo L, X, V, D para no saturar
+                    const show = [0, 2, 4, 6].includes(i);
+                    html += `<div class="hm2-ylabel">${show ? l : ''}</div>`;
+                    if (i < 6) html += `<div style="height:4px;"></div>`;
+                });
+
+                html += `</div><div class="hm2-cols-wrap"><div class="hm2-months-row">`;
+
+                // Etiquetas de mes encima de cada columna
+                grid.forEach((wcol, ci) => {
+                    html += `<div class="hm2-month-label">${monthLabels[ci] || ''}</div>`;
+                });
+
+                html += `</div><div class="hm2-cols">`;
+
+                grid.forEach((wcol) => {
+                    html += `<div class="hm2-col">`;
+                    wcol.forEach((cell) => {
+                        if (!cell) {
+                            html += `<div class="hm2-cell-empty"></div>`;
+                        } else {
+                            const c = COLORS[cell.lvl];
+                            const tip = `${cell.iso}: ${cell.v} cita${cell.v !== 1 ? 's' : ''}`;
+                            html += `<div class="hm2-cell" style="background:${c.bg};border:1px solid ${c.border};" title="${tip}" onmouseenter="showTip(event,'','${tip}')" onmouseleave="hideTip()"></div>`;
+                        }
                     });
+                    html += `</div>`;
                 });
 
-                const CELL = 18; // px cuadrado
-                const GAP = 3;
-                const LEFT = 22; // ancho para etiquetas día
-                const TOP = 24; // alto para etiquetas mes
-
-                const totalW = LEFT + weeks.length * (CELL + GAP);
-                const totalH = TOP + 7 * (CELL + GAP);
-
-                let svg = `<svg viewBox="0 0 ${totalW} ${totalH}" style="width:100%;max-width:${Math.min(totalW*1.5,700)}px;display:block;margin:0 auto;" xmlns="http://www.w3.org/2000/svg">`;
-
-                // Etiquetas mes (cada 2 semanas para no saturar)
-                weeks.forEach((w, wi) => {
-                    if (wi % 2 === 0 && monthLabels[wi]) {
-                        const x = LEFT + wi * (CELL + GAP) + CELL / 2;
-                        svg += `<text x="${x}" y="14" text-anchor="middle" font-size="7" fill="#4a4a5a" font-family="DM Sans,sans-serif">${monthLabels[wi]}</text>`;
-                    }
-                });
-
-                // Etiquetas día
-                DOW_LABELS.forEach((l, di) => {
-                    if (di % 2 === 1) return; // solo L,X,V,D
-                    const y = TOP + di * (CELL + GAP) + CELL / 2 + 3.5;
-                    svg += `<text x="${LEFT-4}" y="${y}" text-anchor="end" font-size="7" fill="#4a4a5a" font-family="DM Sans,sans-serif">${l}</text>`;
-                });
-
-                // Celdas
-                weeks.forEach((w, wi) => {
-                    w.forEach((cell, di) => {
-                        if (!cell) return;
-                        const x = LEFT + wi * (CELL + GAP);
-                        const y = TOP + di * (CELL + GAP);
-                        const tip = `${cell.iso}: ${cell.v} cita${cell.v!==1?'s':''}`;
-                        svg += `<rect x="${x}" y="${y}" width="${CELL}" height="${CELL}" rx="3" fill="${BG[cell.lvl]}" stroke="${BD[cell.lvl]}" stroke-width="1">
-                  <title>${tip}</title>
-                </rect>`;
-                    });
-                });
+                html += `</div></div></div>`;
 
                 // Leyenda
-                const legY = totalH + 12;
-                svg += `<text x="${totalW-80}" y="${legY+9}" font-size="7" fill="#4a4a5a" font-family="DM Sans,sans-serif">Menos</text>`;
-                for (let l = 0; l < 5; l++) {
-                    const lx = totalW - 42 + l * (CELL / 1.5 + 2);
-                    svg += `<rect x="${lx}" y="${legY}" width="11" height="11" rx="2" fill="${BG[l]}" stroke="${BD[l]}" stroke-width="1"/>`;
-                }
-                svg += `<text x="${totalW+3}" y="${legY+9}" font-size="7" fill="#4a4a5a" font-family="DM Sans,sans-serif">Más</text>`;
+                html += `<div class="hm2-legend">
+      <span class="hm2-legend-lbl">Menos</span>`;
+                COLORS.forEach(c => {
+                    html += `<div class="hm2-legend-cell" style="background:${c.bg};border:1px solid ${c.border};"></div>`;
+                });
+                html += `<span class="hm2-legend-lbl">Más</span></div>`;
 
-                svg += '</svg>';
-
-                // Stats rápidas debajo del heatmap
+                // Stats
                 const totalCitas = Object.values(map).reduce((a, b) => a + b, 0);
                 const diasActivos = Object.keys(map).filter(k => map[k] > 0).length;
-                const maxDia = Object.entries(map).sort((a, b) => b[1] - a[1])[0];
+                const maxEntry = Object.entries(map).sort((a, b) => b[1] - a[1])[0];
+                const maxDiaVal = maxEntry ? maxEntry[1] : 0;
 
-                return `
-          <div style="overflow-x:auto;padding:4px 0 12px;">
-            ${svg}
-          </div>
-          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:.6rem;margin-top:.75rem;">
-            ${hmStat(totalCitas,'Total (30d)','#d42b2b')}
-            ${hmStat(diasActivos,'Días activos','#c9a84c')}
-            ${hmStat(maxDia?maxDia[1]:0,'Máx. en un día','#22c55e')}
-          </div>`;
-            }
+                html += `<div class="hm2-stats">
+      <div class="hm2-stat"><div class="hm2-stat-num" style="color:#d42b2b;">${totalCitas}</div><div class="hm2-stat-lbl">Total (30d)</div></div>
+      <div class="hm2-stat"><div class="hm2-stat-num" style="color:#c9a84c;">${diasActivos}</div><div class="hm2-stat-lbl">Días activos</div></div>
+      <div class="hm2-stat"><div class="hm2-stat-num" style="color:#22c55e;">${maxDiaVal}</div><div class="hm2-stat-lbl">Máx. en un día</div></div>
+    </div>`;
 
-            function hmStat(val, lbl, col) {
-                return `<div style="background:#0d0d14;border:1px solid #1c1c26;border-radius:8px;padding:.6rem;text-align:center;">
-          <div style="font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:700;color:${col};">${val}</div>
-          <div style="font-size:.58rem;color:#7a7880;letter-spacing:.08em;text-transform:uppercase;margin-top:.1rem;">${lbl}</div>
-        </div>`;
+                return html;
             }
 
             // Barber card (igual que antes)
