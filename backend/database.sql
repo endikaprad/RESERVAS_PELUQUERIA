@@ -66,6 +66,16 @@ ALTER TABLE reservas
     ADD COLUMN IF NOT EXISTS estado ENUM('pendiente','aceptada','denegada') NOT NULL DEFAULT 'pendiente' AFTER notas,
     ADD COLUMN IF NOT EXISTS token  VARCHAR(64) NOT NULL DEFAULT '' AFTER estado;
 
+-- ============================================================
+--  MIGRACIÓN: añadir estado 'cancelada' a la tabla reservas
+--  Ejecutar UNA sola vez en la base de datos
+-- ============================================================
+
+ALTER TABLE reservas
+    MODIFY COLUMN estado
+        ENUM('pendiente','aceptada','denegada','cancelada')
+        NOT NULL DEFAULT 'pendiente';
+
 -- ── Vista: próximas disponibilidades ──────────────────────
 CREATE OR REPLACE VIEW proxima_disponibilidad AS
 SELECT
