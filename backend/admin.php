@@ -223,6 +223,8 @@ $stmt = $db->prepare("
     SELECT r.id, r.fecha, r.hora,
            r.cliente_nombre, r.cliente_telefono, r.cliente_email, r.notas,
            r.estado, r.token, r.creado_en,
+           r.barbero_id,
+           COALESCE(r.ronda_negociacion, 0) AS ronda_negociacion,
            s.nombre AS servicio, s.precio, s.duracion,
            b.nombre AS barbero
     FROM reservas r
@@ -2920,6 +2922,452 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
             outline: none;
             border-color: #d42b2b;
         }
+
+        <style id="cancel-reschedule-css">
+
+        /* ── Panel lateral: Cancelar / Reprogramar ── */
+        .cr-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, .75);
+            backdrop-filter: blur(6px);
+            z-index: 1200;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity .3s ease;
+        }
+
+        .cr-overlay.open {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .cr-panel {
+            position: fixed;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            width: min(520px, 100vw);
+            background: #111119;
+            border-left: 1px solid #252530;
+            z-index: 1201;
+            display: flex;
+            flex-direction: column;
+            transform: translateX(100%);
+            transition: transform .38s cubic-bezier(.16, 1, .3, 1);
+            overflow: hidden;
+        }
+
+        .cr-panel.open {
+            transform: translateX(0);
+        }
+
+        .cr-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1.25rem 1.5rem;
+            border-bottom: 1px solid #252530;
+            flex-shrink: 0;
+        }
+
+        .cr-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.1rem;
+            font-weight: 700;
+        }
+
+        .cr-close {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: transparent;
+            border: 1px solid #252530;
+            color: #7a7880;
+            cursor: pointer;
+            font-size: .9rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all .2s;
+        }
+
+        .cr-close:hover {
+            border-color: #d42b2b;
+            color: #d42b2b;
+        }
+
+        .cr-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1.5rem;
+        }
+
+        .cr-body::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .cr-body::-webkit-scrollbar-thumb {
+            background: #252530;
+            border-radius: 2px;
+        }
+
+        /* Reserva info badge */
+        .cr-reserva-info {
+            background: #18181f;
+            border: 1px solid #2f2f3c;
+            border-radius: 10px;
+            padding: 14px 16px;
+            margin-bottom: 1.5rem;
+        }
+
+        .cr-reserva-info .ri-nombre {
+            font-weight: 600;
+            font-size: .95rem;
+            margin-bottom: .25rem;
+        }
+
+        .cr-reserva-info .ri-detalle {
+            font-size: .78rem;
+            color: #7a7880;
+            display: flex;
+            flex-wrap: wrap;
+            gap: .4rem;
+        }
+
+        .cr-reserva-info .ri-chip {
+            padding: .15rem .5rem;
+            border-radius: 100px;
+            background: rgba(212, 43, 43, .1);
+            border: 1px solid rgba(212, 43, 43, .2);
+            color: #d42b2b;
+            font-size: .7rem;
+        }
+
+        /* Mode tabs */
+        .cr-mode-tabs {
+            display: flex;
+            gap: .5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .cr-mode-tab {
+            flex: 1;
+            padding: .75rem .5rem;
+            background: #18181f;
+            border: 1px solid #252530;
+            border-radius: 8px;
+            font-family: 'DM Sans', sans-serif;
+            font-size: .72rem;
+            font-weight: 600;
+            letter-spacing: .08em;
+            text-transform: uppercase;
+            color: #7a7880;
+            cursor: pointer;
+            transition: all .2s;
+        }
+
+        .cr-mode-tab:hover {
+            border-color: #7a7880;
+            color: #f0ece3;
+        }
+
+        .cr-mode-tab.active.cancel {
+            background: rgba(107, 114, 128, .12);
+            border-color: rgba(107, 114, 128, .5);
+            color: #9ca3af;
+        }
+
+        .cr-mode-tab.active.reschedule {
+            background: rgba(201, 168, 76, .1);
+            border-color: rgba(201, 168, 76, .5);
+            color: #c9a84c;
+        }
+
+        /* Panes */
+        .cr-pane {
+            display: none;
+        }
+
+        .cr-pane.active {
+            display: block;
+        }
+
+        /* Form fields */
+        .cr-field {
+            display: flex;
+            flex-direction: column;
+            gap: .35rem;
+            margin-bottom: 1rem;
+        }
+
+        .cr-field label {
+            font-size: .65rem;
+            letter-spacing: .15em;
+            text-transform: uppercase;
+            color: #7a7880;
+        }
+
+        .cr-field input,
+        .cr-field select,
+        .cr-field textarea {
+            background: #18181f;
+            border: 1px solid #252530;
+            border-radius: 8px;
+            padding: .75rem 1rem;
+            color: #f0ece3;
+            font-family: 'DM Sans', sans-serif;
+            font-size: .88rem;
+            transition: border-color .2s;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .cr-field input:focus,
+        .cr-field select:focus,
+        .cr-field textarea:focus {
+            outline: none;
+            border-color: var(--accent, #d42b2b);
+        }
+
+        .cr-field textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        /* Slots grid */
+        .cr-slots {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: .4rem;
+            margin-bottom: 1rem;
+        }
+
+        .cr-slot {
+            padding: .5rem .25rem;
+            border: 1px solid #252530;
+            border-radius: 6px;
+            text-align: center;
+            font-size: .78rem;
+            color: #7a7880;
+            cursor: pointer;
+            transition: all .18s;
+            background: #18181f;
+        }
+
+        .cr-slot:hover:not(.taken):not(.past) {
+            border-color: #c9a84c;
+            color: #c9a84c;
+        }
+
+        .cr-slot.selected {
+            background: rgba(201, 168, 76, .12);
+            border-color: #c9a84c;
+            color: #c9a84c;
+            font-weight: 600;
+        }
+
+        .cr-slot.taken {
+            opacity: .35;
+            cursor: not-allowed;
+            text-decoration: line-through;
+        }
+
+        .cr-slot.past {
+            opacity: .25;
+            cursor: not-allowed;
+            text-decoration: line-through;
+        }
+
+        .cr-slots-loading {
+            text-align: center;
+            padding: 1rem;
+            color: #7a7880;
+            font-size: .8rem;
+            grid-column: 1/-1;
+        }
+
+        /* Buttons */
+        .cr-btn-cancel {
+            width: 100%;
+            padding: .9rem;
+            border-radius: 8px;
+            background: rgba(107, 114, 128, .12);
+            border: 1px solid rgba(107, 114, 128, .4);
+            color: #9ca3af;
+            font-family: 'DM Sans', sans-serif;
+            font-size: .78rem;
+            font-weight: 700;
+            letter-spacing: .1em;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: all .25s;
+        }
+
+        .cr-btn-cancel:hover:not(:disabled) {
+            background: #4b5563;
+            color: #fff;
+            border-color: #6b7280;
+        }
+
+        .cr-btn-reschedule {
+            width: 100%;
+            padding: .9rem;
+            border-radius: 8px;
+            background: linear-gradient(135deg, #c9a84c, #a17c2d);
+            border: none;
+            color: #000;
+            font-family: 'DM Sans', sans-serif;
+            font-size: .78rem;
+            font-weight: 700;
+            letter-spacing: .1em;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: all .25s;
+            box-shadow: 0 4px 16px rgba(201, 168, 76, .2);
+        }
+
+        .cr-btn-reschedule:hover:not(:disabled) {
+            transform: translateY(-1px);
+            box-shadow: 0 8px 24px rgba(201, 168, 76, .35);
+        }
+
+        .cr-btn-reschedule:disabled,
+        .cr-btn-cancel:disabled {
+            opacity: .45;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Warning box */
+        .cr-warning {
+            background: rgba(245, 158, 11, .06);
+            border: 1px solid rgba(245, 158, 11, .2);
+            border-radius: 8px;
+            padding: .75rem 1rem;
+            margin-bottom: 1rem;
+            font-size: .78rem;
+            color: #d4a84b;
+            line-height: 1.6;
+        }
+
+        /* Status */
+        .cr-status {
+            display: flex;
+            align-items: center;
+            gap: .5rem;
+            padding: .65rem 1rem;
+            border-radius: 8px;
+            font-size: .78rem;
+            margin-top: .75rem;
+            opacity: 0;
+            transition: opacity .3s;
+        }
+
+        .cr-status.visible {
+            opacity: 1;
+        }
+
+        .cr-status.ok {
+            background: rgba(34, 197, 94, .1);
+            border: 1px solid rgba(34, 197, 94, .25);
+            color: #22c55e;
+        }
+
+        .cr-status.err {
+            background: rgba(212, 43, 43, .1);
+            border: 1px solid rgba(212, 43, 43, .25);
+            color: #d42b2b;
+        }
+
+        /* Ronda badge */
+        .cr-ronda-badge {
+            display: inline-block;
+            padding: .2rem .65rem;
+            background: rgba(245, 158, 11, .12);
+            border: 1px solid rgba(245, 158, 11, .3);
+            border-radius: 100px;
+            font-size: .7rem;
+            color: #f59e0b;
+            margin-bottom: 1rem;
+        }
+
+        /* Botón en tabla/cards */
+        .btn-manage {
+            padding: .32rem .65rem;
+            border-radius: 4px;
+            font-family: 'DM Sans', sans-serif;
+            font-size: .67rem;
+            font-weight: 600;
+            letter-spacing: .08em;
+            text-transform: uppercase;
+            cursor: pointer;
+            border: 1px solid transparent;
+            transition: all .2s;
+            background: rgba(107, 114, 128, .1);
+            border-color: rgba(107, 114, 128, .3);
+            color: #9ca3af;
+            white-space: nowrap;
+        }
+
+        .btn-manage:hover {
+            background: #374151;
+            color: #fff;
+            border-color: #4b5563;
+        }
+
+        /* Mobile card action button */
+        .btn-manage-mobile {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: .4rem;
+            padding: .7rem .5rem;
+            border-radius: 7px;
+            font-family: 'DM Sans', sans-serif;
+            font-size: .78rem;
+            font-weight: 600;
+            letter-spacing: .06em;
+            text-transform: uppercase;
+            cursor: pointer;
+            border: 1px solid rgba(107, 114, 128, .35);
+            background: rgba(107, 114, 128, .1);
+            color: #9ca3af;
+            transition: all .22s;
+        }
+
+        .btn-manage-mobile:hover {
+            background: #374151;
+            color: #fff;
+            border-color: #4b5563;
+        }
+
+        /* Estado reprogramar badge */
+        .ebadge-reprogramar_barbero {
+            background: rgba(201, 168, 76, .12);
+            border: 1px solid rgba(201, 168, 76, .3);
+            color: #c9a84c;
+        }
+
+        .ebadge-reprogramar_cliente {
+            background: rgba(37, 80, 160, .12);
+            border: 1px solid rgba(37, 80, 160, .35);
+            color: #6b9fff;
+        }
+
+        .badge-reprogramar_barbero {
+            background: rgba(201, 168, 76, .12);
+            border: 1px solid rgba(201, 168, 76, .3);
+            color: #c9a84c;
+        }
+
+        .badge-reprogramar_cliente {
+            background: rgba(37, 80, 160, .12);
+            border: 1px solid rgba(37, 80, 160, .35);
+            color: #6b9fff;
+        }
+    </style>
     </style>
 </head>
 
@@ -2989,6 +3437,8 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
                         <option value="aceptada" <?= $filtroEstado === 'aceptada' ? 'selected' : '' ?>>✓ Aceptadas</option>
                         <option value="denegada" <?= $filtroEstado === 'denegada' ? 'selected' : '' ?>>✕ Denegadas</option>
                         <option value="cancelada" <?= $filtroEstado === 'cancelada' ? 'selected' : '' ?>>✕ Canceladas</option>
+                        <option value="reprogramar_barbero" <?= $filtroEstado === 'reprogramar_barbero' ? 'selected' : '' ?>>⇄ Prop. barbero</option>
+                        <option value="reprogramar_cliente" <?= $filtroEstado === 'reprogramar_cliente' ? 'selected' : '' ?>>⇄ Prop. cliente</option>
                     </select>
                 </div>
                 <div class="frow">
@@ -3050,6 +3500,10 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
                                 <span class="ebadge ebadge-denegada">✕ Denegada</span>
                             <?php elseif ($est === 'cancelada'): ?>
                                 <span class="ebadge ebadge-cancelada">✕ Cancelada</span>
+                            <?php elseif ($est === 'reprogramar_barbero'): ?>
+                                <span class="ebadge ebadge-reprogramar_barbero">⇄ Prop. barbero</span>
+                            <?php elseif ($est === 'reprogramar_cliente'): ?>
+                                <span class="ebadge ebadge-reprogramar_cliente">⇄ Prop. cliente</span>
                             <?php endif; ?>
                         </div>
                         <div class="rc-divider"></div>
@@ -3080,18 +3534,34 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
                                 <div class="rc-notas">"<?= htmlspecialchars($r['notas']) ?>"</div>
                             <?php endif; ?>
                         </div>
-                        <?php if ($est === 'pendiente'): ?>
+                        <?php if ($est === 'pendiente' || $est === 'aceptada' || in_array($est, ['reprogramar_barbero', 'reprogramar_cliente'])): ?>
                             <div class="rc-actions">
-                                <a href="?accion=aceptar&token=<?= urlencode($r['token']) ?>&<?= http_build_query(['barbero' => $filtroBarbero, 'fecha' => $filtroFecha, 'estado' => $filtroEstado, 'fecha_custom' => $fechaCustom]) ?>"
-                                    class="btn-accept"
-                                    onclick="return confirm('¿Aceptar la reserva de <?= htmlspecialchars(addslashes($r['cliente_nombre'])) ?>?')">
-                                    ✓ Aceptar
-                                </a>
-                                <a href="?accion=denegar&token=<?= urlencode($r['token']) ?>&<?= http_build_query(['barbero' => $filtroBarbero, 'fecha' => $filtroFecha, 'estado' => $filtroEstado, 'fecha_custom' => $fechaCustom]) ?>"
-                                    class="btn-deny"
-                                    onclick="return confirm('¿Denegar la reserva de <?= htmlspecialchars(addslashes($r['cliente_nombre'])) ?>?')">
-                                    ✕ Denegar
-                                </a>
+                                <?php if ($est === 'pendiente'): ?>
+                                    <a href="?accion=aceptar&token=<?= urlencode($r['token']) ?>&<?= http_build_query(['barbero' => $filtroBarbero, 'fecha' => $filtroFecha, 'estado' => $filtroEstado, 'fecha_custom' => $fechaCustom]) ?>"
+                                        class="btn-accept"
+                                        onclick="return confirm('¿Aceptar la reserva de <?= htmlspecialchars(addslashes($r['cliente_nombre'])) ?>?')">
+                                        ✓ Aceptar
+                                    </a>
+                                    <a href="?accion=denegar&token=<?= urlencode($r['token']) ?>&<?= http_build_query(['barbero' => $filtroBarbero, 'fecha' => $filtroFecha, 'estado' => $filtroEstado, 'fecha_custom' => $fechaCustom]) ?>"
+                                        class="btn-deny"
+                                        onclick="return confirm('¿Denegar la reserva de <?= htmlspecialchars(addslashes($r['cliente_nombre'])) ?>?')">
+                                        ✕ Denegar
+                                    </a>
+                                <?php endif; ?>
+                                <?php if ($est === 'aceptada' || in_array($est, ['reprogramar_barbero', 'reprogramar_cliente'])): ?>
+                                    <button class="btn-manage-mobile"
+                                        onclick="openCR(
+                                            '<?= addslashes($r['token']) ?>',
+                                            '<?= addslashes($r['barbero_id'] ?? '') ?>',
+                                            '<?= htmlspecialchars(addslashes($r['cliente_nombre'])) ?>',
+                                            '<?= htmlspecialchars(addslashes($r['servicio'])) ?>',
+                                            '<?= $r['fecha'] ?>',
+                                            '<?= substr($r['hora'], 0, 5) ?>',
+                                            <?= (int)($r['ronda_negociacion'] ?? 0) ?>
+                                        )">
+                                        🚫 Gestionar
+                                    </button>
+                                <?php endif; ?>
                             </div>
                         <?php endif; ?>
                     </div>
@@ -3149,6 +3619,10 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
                                             <span class="estado-badge badge-denegada">✕ Denegada</span>
                                         <?php elseif ($r['estado'] === 'cancelada'): ?>
                                             <span class="estado-badge badge-cancelada">✕ Cancelada</span>
+                                        <?php elseif ($r['estado'] === 'reprogramar_barbero'): ?>
+                                            <span class="estado-badge badge-reprogramar_barbero">⇄ Prop. barbero</span>
+                                        <?php elseif ($r['estado'] === 'reprogramar_cliente'): ?>
+                                            <span class="estado-badge badge-reprogramar_cliente">⇄ Prop. cliente</span>
                                         <?php endif; ?>
                                     </td>
                                     <td>
@@ -3161,7 +3635,19 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
                                                     class="tb-deny"
                                                     onclick="return confirm('¿Denegar la reserva de <?= htmlspecialchars(addslashes($r['cliente_nombre'])) ?>?')">✕ Denegar</a>
                                             </div>
-                                        <?php else: ?><span style="color:#7a7880;font-size:.75rem;">—</span>
+                                        <?php elseif ($r['estado'] === 'aceptada' || in_array($r['estado'], ['reprogramar_barbero', 'reprogramar_cliente'])): ?>
+                                            <button class="btn-manage"
+                                                onclick="openCR(
+                                                    '<?= addslashes($r['token']) ?>',
+                                                    '<?= addslashes($r['barbero_id'] ?? '') ?>',
+                                                    '<?= htmlspecialchars(addslashes($r['cliente_nombre'])) ?>',
+                                                    '<?= htmlspecialchars(addslashes($r['servicio'])) ?>',
+                                                    '<?= $r['fecha'] ?>',
+                                                    '<?= substr($r['hora'], 0, 5) ?>',
+                                                    <?= (int)($r['ronda_negociacion'] ?? 0) ?>
+                                                )">🚫 Gestionar</button>
+                                        <?php else: ?>
+                                            <span style="color:#7a7880;font-size:.75rem;">—</span>
                                         <?php endif; ?>
                                     </td>
                                     <td class="td-notas"><?= $r['notas'] ? htmlspecialchars($r['notas']) : '—' ?></td>
@@ -4323,6 +4809,375 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
         })();
     </script>
 
+    <div class="cr-overlay" id="cr-overlay" onclick="closeCR()"></div>
+
+    <div class="cr-panel" id="cr-panel">
+        <div class="cr-header">
+            <div class="cr-title" id="cr-panel-title">Gestionar reserva</div>
+            <button class="cr-close" onclick="closeCR()">✕</button>
+        </div>
+        <div class="cr-body">
+
+            <!-- Info de la reserva -->
+            <div class="cr-reserva-info" id="cr-reserva-info">
+                <div class="ri-nombre" id="cr-info-nombre">—</div>
+                <div class="ri-detalle">
+                    <span class="ri-chip" id="cr-info-servicio">—</span>
+                    <span id="cr-info-fecha" style="color:#7a7880;font-size:.78rem;">—</span>
+                    <span id="cr-info-hora" style="color:#d42b2b;font-weight:700;font-size:.78rem;">—</span>
+                </div>
+            </div>
+
+            <!-- Badge de ronda de negociación -->
+            <div class="cr-ronda-badge" id="cr-ronda-badge" style="display:none;">
+                ⇄ Negociación activa
+            </div>
+
+            <!-- Tabs: cancelar | reprogramar -->
+            <div class="cr-mode-tabs">
+                <button class="cr-mode-tab active cancel" id="cr-tab-cancel"
+                    onclick="crSwitchMode('cancel')">🚫 Cancelar cita</button>
+                <button class="cr-mode-tab reschedule" id="cr-tab-reschedule"
+                    onclick="crSwitchMode('reschedule')">⇄ Proponer cambio</button>
+            </div>
+
+            <!-- PANE: Cancelar -->
+            <div class="cr-pane active" id="cr-pane-cancel">
+                <div class="cr-warning">
+                    ⚠ Al cancelar se notificará al cliente por email con el motivo indicado y podrá hacer una nueva reserva.
+                </div>
+                <div class="cr-field">
+                    <label>Motivo de cancelación *</label>
+                    <textarea id="cr-cancel-motivo" placeholder="Ej: Enfermedad imprevista, problema técnico…" rows="4"></textarea>
+                </div>
+                <button class="cr-btn-cancel" id="cr-btn-do-cancel" onclick="crDoCancel()">
+                    🚫 Confirmar cancelación y notificar cliente
+                </button>
+                <div class="cr-status" id="cr-cancel-status"></div>
+            </div>
+
+            <!-- PANE: Reprogramar -->
+            <div class="cr-pane" id="cr-pane-reschedule">
+                <div class="cr-warning">
+                    ⇄ El cliente recibirá un email con el nuevo horario propuesto y podrá aceptarlo, rechazarlo o proponer otro.
+                </div>
+                <div class="cr-field">
+                    <label>Motivo del cambio *</label>
+                    <textarea id="cr-resch-motivo" placeholder="Ej: Cambio de agenda, formación…" rows="3"></textarea>
+                </div>
+                <div class="cr-field">
+                    <label>Nueva fecha propuesta *</label>
+                    <input type="date" id="cr-resch-fecha"
+                        onchange="crLoadSlots()" />
+                </div>
+                <div class="cr-field">
+                    <label>Nueva hora propuesta *</label>
+                    <div class="cr-slots" id="cr-slots-grid">
+                        <div class="cr-slots-loading">Selecciona una fecha primero</div>
+                    </div>
+                    <input type="hidden" id="cr-resch-hora" />
+                </div>
+                <button class="cr-btn-reschedule" id="cr-btn-do-reschedule" onclick="crDoReschedule()" disabled>
+                    ⇄ Enviar propuesta al cliente
+                </button>
+                <div class="cr-status" id="cr-resch-status"></div>
+            </div>
+
+        </div>
+    </div>
+
+    // --- SCRIPT DE CANCELACION ---
+    <script id="cancel-reschedule-js">
+        (function() {
+            'use strict';
+
+            const API = './api/cancel-by-barber.php';
+            const SLOTS_API = './api/slots.php';
+
+            const ALL_SLOTS = [
+                '09:00', '09:30', '10:00', '10:30', '11:00', '11:30',
+                '12:00', '12:30', '13:00', '13:30',
+                '16:00', '16:30', '17:00', '17:30', '18:00', '18:30', '19:00', '19:30',
+            ];
+
+            let crState = {
+                token: null,
+                barberoId: null,
+                nombre: null,
+                servicio: null,
+                fecha: null, // YYYY-MM-DD
+                hora: null,
+                ronda: 0,
+                mode: 'cancel',
+                selectedSlot: null,
+            };
+
+            // ── Abrir panel ──────────────────────────────────────────
+            window.openCR = function(token, barberoId, nombre, servicio, fecha, hora, ronda) {
+                crState = {
+                    token,
+                    barberoId,
+                    nombre,
+                    servicio,
+                    fecha,
+                    hora,
+                    ronda: +ronda,
+                    mode: 'cancel',
+                    selectedSlot: null
+                };
+
+                // Rellenar info
+                document.getElementById('cr-info-nombre').textContent = nombre;
+                document.getElementById('cr-info-servicio').textContent = servicio;
+                document.getElementById('cr-info-fecha').textContent = fecha;
+                document.getElementById('cr-info-hora').textContent = hora;
+                document.getElementById('cr-panel-title').textContent = 'Gestionar reserva';
+
+                // Badge ronda
+                const rondaBadge = document.getElementById('cr-ronda-badge');
+                if (+ronda > 0) {
+                    rondaBadge.textContent = '⇄ Negociación — ronda ' + ronda;
+                    rondaBadge.style.display = 'inline-block';
+                } else {
+                    rondaBadge.style.display = 'none';
+                }
+
+                // Reset forms
+                document.getElementById('cr-cancel-motivo').value = '';
+                document.getElementById('cr-resch-motivo').value = '';
+                document.getElementById('cr-resch-fecha').value = '';
+                document.getElementById('cr-resch-hora').value = '';
+                document.getElementById('cr-slots-grid').innerHTML = '<div class="cr-slots-loading">Selecciona una fecha primero</div>';
+                document.getElementById('cr-btn-do-reschedule').disabled = true;
+
+                // Fecha mínima: mañana
+                const tomorrow = new Date();
+                tomorrow.setDate(tomorrow.getDate() + 1);
+                document.getElementById('cr-resch-fecha').min = tomorrow.toISOString().slice(0, 10);
+
+                crSwitchMode('cancel');
+
+                document.getElementById('cr-overlay').classList.add('open');
+                document.getElementById('cr-panel').classList.add('open');
+                document.body.style.overflow = 'hidden';
+            };
+
+            window.closeCR = function() {
+                document.getElementById('cr-overlay').classList.remove('open');
+                document.getElementById('cr-panel').classList.remove('open');
+                document.body.style.overflow = '';
+            };
+
+            window.crSwitchMode = function(mode) {
+                crState.mode = mode;
+                document.querySelectorAll('.cr-mode-tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.cr-pane').forEach(p => p.classList.remove('active'));
+                document.getElementById('cr-tab-' + mode).classList.add('active');
+                document.getElementById('cr-pane-' + mode).classList.add('active');
+            };
+
+            // ── Cargar slots para fecha seleccionada ─────────────────
+            window.crLoadSlots = async function() {
+                const fecha = document.getElementById('cr-resch-fecha').value;
+                const grid = document.getElementById('cr-slots-grid');
+                const btnResch = document.getElementById('cr-btn-do-reschedule');
+                crState.selectedSlot = null;
+                document.getElementById('cr-resch-hora').value = '';
+                btnResch.disabled = true;
+
+                if (!fecha) {
+                    grid.innerHTML = '<div class="cr-slots-loading">Selecciona una fecha primero</div>';
+                    return;
+                }
+
+                // Domingo bloqueado
+                const dt = new Date(fecha + 'T00:00:00');
+                if (dt.getDay() === 0) {
+                    grid.innerHTML = '<div class="cr-slots-loading" style="color:#d42b2b;">Los domingos estamos cerrados</div>';
+                    return;
+                }
+
+                grid.innerHTML = '<div class="cr-slots-loading">Cargando horarios…</div>';
+
+                try {
+                    const res = await fetch(`${SLOTS_API}?fecha=${fecha}&barbero=${crState.barberoId}`);
+                    const json = await res.json();
+
+                    if (json.ok && json.data.bloqueado) {
+                        grid.innerHTML = `<div class="cr-slots-loading" style="color:#d42b2b;">🔒 Día bloqueado: ${json.data.motivo || 'No disponible'}</div>`;
+                        return;
+                    }
+
+                    const ocupadas = json.ok ? (json.data.ocupadas || []) : [];
+                    const now = new Date();
+                    const isToday = fecha === now.toISOString().slice(0, 10);
+                    const currentHHMM = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
+                    const esSabado = dt.getDay() === 6;
+
+                    const slotsFiltrados = ALL_SLOTS.filter(s => !esSabado || s < '14:00');
+
+                    grid.innerHTML = slotsFiltrados.map(s => {
+                        const taken = ocupadas.includes(s);
+                        const past = isToday && s <= currentHHMM;
+                        let cls = 'cr-slot';
+                        if (taken) cls += ' taken';
+                        else if (past) cls += ' past';
+                        const disabled = taken || past;
+                        const onclick = disabled ? '' : `onclick="crSelectSlot('${s}')"`;
+                        return `<div class="${cls}" id="crslot-${s.replace(':','')}" ${onclick}>${s}</div>`;
+                    }).join('');
+
+                } catch (e) {
+                    grid.innerHTML = '<div class="cr-slots-loading" style="color:#d42b2b;">Error al cargar horarios</div>';
+                }
+            };
+
+            window.crSelectSlot = function(slot) {
+                document.querySelectorAll('.cr-slot').forEach(el => el.classList.remove('selected'));
+                const el = document.getElementById('crslot-' + slot.replace(':', ''));
+                if (el) el.classList.add('selected');
+                crState.selectedSlot = slot;
+                document.getElementById('cr-resch-hora').value = slot;
+                document.getElementById('cr-btn-do-reschedule').disabled = false;
+            };
+
+            // ── Ejecutar: CANCELAR ───────────────────────────────────
+            window.crDoCancel = async function() {
+                const motivo = document.getElementById('cr-cancel-motivo').value.trim();
+                if (!motivo) {
+                    crShowStatus('cr-cancel-status', false, 'El motivo es obligatorio.');
+                    return;
+                }
+
+                if (!confirm(`¿Cancelar la reserva de ${crState.nombre}?\n\nSe le enviará un email con el motivo.`)) return;
+
+                const btn = document.getElementById('cr-btn-do-cancel');
+                btn.disabled = true;
+                btn.textContent = 'Enviando…';
+
+                try {
+                    const res = await fetch(API, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            token: crState.token,
+                            accion: 'cancelar',
+                            motivo
+                        }),
+                    });
+                    const json = await res.json();
+                    if (json.ok) {
+                        crShowStatus('cr-cancel-status', true, '✓ Reserva cancelada. Email enviado al cliente.');
+                        setTimeout(() => {
+                            closeCR();
+                            location.reload();
+                        }, 2200);
+                    } else {
+                        crShowStatus('cr-cancel-status', false, json.error || 'Error al cancelar.');
+                    }
+                } catch (e) {
+                    crShowStatus('cr-cancel-status', false, 'Error de conexión.');
+                } finally {
+                    btn.disabled = false;
+                    btn.textContent = '🚫 Confirmar cancelación y notificar cliente';
+                }
+            };
+
+            // ── Ejecutar: REPROGRAMAR ────────────────────────────────
+            window.crDoReschedule = async function() {
+                const motivo = document.getElementById('cr-resch-motivo').value.trim();
+                const nuevaFecha = document.getElementById('cr-resch-fecha').value;
+                const nuevaHora = crState.selectedSlot;
+
+                if (!motivo) {
+                    crShowStatus('cr-resch-status', false, 'El motivo es obligatorio.');
+                    return;
+                }
+                if (!nuevaFecha) {
+                    crShowStatus('cr-resch-status', false, 'Selecciona una fecha.');
+                    return;
+                }
+                if (!nuevaHora) {
+                    crShowStatus('cr-resch-status', false, 'Selecciona una hora.');
+                    return;
+                }
+
+                if (!confirm(`¿Proponer cambio de horario a ${crState.nombre}?\n\nNuevo horario: ${nuevaFecha} a las ${nuevaHora}\nEl cliente recibirá un email para aceptar o negociar.`)) return;
+
+                const btn = document.getElementById('cr-btn-do-reschedule');
+                btn.disabled = true;
+                btn.textContent = 'Enviando…';
+
+                try {
+                    const res = await fetch(API, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            token: crState.token,
+                            accion: 'reprogramar',
+                            motivo,
+                            nueva_fecha: nuevaFecha,
+                            nueva_hora: nuevaHora,
+                        }),
+                    });
+                    const json = await res.json();
+                    if (json.ok) {
+                        crShowStatus('cr-resch-status', true, '✓ Propuesta enviada. El cliente fue notificado por email.');
+                        setTimeout(() => {
+                            closeCR();
+                            location.reload();
+                        }, 2200);
+                    } else {
+                        crShowStatus('cr-resch-status', false, json.error || 'Error al enviar propuesta.');
+                    }
+                } catch (e) {
+                    crShowStatus('cr-resch-status', false, 'Error de conexión.');
+                } finally {
+                    btn.disabled = false;
+                    btn.textContent = '⇄ Enviar propuesta al cliente';
+                }
+            };
+
+            function crShowStatus(id, ok, msg) {
+                const el = document.getElementById(id);
+                if (!el) return;
+                el.className = 'cr-status visible ' + (ok ? 'ok' : 'err');
+                el.textContent = msg;
+                if (!ok) setTimeout(() => el.classList.remove('visible'), 4000);
+            }
+
+            // ── Manejar propuestas del cliente desde el admin ─────────
+            // (cuando el barbero recibe ?reschedule_pt=XXX&raccion=aceptar|denegar)
+            (function handleRescheduleFromAdmin() {
+                const params = new URLSearchParams(window.location.search);
+                const pt = params.get('reschedule_pt');
+                const raccion = params.get('raccion');
+                if (!pt || !raccion) return;
+
+                // Limpiar URL sin recargar
+                history.replaceState({}, '', window.location.pathname);
+
+                if (raccion === 'aceptar' || raccion === 'denegar') {
+                    const url = `./api/reschedule-response.php?pt=${pt}&accion=${raccion}`;
+                    // Redirigir a la página de resultado
+                    window.location.href = url;
+                }
+                // 'reproponer' → el barbero quiere proponer otro: abrir panel
+                // (necesita que la página haya cargado y el token esté en BD)
+                if (raccion === 'reproponer') {
+                    // Mostrar un mensaje para que el barbero lo gestione desde el panel de la reserva correspondiente
+                    setTimeout(() => {
+                        alert('Para proponer otro horario, busca la reserva en el panel y usa el botón "Gestionar".');
+                    }, 800);
+                }
+            })();
+
+        })();
+    </script>
 </body>
 
 </html>
