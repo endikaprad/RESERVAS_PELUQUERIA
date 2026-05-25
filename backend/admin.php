@@ -3047,15 +3047,15 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
      STATS JAVASCRIPT
 ================================================================ -->
     <script>
-         // ================================================================
+        // ================================================================
         //  PRADO BARBER CO. — Script completo corregido para admin.php
         //  Sustituye el bloque <script> al final del body en admin.php
         //
         //  CORRECCIONES:
         //  1. Panel de configuración (openCfg/closeCfg/switchTab/etc.) — AÑADIDO
-        //  2. Heatmap rediseñado: botones prev/next mes + datos correctos para todos los días
-        //  3. Bar chart: números pegados a la barra (no flotando arriba)
-        //  4. Servicios: precio alineado verticalmente con las barras
+        //  2. Heatmap rediseñado: más compacto y claro
+        //  3. Bar chart: espacio vertical corregido
+        //  4. Servicios: muestra dinero perdido con tachado + canceladas
         //  5. Donut conversión: multicolor (verde/rojo/naranja), sin recorte
         // ================================================================
 
@@ -3163,23 +3163,34 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
                     alcance = sel ? sel.dataset.val : 'siempre';
                 }
                 const btn = document.getElementById('btn-save-auto');
-                if (btn) { btn.disabled = true; btn.textContent = 'Guardando…'; }
+                if (btn) {
+                    btn.disabled = true;
+                    btn.textContent = 'Guardando…';
+                }
                 try {
                     const res = await fetch(CFG_API, {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ accion: 'auto_aceptar', valor: alcance })
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            accion: 'auto_aceptar',
+                            valor: alcance
+                        })
                     });
                     const json = await res.json();
                     showCfgStatus('auto-status', json.ok, json.ok ? 'Configuración guardada.' : (json.error || 'Error'));
                 } catch (e) {
                     showCfgStatus('auto-status', false, 'Error de conexión.');
                 } finally {
-                    if (btn) { btn.disabled = false; btn.textContent = 'Guardar configuración'; }
+                    if (btn) {
+                        btn.disabled = false;
+                        btn.textContent = 'Guardar configuración';
+                    }
                 }
             };
 
-            const MONTHS_ES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+            const MONTHS_ES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
             window.mcNav = function(dir) {
                 mcDate.setMonth(mcDate.getMonth() + dir);
                 renderMiniCal();
@@ -3190,8 +3201,10 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
                 if (title) title.textContent = MONTHS_ES[mcDate.getMonth()] + ' ' + mcDate.getFullYear();
                 const grid = document.getElementById('mc-grid');
                 if (!grid) return;
-                const year = mcDate.getFullYear(), month = mcDate.getMonth();
-                const today = new Date(); today.setHours(0,0,0,0);
+                const year = mcDate.getFullYear(),
+                    month = mcDate.getMonth();
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
                 const firstDay = new Date(year, month, 1).getDay();
                 const offset = (firstDay + 6) % 7;
                 const daysIn = new Date(year, month + 1, 0).getDate();
@@ -3200,7 +3213,8 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
                 for (let d = 1; d <= daysIn; d++) {
                     const dt = new Date(year, month, d);
                     const iso = isoDate(year, month, d);
-                    const isPast = dt < today, isSun = dt.getDay() === 0;
+                    const isPast = dt < today,
+                        isSun = dt.getDay() === 0;
                     const isBlocked = Object.prototype.hasOwnProperty.call(blockedDates, iso);
                     const isPendAdd = pendingAdd.includes(iso);
                     const isPendDel = pendingDel.includes(iso);
@@ -3210,7 +3224,7 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
                     else if (isPendDel) cls += ' mc-unblocking';
                     else if (isBlocked) cls += ' mc-blocked';
                     else if (isPendAdd) cls += ' mc-pending';
-                    else if (isToday)   cls += ' mc-today';
+                    else if (isToday) cls += ' mc-today';
                     const disabled = isPast || isSun;
                     const onclick = disabled ? '' : `onclick="mcCellClick('${iso}')"`;
                     const motivo = isBlocked ? (blockedDates[iso] || 'Bloqueado') : '';
@@ -3270,7 +3284,10 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
                 if (hint) hint.className = 'range-hint' + (rangeMode ? ' visible' : '');
             };
             window.clearPending = function() {
-                pendingAdd = []; pendingDel = []; rangeStart = null; rangeMode = false;
+                pendingAdd = [];
+                pendingDel = [];
+                rangeStart = null;
+                rangeMode = false;
                 const btn = document.getElementById('btn-rango');
                 const hint = document.getElementById('range-hint');
                 if (btn) btn.textContent = '⇔ Rango de días';
@@ -3286,24 +3303,59 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
             window.saveDays = async function() {
                 const motivo = (document.getElementById('vac-motivo').value.trim()) || 'Vacaciones';
                 const btn = document.getElementById('btn-save-days');
-                if (btn) { btn.disabled = true; btn.textContent = 'Guardando…'; }
+                if (btn) {
+                    btn.disabled = true;
+                    btn.textContent = 'Guardando…';
+                }
                 try {
                     for (const f of pendingAdd)
-                        await fetch(CFG_API, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ accion:'bloquear_dia', fecha:f, motivo }) });
+                        await fetch(CFG_API, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                accion: 'bloquear_dia',
+                                fecha: f,
+                                motivo
+                            })
+                        });
                     for (const f of pendingDel)
-                        await fetch(CFG_API, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ accion:'desbloquear_dia', fecha:f }) });
-                    pendingAdd = []; pendingDel = [];
+                        await fetch(CFG_API, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                accion: 'desbloquear_dia',
+                                fecha: f
+                            })
+                        });
+                    pendingAdd = [];
+                    pendingDel = [];
                     await loadCfg();
                     showCfgStatus('vac-status', true, 'Días guardados correctamente.');
                 } catch (e) {
                     showCfgStatus('vac-status', false, 'Error al guardar.');
                 } finally {
-                    if (btn) { btn.textContent = 'Guardar días bloqueados'; updateSaveDaysBtn(); }
+                    if (btn) {
+                        btn.textContent = 'Guardar días bloqueados';
+                        updateSaveDaysBtn();
+                    }
                 }
             };
             window.deleteBlocked = async function(fecha) {
                 try {
-                    await fetch(CFG_API, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ accion:'desbloquear_dia', fecha }) });
+                    await fetch(CFG_API, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            accion: 'desbloquear_dia',
+                            fecha
+                        })
+                    });
                     await loadCfg();
                     showCfgStatus('vac-status', true, 'Día desbloqueado.');
                 } catch (e) {
@@ -3377,13 +3429,21 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
             }
 
             function animNum(el, target, decimals, suffix) {
-                decimals = decimals || 0; suffix = suffix || '';
-                const dur = 1200, start = performance.now();
+                decimals = decimals || 0;
+                suffix = suffix || '';
+                const dur = 1200,
+                    start = performance.now();
+
                 function step(now) {
-                    const p = Math.min((now - start) / dur, 1), ease = 1 - Math.pow(1 - p, 3), val = ease * target;
+                    const p = Math.min((now - start) / dur, 1),
+                        ease = 1 - Math.pow(1 - p, 3),
+                        val = ease * target;
                     el.textContent = (decimals ? val.toFixed(decimals) : Math.floor(val)) + suffix;
                     if (p < 1) requestAnimationFrame(step);
-                    else { el.textContent = (decimals ? target.toFixed(decimals) : target) + suffix; el.classList.add('pop'); }
+                    else {
+                        el.textContent = (decimals ? target.toFixed(decimals) : target) + suffix;
+                        el.classList.add('pop');
+                    }
                 }
                 requestAnimationFrame(step);
             }
@@ -3395,7 +3455,9 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
                 tooltip.style.top = e.clientY + 'px';
                 tooltip.classList.add('visible');
             };
-            window.hideTip = function() { tooltip.classList.remove('visible'); };
+            window.hideTip = function() {
+                tooltip.classList.remove('visible');
+            };
             document.addEventListener('mousemove', e => {
                 if (tooltip.classList.contains('visible')) {
                     tooltip.style.left = e.clientX + 'px';
@@ -3406,10 +3468,18 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
             function onVisible(el, cb) {
                 if (!el) return;
                 new IntersectionObserver((entries, obs) => {
-                    entries.forEach(en => { if (en.isIntersecting) { cb(); obs.unobserve(el); } });
-                }, { threshold: 0.15 }).observe(el);
+                    entries.forEach(en => {
+                        if (en.isIntersecting) {
+                            cb();
+                            obs.unobserve(el);
+                        }
+                    });
+                }, {
+                    threshold: 0.15
+                }).observe(el);
             }
 
+            // ── Barbero modal ─────────────────────────────────────────────
             window._openBarberoModal = function(iniciales) {
                 const b = (window._statsBarberos || []).find(x => x.iniciales === iniciales);
                 if (b) openBarberoModal(b, window._statsBarberos || []);
@@ -3421,7 +3491,11 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
                 const maxIng = Math.max(...allBarbers.map(x => +x.ingresos), 1);
                 const pct = maxIng > 0 ? Math.round(+b.ingresos / maxIng * 100) : 0;
                 const ticket = (+b.ingresos / Math.max(+(b.aceptadas || b.total_citas) || 1, 1)).toFixed(0);
-                const colorMap = { EP: '#d42b2b', MV: '#2550a0', AR: '#c9a84c' };
+                const colorMap = {
+                    EP: '#d42b2b',
+                    MV: '#2550a0',
+                    AR: '#c9a84c'
+                };
                 const accent = colorMap[b.iniciales] || '#d42b2b';
                 const acceptPct = b.total_citas > 0 ? Math.round((+(b.aceptadas || 0) / +b.total_citas) * 100) : 0;
 
@@ -3465,12 +3539,19 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
                     overlay.style.opacity = '1';
                     modal.style.opacity = '1';
                     modal.style.transform = 'translateY(0) scale(1)';
-                    setTimeout(() => { const f = document.getElementById('bm-prog'); if (f) f.style.width = pct + '%'; }, 100);
+                    setTimeout(() => {
+                        const f = document.getElementById('bm-prog');
+                        if (f) f.style.width = pct + '%';
+                    }, 100);
                 });
                 overlay.addEventListener('click', () => {
-                    overlay.style.opacity = '0'; modal.style.opacity = '0';
+                    overlay.style.opacity = '0';
+                    modal.style.opacity = '0';
                     modal.style.transform = 'translateY(10px) scale(.97)';
-                    setTimeout(() => { overlay.remove(); document.body.style.overflow = ''; }, 300);
+                    setTimeout(() => {
+                        overlay.remove();
+                        document.body.style.overflow = '';
+                    }, 300);
                 });
                 document.body.style.overflow = 'hidden';
             }
@@ -3478,57 +3559,81 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
             function kpiCell(num, lbl, col, border) {
                 return `<div style="padding:1.25rem 1rem;text-align:center;${border?'border-right:1px solid #252530;':''}"><div style="font-family:'Playfair Display',serif;font-size:1.5rem;font-weight:700;color:${col};line-height:1;">${num}</div><div style="font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;color:#7a7880;margin-top:.3rem;">${lbl}</div></div>`;
             }
+
             function miniKpi(num, lbl) {
                 return `<div style="background:#0d0d14;border-radius:10px;padding:1rem;text-align:center;border:1px solid #1c1c26;"><div style="font-family:'Playfair Display',serif;font-size:1.4rem;font-weight:700;color:#c9a84c;">${num}</div><div style="font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;color:#7a7880;margin-top:.25rem;">${lbl}</div></div>`;
             }
 
             // ── RENDER STATS ─────────────────────────────────────────────
             function renderStats(d) {
-                const kpi   = d.kpi   || {};
-                const hoy   = d.hoy   || {};
-                const mes   = d.mes   || {};
+                const kpi = d.kpi || {};
+                const hoy = d.hoy || {};
+                const mes = d.mes || {};
                 const barbs = d.barberos || [];
-                const svcs  = d.servicios_top || [];
+                const svcs = d.servicios_top || [];
                 const meses = d.ingresos_mensual || [];
-                const dow   = d.dias_semana || [];
+                const dow = d.dias_semana || [];
                 const horas = d.horas_top || [];
-                const hmap  = d.heatmap_30d || [];
-                const tasa  = d.tasa_conversion != null ? d.tasa_conversion : 0;
+                const hmap = d.heatmap_30d || [];
+                const tasa = d.tasa_conversion != null ? d.tasa_conversion : 0;
 
-                const BASE = [
-                    { id:'endika', nombre:'Endika Prado', iniciales:'EP' },
-                    { id:'marcos', nombre:'Marcos Vila',  iniciales:'MV' },
-                    { id:'alex',   nombre:'Alex Ramos',   iniciales:'AR' },
+                const BASE = [{
+                        id: 'endika',
+                        nombre: 'Endika Prado',
+                        iniciales: 'EP'
+                    },
+                    {
+                        id: 'marcos',
+                        nombre: 'Marcos Vila',
+                        iniciales: 'MV'
+                    },
+                    {
+                        id: 'alex',
+                        nombre: 'Alex Ramos',
+                        iniciales: 'AR'
+                    },
                 ];
-                const barbsAll = BASE.map(base => barbs.find(b => b.iniciales === base.iniciales) || { ...base, total_citas:0, ingresos:0, aceptadas:0, pendientes:0 });
+                const barbsAll = BASE.map(base => barbs.find(b => b.iniciales === base.iniciales) || {
+                    ...base,
+                    total_citas: 0,
+                    ingresos: 0,
+                    aceptadas: 0,
+                    pendientes: 0
+                });
                 const maxBarbIng = Math.max(...barbsAll.map(b => +b.ingresos), 1);
-                const maxHora    = Math.max(...horas.map(h => +h.total), 1);
+                const maxHora = Math.max(...horas.map(h => +h.total), 1);
 
                 let html = '';
 
                 // KPIs
                 html += '<div class="stats-kpis">';
-                html += kpiCard('Reservas totales',  kpi.total_reservas  || 0, '#d42b2b', '📋', '');
-                html += kpiCard('Ingresos totales',  kpi.ingresos_totales|| 0, '#c9a84c', '💶', ' €');
-                html += kpiCard('Clientes únicos',   kpi.clientes_unicos || 0, '#2550a0', '👥', '');
-                html += kpiCard('Citas hoy',         hoy.citas_hoy       || 0, '#22c55e', '📅', '');
-                html += kpiCard('Ingresos hoy',      hoy.ingresos_hoy    || 0, '#f59e0b', '💰', ' €');
-                html += kpiCard('Citas este mes',    mes.citas_mes       || 0, '#a78bfa', '📆', '');
+                html += kpiCard('Reservas totales', kpi.total_reservas || 0, '#d42b2b', '📋', '');
+                html += kpiCard('Ingresos totales', kpi.ingresos_totales || 0, '#c9a84c', '💶', ' €');
+                html += kpiCard('Clientes únicos', kpi.clientes_unicos || 0, '#2550a0', '👥', '');
+                html += kpiCard('Citas hoy', hoy.citas_hoy || 0, '#22c55e', '📅', '');
+                html += kpiCard('Ingresos hoy', hoy.ingresos_hoy || 0, '#f59e0b', '💰', ' €');
+                html += kpiCard('Citas este mes', mes.citas_mes || 0, '#a78bfa', '📆', '');
                 html += '</div>';
 
                 // Monthly charts
                 html += '<div class="stats-section"><div class="stats-section-label">Evolución mensual — últimos 12 meses</div>';
                 html += '<div class="stats-grid-2">';
                 html += '<div class="stats-card"><div class="stats-card-title">Ingresos por mes (€)</div>' + buildLineChart(meses, 'ingresos', '€') + '</div>';
-                html += '<div class="stats-card"><div class="stats-card-title">Citas por mes</div>' + buildBarChartTall(meses.map(m => ({ label:m.label, value:m.citas, tip:m.citas+' citas — '+m.label })), '#2550a0') + '</div>';
+                html += '<div class="stats-card"><div class="stats-card-title">Citas por mes</div>' + buildBarChart(meses.map(m => ({
+                    label: m.label,
+                    value: m.citas,
+                    tip: m.citas + ' citas — ' + m.label
+                })), '#2550a0') + '</div>';
                 html += '</div></div>';
 
                 // Barbers
                 html += '<div class="stats-section"><div class="stats-section-label">Rendimiento por barbero</div><div class="stats-grid-3">';
-                barbsAll.forEach((b, i) => { html += barberCard(b, maxBarbIng, i); });
+                barbsAll.forEach((b, i) => {
+                    html += barberCard(b, maxBarbIng, i);
+                });
                 html += '</div></div>';
 
-                // Servicios + conversión
+                // Servicios + conversión  ← MEJORADO
                 html += '<div class="stats-section"><div class="stats-section-label">Servicios &amp; conversión</div>';
                 html += '<div class="stats-grid-2">';
                 html += buildServicesCardV2(svcs, kpi);
@@ -3539,7 +3644,11 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
 
                 // Demand patterns
                 html += '<div class="stats-section"><div class="stats-section-label">Patrones de demanda</div><div class="stats-grid-2">';
-                html += '<div class="stats-card"><div class="stats-card-title">Citas por día de la semana</div>' + buildBarChartTall(dow.map(d => ({ label:d.label, value:d.count, tip:d.count+' citas los '+d.label })), '#d42b2b') + '</div>';
+                html += '<div class="stats-card"><div class="stats-card-title">Citas por día de la semana</div>' + buildBarChartTall(dow.map(d => ({
+                    label: d.label,
+                    value: d.count,
+                    tip: d.count + ' citas los ' + d.label
+                })), '#d42b2b') + '</div>';
                 html += '<div class="stats-card"><div class="stats-card-title">Franjas horarias más populares</div><div class="horas-wrap">';
                 horas.forEach((h, i) => {
                     const pct = Math.round(+h.total / maxHora * 100);
@@ -3547,7 +3656,7 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
                 });
                 html += '</div></div></div></div>';
 
-                // Heatmap
+                // Heatmap rediseñado ← MEJORADO
                 html += '<div class="stats-section"><div class="stats-section-label">Actividad últimos 30 días</div>';
                 html += '<div class="stats-card"><div class="stats-card-title">Mapa de calor de reservas</div>';
                 html += buildHeatmapV2(hmap);
@@ -3577,22 +3686,29 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
                 return `<div class="kpi-card" style="--kpi-accent:${color}" data-target="${+value}" data-dec="0" data-suffix="${suffix}"><div class="kpi-badge">${icon}</div><div class="kpi-label">${label}</div><div class="kpi-value">0${suffix}</div></div>`;
             }
 
-            // ── FIX 1: Bar chart — número pegado a la barra ──────────────
+            // ── Bar chart con altura correcta ────────────────────────────
+            function buildBarChart(items, color) {
+                return buildBarChartTall(items, color);
+            }
+            
             function buildBarChartTall(items, color) {
-                const maxV    = Math.max(...items.map(x => x.value), 1);
-                const barMaxH = 110;
+                const maxV = Math.max(...items.map(x => x.value), 1);
+                const chartH = 180;
+                const barMaxH = 120;
+                const padBottom = 32;
+                const padTop = 28;
 
-                let html = `<div style="display:flex;align-items:flex-end;gap:6px;height:158px;padding:0 0 26px;position:relative;box-sizing:border-box;">`;
-                html += `<div style="position:absolute;bottom:26px;left:0;right:0;height:1px;background:rgba(245,240,232,0.06);"></div>`;
+                let html = `<div style="display:flex;align-items:flex-end;gap:6px;height:${chartH}px;padding:${padTop}px 0 ${padBottom}px;position:relative;box-sizing:border-box;">`;
+                html += `<div style="position:absolute;bottom:${padBottom}px;left:0;right:0;height:1px;background:rgba(245,240,232,0.06);"></div>`;
 
-                items.forEach((item) => {
+                items.forEach((item, i) => {
                     const h = Math.max(Math.round(item.value / maxV * barMaxH), 3);
                     html += `
         <div style="flex:1;display:flex;flex-direction:column;align-items:center;position:relative;height:100%;justify-content:flex-end;">
-            <div style="font-size:.68rem;color:#c0bcc9;font-weight:600;line-height:1;margin-bottom:3px;">${item.value > 0 ? item.value : ''}</div>
-            <div style="width:80%;border-radius:4px 4px 0 0;background:${color};height:${h}px;min-height:3px;"
+            <div style="font-size:.7rem;color:#a0a0b0;font-weight:500;margin-bottom:4px;line-height:1;">${item.value || ''}</div>
+            <div style="width:80%;border-radius:4px 4px 0 0;background:${color};height:${h}px;min-height:3px;transition:height .4s;"
                  onmouseenter="showTip(event,'','${item.tip||item.value}')" onmouseleave="hideTip()"></div>
-            <div style="position:absolute;bottom:-20px;font-size:.73rem;color:#7a7880;white-space:nowrap;text-align:center;left:50%;transform:translateX(-50%);">${item.label}</div>
+            <div style="position:absolute;bottom:-${padBottom - 6}px;font-size:.75rem;color:#7a7880;white-space:nowrap;text-align:center;">${item.label}</div>
         </div>`;
                 });
 
@@ -3600,11 +3716,15 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
                 return html;
             }
 
-            // buildBarChart usa la misma función
-            function buildBarChart(items, color) { return buildBarChartTall(items, color); }
-
             function buildLineChart(meses, field, unit) {
-                const W = 500, H = 130, PAD = { t:12, r:10, b:30, l:42 };
+                const W = 500,
+                    H = 130,
+                    PAD = {
+                        t: 12,
+                        r: 10,
+                        b: 30,
+                        l: 42
+                    };
                 const vals = meses.map(m => +m[field]);
                 const maxV = Math.max(...vals, 1);
                 const pts = vals.map((v, i) => [
@@ -3614,7 +3734,8 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
                 const pathD = pts.map((p, i) => (i === 0 ? 'M' : 'L') + p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ');
                 const areaD = pathD + ` L${pts[pts.length-1][0].toFixed(1)},${H-PAD.b} L${pts[0][0].toFixed(1)},${H-PAD.b} Z`;
                 const grids = [0.25, 0.5, 0.75, 1].map(f => {
-                    const yy = PAD.t + (1 - f) * (H - PAD.t - PAD.b), lbl = Math.round(maxV * f);
+                    const yy = PAD.t + (1 - f) * (H - PAD.t - PAD.b),
+                        lbl = Math.round(maxV * f);
                     return `<line class="line-grid" x1="${PAD.l}" x2="${W-PAD.r}" y1="${yy.toFixed(1)}" y2="${yy.toFixed(1)}"/><text class="line-y-label" x="${PAD.l-4}" y="${(yy+3).toFixed(1)}">${lbl>999?(lbl/1000).toFixed(1)+'k':lbl}</text>`;
                 }).join('');
                 const xlbls = meses.map((m, i) => {
@@ -3625,14 +3746,22 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
                 return `<svg class="line-chart-svg" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet"><defs><linearGradient id="lineGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#d42b2b" stop-opacity=".25"/><stop offset="100%" stop-color="#d42b2b" stop-opacity="0"/></linearGradient></defs>${grids}${xlbls}<path class="line-area" d="${areaD}"/><path class="line-path" d="${pathD}"/>${dots}</svg>`;
             }
 
+            // ── DONUT MULTICOLOR (FIX 5) ─────────────────────────────────
+            // Radio más pequeño para que no se corte, con segmentos coloreados
             function buildConversionDonut(tasa, kpi) {
-                const aceptadas  = +(kpi.aceptadas  || 0);
+                const aceptadas = +(kpi.aceptadas || 0);
                 const pendientes = +(kpi.pendientes || 0);
-                const denegadas  = +(kpi.denegadas  || 0);
+                const denegadas = +(kpi.denegadas || 0);
                 const canceladas = +((kpi.total_reservas || 0) - aceptadas - pendientes - denegadas);
                 const total = aceptadas + pendientes + denegadas + Math.max(canceladas, 0);
-                const cx = 90, cy = 90, r = 62, strokeW = 16;
+
+                // SVG donut con viewBox holgado para no cortar
+                const cx = 90,
+                    cy = 90,
+                    r = 62,
+                    strokeW = 16;
                 const circ = 2 * Math.PI * r;
+
                 function seg(value, color, offset, delay) {
                     if (!value || total === 0) return '';
                     const dash = (value / total) * circ;
@@ -3644,10 +3773,13 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
               onmouseenter="showTip(event,'','${value} ${color==='#22c55e'?'aceptadas':color==='#f59e0b'?'pendientes':color==='#d42b2b'?'denegadas':'canceladas'}')"
               onmouseleave="hideTip()"/>`;
                 }
+
+                // Calcular offsets acumulados
                 const o1 = 0;
-                const o2 = total > 0 ? (aceptadas  / total) * circ : 0;
+                const o2 = total > 0 ? (aceptadas / total) * circ : 0;
                 const o3 = o2 + (total > 0 ? (pendientes / total) * circ : 0);
-                const o4 = o3 + (total > 0 ? (denegadas  / total) * circ : 0);
+                const o4 = o3 + (total > 0 ? (denegadas / total) * circ : 0);
+
                 const svgHtml = `
           <svg viewBox="0 0 180 180" style="width:160px;height:160px;flex-shrink:0;">
             <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#1c1c26" stroke-width="${strokeW}"/>
@@ -3658,6 +3790,7 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
             <text x="${cx}" y="${cy-6}" text-anchor="middle" font-family="'Playfair Display',serif" font-size="20" font-weight="700" fill="#22c55e">${tasa}%</text>
             <text x="${cx}" y="${cy+12}" text-anchor="middle" font-family="'DM Sans',sans-serif" font-size="8.5" fill="#7a7880" letter-spacing="1">ACEPTADAS</text>
           </svg>`;
+
                 return `
           <div style="display:flex;flex-direction:column;align-items:center;gap:1.25rem;padding:.5rem 0;width:100%;">
             ${svgHtml}
@@ -3674,190 +3807,205 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
                 return `<div class="conv-meta-item"><div class="conv-meta-num" style="color:${col};">${num}</div><div class="conv-meta-lbl">${lbl}</div></div>`;
             }
 
-            // ── FIX 2: Heatmap con navegación prev/next mes ──────────────
-            window._hmViewDate = window._hmViewDate || new Date();
-            window._hmRawData  = window._hmRawData  || {};
-
+            // ── SERVICIOS MEJORADO (FIX 4) ───────────────────────────────
             function buildHeatmapV2(hmap) {
-                window._hmRawData = {};
-                hmap.forEach(h => { window._hmRawData[h.dia] = +h.total; });
-                window._hmViewDate = new Date();
-                return renderHeatmapHTML();
-            }
+                const today = new Date();
+                const MONTHS_ES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+                const DOW = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
 
-            function renderHeatmapHTML() {
-                const hmap   = window._hmRawData || {};
-                const today  = new Date(); today.setHours(0,0,0,0);
-                const todayISO = today.toISOString().slice(0,10);
-                const MONTHS_ES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-                const DOW = ['L','M','X','J','V','S','D'];
-                const maxV = Math.max(...Object.values(hmap), 1);
+                const map = {};
+                hmap.forEach(h => {
+                    map[h.dia] = +h.total;
+                });
+                const maxV = Math.max(...Object.values(map), 1);
 
                 function getLevel(v) {
-                    if (!v)            return 0;
-                    if (v <= maxV*.25) return 1;
-                    if (v <= maxV*.5)  return 2;
-                    if (v <= maxV*.75) return 3;
+                    if (!v) return 0;
+                    if (v <= maxV * .25) return 1;
+                    if (v <= maxV * .5) return 2;
+                    if (v <= maxV * .75) return 3;
                     return 4;
                 }
-                const COLORS = [
-                    { bg:'rgba(255,255,255,0.04)', border:'rgba(255,255,255,0.07)' },
-                    { bg:'rgba(212,43,43,0.20)',   border:'rgba(212,43,43,0.30)' },
-                    { bg:'rgba(212,43,43,0.45)',   border:'rgba(212,43,43,0.55)' },
-                    { bg:'rgba(212,43,43,0.72)',   border:'rgba(212,43,43,0.80)' },
-                    { bg:'#d42b2b',                border:'#ff4040' },
+
+                const COLORS = [{
+                        bg: 'rgba(255,255,255,0.04)',
+                        border: 'rgba(255,255,255,0.07)'
+                    },
+                    {
+                        bg: 'rgba(212,43,43,0.20)',
+                        border: 'rgba(212,43,43,0.30)'
+                    },
+                    {
+                        bg: 'rgba(212,43,43,0.45)',
+                        border: 'rgba(212,43,43,0.55)'
+                    },
+                    {
+                        bg: 'rgba(212,43,43,0.72)',
+                        border: 'rgba(212,43,43,0.80)'
+                    },
+                    {
+                        bg: '#d42b2b',
+                        border: '#ff4040'
+                    },
                 ];
 
-                const vYear  = window._hmViewDate.getFullYear();
-                const vMonth = window._hmViewDate.getMonth();
-                const thisMonthStart = new Date(today.getFullYear(), today.getMonth(), 1);
-                const canGoNext = new Date(vYear, vMonth + 1, 1) <= thisMonthStart;
-                const minDate   = new Date(today.getFullYear(), today.getMonth() - 3, 1);
-                const canGoPrev = new Date(vYear, vMonth - 1, 1) >= minDate;
-                const daysInMonth = new Date(vYear, vMonth + 1, 0).getDate();
-                const firstDow    = (new Date(vYear, vMonth, 1).getDay() + 6) % 7;
+                const start = new Date(today);
+                start.setDate(start.getDate() - 29);
+
+                const months = [];
+                let cur = new Date(start.getFullYear(), start.getMonth(), 1);
+                const endMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+                while (cur <= endMonth) {
+                    months.push(new Date(cur));
+                    cur.setMonth(cur.getMonth() + 1);
+                }
+
+                const todayISO = today.toISOString().slice(0, 10);
 
                 let html = `
     <style>
-      .hm3-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:.5rem;}
+      .hm3-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
       .hm3-legend{display:flex;align-items:center;gap:5px;}
       .hm3-legend span{font-size:10px;color:#4a4a5a;}
       .hm3-lswatch{width:11px;height:11px;border-radius:3px;}
-      .hm3-nav{display:flex;align-items:center;gap:.5rem;}
-      .hm3-nbtn{width:28px;height:28px;border-radius:6px;background:transparent;border:1px solid #252530;
-                color:#7a7880;font-size:.9rem;display:flex;align-items:center;justify-content:center;
-                cursor:pointer;transition:all .2s;line-height:1;padding:0;}
-      .hm3-nbtn:hover:not([disabled]){border-color:#d42b2b;color:#d42b2b;}
-      .hm3-nbtn[disabled]{opacity:.22;cursor:not-allowed;}
-      .hm3-nmth{font-size:.82rem;font-weight:600;color:#f0ece3;min-width:120px;text-align:center;}
-      .hm3-dow-row{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-bottom:4px;}
+      .hm3-calendar{display:flex;gap:0;flex-wrap:wrap;}
+      .hm3-month{flex:1;min-width:200px;padding-right:20px;}
+      .hm3-month:last-child{padding-right:0;}
+      .hm3-mname{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#d42b2b;font-weight:600;margin-bottom:8px;}
+      .hm3-dow-row{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-bottom:3px;}
       .hm3-dow{font-size:10px;color:#3a3a48;text-align:center;padding:2px 0;}
       .hm3-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;}
-      .hm3-c{aspect-ratio:1;border-radius:4px;display:flex;align-items:center;justify-content:center;
-             font-size:9px;position:relative;cursor:default;}
+      .hm3-c{aspect-ratio:1;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:9px;position:relative;cursor:default;}
       .hm3-c:hover .hm3-tip{display:block;}
-      .hm3-tip{display:none;position:absolute;bottom:calc(100% + 4px);left:50%;transform:translateX(-50%);
-               background:#1c1c26;border:1px solid #2f2f3c;border-radius:5px;padding:3px 8px;
-               font-size:10px;color:#f0ece3;white-space:nowrap;z-index:20;pointer-events:none;}
+      .hm3-tip{display:none;position:absolute;bottom:calc(100% + 4px);left:50%;transform:translateX(-50%);background:#1c1c26;border:1px solid #2f2f3c;border-radius:5px;padding:3px 8px;font-size:10px;color:#f0ece3;white-space:nowrap;z-index:20;pointer-events:none;}
       .hm3-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:14px;}
       .hm3-stat{background:#0d0d14;border:1px solid #1c1c26;border-radius:8px;padding:10px;text-align:center;}
       .hm3-snum{font-family:'Playfair Display',serif;font-size:1.25rem;font-weight:700;line-height:1;}
       .hm3-slbl{font-size:10px;color:#7a7880;letter-spacing:.1em;text-transform:uppercase;margin-top:3px;}
     </style>
     <div class="hm3-top">
-      <div class="hm3-nav">
-        <button class="hm3-nbtn" onclick="hmNav(-1)" ${canGoPrev ? '' : 'disabled'}>‹</button>
-        <span class="hm3-nmth">${MONTHS_ES[vMonth]} ${vYear}</span>
-        <button class="hm3-nbtn" onclick="hmNav(1)" ${canGoNext ? '' : 'disabled'}>›</button>
-      </div>
+      <div style="font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:#7a7880;">Reservas por día</div>
       <div class="hm3-legend">
         <span>Sin reservas</span>`;
-                COLORS.forEach(c => { html += `<div class="hm3-lswatch" style="background:${c.bg};border:1px solid ${c.border};"></div>`; });
-                html += `<span>Muchas</span></div></div>`;
-                html += `<div class="hm3-dow-row">`;
-                DOW.forEach(d => html += `<div class="hm3-dow">${d}</div>`);
-                html += `</div><div class="hm3-grid">`;
-                for (let p = 0; p < firstDow; p++) html += `<div class="hm3-c" style="background:transparent;border:none;"></div>`;
-                for (let d = 1; d <= daysInMonth; d++) {
-                    const dt  = new Date(vYear, vMonth, d);
-                    const iso = `${vYear}-${String(vMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-                    const isFuture = dt > today;
-                    const isToday  = iso === todayISO;
-                    const v = hmap[iso] || 0;
-                    if (isFuture) {
-                        html += `<div class="hm3-c" style="background:rgba(255,255,255,0.015);border:1px solid rgba(255,255,255,0.03);color:#252530;">${d}</div>`;
-                    } else {
-                        const lvl = getLevel(v);
-                        const c   = COLORS[lvl];
-                        const txt = lvl >= 3 ? 'rgba(255,255,255,0.85)' : (lvl > 0 ? '#d0d0d0' : '#4a4a5a');
-                        const border = isToday ? '2px solid rgba(212,43,43,0.8)' : `1px solid ${c.border}`;
-                        html += `<div class="hm3-c" style="background:${c.bg};border:${border};color:${txt};">${d}`;
-                        if (v > 0) html += `<div class="hm3-tip">${v} cita${v!==1?'s':''}</div>`;
-                        html += `</div>`;
-                    }
-                }
-                html += `</div>`;
-                const mEntries = Object.entries(hmap).filter(([k]) => {
-                    const [y,m] = k.split('-').map(Number);
-                    return y === vYear && m === vMonth + 1;
+
+                COLORS.forEach(c => {
+                    html += `<div class="hm3-lswatch" style="background:${c.bg};border:1px solid ${c.border};"></div>`;
                 });
-                const totalMes = mEntries.reduce((a,[,v2]) => a + v2, 0);
-                const diasAct  = mEntries.filter(([,v2]) => v2 > 0).length;
-                const maxEntry = [...mEntries].sort((a,b) => b[1]-a[1])[0];
-                const avg      = diasAct > 0 ? (totalMes / diasAct).toFixed(1) : '0';
+                html += `<span>Muchas</span></div></div>`;
+                html += `<div class="hm3-calendar">`;
+
+                months.forEach((mDate) => {
+                    const y = mDate.getFullYear(),
+                        m = mDate.getMonth();
+                    const daysInMonth = new Date(y, m + 1, 0).getDate();
+                    const firstDow = (new Date(y, m, 1).getDay() + 6) % 7;
+
+                    html += `<div class="hm3-month">`;
+                    html += `<div class="hm3-mname">${MONTHS_ES[m]} ${y}</div>`;
+                    html += `<div class="hm3-dow-row">`;
+                    DOW.forEach(d => html += `<div class="hm3-dow">${d}</div>`);
+                    html += `</div><div class="hm3-grid">`;
+
+                    for (let p = 0; p < firstDow; p++) html += `<div class="hm3-c" style="background:transparent;border:none;"></div>`;
+
+                    for (let d = 1; d <= daysInMonth; d++) {
+                        const dt = new Date(y, m, d);
+                        const iso = `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+                        const isInRange = dt >= start && dt <= today;
+                        const isToday = iso === todayISO;
+                        const v = map[iso] || 0;
+
+                        if (!isInRange) {
+                            html += `<div class="hm3-c" style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.04);color:#2a2a38;">${d}</div>`;
+                        } else {
+                            const c = COLORS[getLevel(v)];
+                            const txtColor = getLevel(v) >= 3 ? 'rgba(255,255,255,0.85)' : '#4a4a5a';
+                            const border = isToday ? '2px solid rgba(212,43,43,0.8)' : `1px solid ${c.border}`;
+                            html += `<div class="hm3-c" style="background:${c.bg};border:${border};color:${txtColor};">${d}`;
+                            if (v > 0) html += `<div class="hm3-tip">${v} cita${v!==1?'s':''}</div>`;
+                            html += `</div>`;
+                        }
+                    }
+                    html += `</div></div>`;
+                });
+
+                html += `</div>`;
+
+                const totalCitas = Object.values(map).reduce((a, b) => a + b, 0);
+                const diasActivos = Object.keys(map).filter(k => map[k] > 0).length;
+                const maxEntry = Object.entries(map).sort((a, b) => b[1] - a[1])[0];
+                const avgCitas = diasActivos > 0 ? (totalCitas / diasActivos).toFixed(1) : '0';
+
                 html += `<div class="hm3-stats">
-      <div class="hm3-stat"><div class="hm3-snum" style="color:#d42b2b;">${totalMes}</div><div class="hm3-slbl">Total mes</div></div>
-      <div class="hm3-stat"><div class="hm3-snum" style="color:#c9a84c;">${diasAct}</div><div class="hm3-slbl">Días activos</div></div>
+      <div class="hm3-stat"><div class="hm3-snum" style="color:#d42b2b;">${totalCitas}</div><div class="hm3-slbl">Total 30d</div></div>
+      <div class="hm3-stat"><div class="hm3-snum" style="color:#c9a84c;">${diasActivos}</div><div class="hm3-slbl">Días activos</div></div>
       <div class="hm3-stat"><div class="hm3-snum" style="color:#22c55e;">${maxEntry ? maxEntry[1] : 0}</div><div class="hm3-slbl">Máx. día</div></div>
-      <div class="hm3-stat"><div class="hm3-snum" style="color:#6b9fff;">${avg}</div><div class="hm3-slbl">Media/día activo</div></div>
+      <div class="hm3-stat"><div class="hm3-snum" style="color:#6b9fff;">${avgCitas}</div><div class="hm3-slbl">Media/día activo</div></div>
     </div>`;
+
                 return html;
             }
 
-            window.hmNav = function(dir) {
-                window._hmViewDate.setMonth(window._hmViewDate.getMonth() + dir);
-                document.querySelectorAll('.stats-section').forEach(sec => {
-                    const card = sec.querySelector('.stats-card');
-                    if (card && card.querySelector('.hm3-grid')) {
-                        const titleEl   = card.querySelector('.stats-card-title');
-                        const titleHTML = titleEl ? titleEl.outerHTML : '';
-                        card.innerHTML  = titleHTML + renderHeatmapHTML();
-                    }
-                });
-            };
-
-            // ── FIX 3: Servicios — precio alineado con las barras ────────
             function buildServicesCardV2(svcs, kpi) {
+                const maxTotal = Math.max(...svcs.map(s => +s.total), 1);
                 const maxAcept = Math.max(...svcs.map(s => +s.citas_aceptadas || 0), 1);
-                const maxPerd  = Math.max(...svcs.map(s => +s.citas_perdidas  || 0), 1);
+                const maxPerd = Math.max(...svcs.map(s => +s.citas_perdidas || 0), 1);
+
                 let items = '';
                 svcs.forEach((s, i) => {
                     const pctAcept = Math.round((+s.citas_aceptadas || 0) / maxAcept * 100);
-                    const pctPerd  = Math.round((+s.citas_perdidas  || 0) / maxPerd  * 100);
-                    const ingOk    = (+s.ingresos || 0).toFixed(0);
-                    const ingLost  = (+s.ingresos_perdidos || 0).toFixed(0);
-                    const hasLoss  = +ingLost > 0;
+                    const pctPerd = Math.round((+s.citas_perdidas || 0) / maxPerd * 100);
+                    const ingOk = (+s.ingresos || 0).toFixed(0);
+                    const ingLost = (+s.ingresos_perdidos || 0).toFixed(0);
+                    const hasLoss = +ingLost > 0;
+
                     items += `
-        <div class="svc-stat-item" style="align-items:stretch;padding:.85rem 0;border-bottom:1px solid #1c1c26;gap:.75rem;">
-            <div class="svc-stat-rank" style="margin-top:3px;flex-shrink:0;">${i + 1}</div>
-            <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:.4rem;">
-                <div style="font-size:.82rem;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:.25rem;">${s.nombre}</div>
-                <div style="display:flex;align-items:center;gap:.6rem;">
-                    <span style="font-size:.63rem;letter-spacing:.08em;text-transform:uppercase;color:#22c55e;width:68px;flex-shrink:0;">Aceptadas</span>
-                    <div style="flex:1;height:7px;background:#1c1c26;border-radius:4px;overflow:hidden;">
-                        <div class="svc-stat-bar-fill" style="--svc-w:${pctAcept}%;--svc-delay:${i*0.1}s;height:100%;border-radius:4px;background:#22c55e;"></div>
+        <div class="svc-stat-item" style="align-items:flex-start;padding:.85rem 0;border-bottom:1px solid #1c1c26;">
+            <div class="svc-stat-rank">${i + 1}</div>
+            <div class="svc-stat-info" style="flex:1;min-width:0;">
+                <div class="svc-stat-name" style="margin-bottom:.55rem;">${s.nombre}</div>
+                <div style="display:flex;flex-direction:column;gap:.35rem;">
+                    <div style="display:flex;align-items:center;gap:.6rem;">
+                        <span style="font-size:.63rem;letter-spacing:.08em;text-transform:uppercase;color:#22c55e;width:68px;flex-shrink:0;">Aceptadas</span>
+                        <div style="flex:1;height:8px;background:#1c1c26;border-radius:4px;overflow:hidden;">
+                            <div class="svc-stat-bar-fill" style="--svc-w:${pctAcept}%;--svc-delay:${i*0.1}s;height:100%;border-radius:4px;background:#22c55e;"></div>
+                        </div>
                     </div>
-                </div>
-                <div style="display:flex;align-items:center;gap:.6rem;">
-                    <span style="font-size:.63rem;letter-spacing:.08em;text-transform:uppercase;color:#d42b2b;width:68px;flex-shrink:0;">Denegadas</span>
-                    <div style="flex:1;height:7px;background:#1c1c26;border-radius:4px;overflow:hidden;">
-                        <div class="svc-stat-bar-fill" style="--svc-w:${pctPerd}%;--svc-delay:${i*0.12+0.05}s;height:100%;border-radius:4px;background:#d42b2b;"></div>
+                    <div style="display:flex;align-items:center;gap:.6rem;">
+                        <span style="font-size:.63rem;letter-spacing:.08em;text-transform:uppercase;color:#d42b2b;width:68px;flex-shrink:0;">Denegadas</span>
+                        <div style="flex:1;height:8px;background:#1c1c26;border-radius:4px;overflow:hidden;">
+                            <div class="svc-stat-bar-fill" style="--svc-w:${pctPerd}%;--svc-delay:${i*0.12+0.05}s;height:100%;border-radius:4px;background:#d42b2b;"></div>
+                        </div>
                     </div>
                 </div>
             </div>
-            <div style="flex-shrink:0;text-align:right;min-width:72px;padding-left:.75rem;
-                        display:flex;flex-direction:column;justify-content:center;
-                        align-items:flex-end;gap:.15rem;">
-                <div style="font-size:.82rem;color:#f0ece3;font-weight:500;">${s.total}&nbsp;cita${s.total!=1?'s':''}</div>
-                <div style="font-size:.82rem;color:#22c55e;font-weight:600;">${ingOk}&nbsp;€</div>
+            <div style="flex-shrink:0;text-align:right;min-width:70px;padding-left:.75rem;">
+                <div style="font-size:.82rem;color:#f0ece3;font-weight:500;margin-bottom:.15rem;">${s.total} cita${s.total!=1?'s':''}</div>
+                <div style="font-size:.78rem;color:#22c55e;font-weight:600;">${ingOk} €</div>
                 ${hasLoss
-                    ? `<div style="font-size:.75rem;color:#d42b2b;text-decoration:line-through;opacity:.85;">-${ingLost}&nbsp;€</div>`
-                    : `<div style="font-size:.7rem;color:#3a3a48;">sin pérdidas</div>`
+                    ? `<div style="font-size:.73rem;color:#d42b2b;text-decoration:line-through;opacity:.85;">-${ingLost} €</div>`
+                    : `<div style="font-size:.72rem;color:#3a3a48;">sin pérdidas</div>`
                 }
             </div>
         </div>`;
                 });
+
                 return `<div class="stats-card" style="padding-bottom:.25rem;">
         <div class="stats-card-title">Servicios más reservados</div>
         <div style="display:flex;flex-direction:column;">${items}</div>
     </div>`;
             }
 
+            // Barber card (igual que antes)
             function barberCard(b, maxIng, i) {
                 const pct = maxIng > 0 ? Math.round(+b.ingresos / maxIng * 100) : 0;
                 const ticket = (+b.ingresos / Math.max(+(b.aceptadas || b.total_citas) || 1, 1)).toFixed(0);
                 const isEmpty = +b.total_citas === 0;
-                const colorMap = { EP:'#d42b2b', MV:'#2550a0', AR:'#c9a84c' };
+                const colorMap = {
+                    EP: '#d42b2b',
+                    MV: '#2550a0',
+                    AR: '#c9a84c'
+                };
                 const accent = colorMap[b.iniciales] || '#d42b2b';
                 return `<div class="barbero-stat-card" style="cursor:pointer;${isEmpty?'opacity:.65;':''}" onclick="window._openBarberoModal('${b.iniciales}')" title="Ver detalles de ${b.nombre}">
           <div class="barbero-stat-header">
