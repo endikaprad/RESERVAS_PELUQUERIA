@@ -3047,7 +3047,7 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
      STATS JAVASCRIPT
 ================================================================ -->
     <script>
-        // ================================================================
+         // ================================================================
         //  PRADO BARBER CO. — Script completo corregido para admin.php
         //  Sustituye el bloque <script> al final del body en admin.php
         //
@@ -3163,34 +3163,23 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
                     alcance = sel ? sel.dataset.val : 'siempre';
                 }
                 const btn = document.getElementById('btn-save-auto');
-                if (btn) {
-                    btn.disabled = true;
-                    btn.textContent = 'Guardando…';
-                }
+                if (btn) { btn.disabled = true; btn.textContent = 'Guardando…'; }
                 try {
                     const res = await fetch(CFG_API, {
                         method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            accion: 'auto_aceptar',
-                            valor: alcance
-                        })
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ accion: 'auto_aceptar', valor: alcance })
                     });
                     const json = await res.json();
                     showCfgStatus('auto-status', json.ok, json.ok ? 'Configuración guardada.' : (json.error || 'Error'));
                 } catch (e) {
                     showCfgStatus('auto-status', false, 'Error de conexión.');
                 } finally {
-                    if (btn) {
-                        btn.disabled = false;
-                        btn.textContent = 'Guardar configuración';
-                    }
+                    if (btn) { btn.disabled = false; btn.textContent = 'Guardar configuración'; }
                 }
             };
 
-            const MONTHS_ES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+            const MONTHS_ES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
             window.mcNav = function(dir) {
                 mcDate.setMonth(mcDate.getMonth() + dir);
                 renderMiniCal();
@@ -3201,10 +3190,8 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
                 if (title) title.textContent = MONTHS_ES[mcDate.getMonth()] + ' ' + mcDate.getFullYear();
                 const grid = document.getElementById('mc-grid');
                 if (!grid) return;
-                const year = mcDate.getFullYear(),
-                    month = mcDate.getMonth();
-                const today = new Date();
-                today.setHours(0, 0, 0, 0);
+                const year = mcDate.getFullYear(), month = mcDate.getMonth();
+                const today = new Date(); today.setHours(0,0,0,0);
                 const firstDay = new Date(year, month, 1).getDay();
                 const offset = (firstDay + 6) % 7;
                 const daysIn = new Date(year, month + 1, 0).getDate();
@@ -3213,8 +3200,7 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
                 for (let d = 1; d <= daysIn; d++) {
                     const dt = new Date(year, month, d);
                     const iso = isoDate(year, month, d);
-                    const isPast = dt < today,
-                        isSun = dt.getDay() === 0;
+                    const isPast = dt < today, isSun = dt.getDay() === 0;
                     const isBlocked = Object.prototype.hasOwnProperty.call(blockedDates, iso);
                     const isPendAdd = pendingAdd.includes(iso);
                     const isPendDel = pendingDel.includes(iso);
@@ -3224,7 +3210,7 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
                     else if (isPendDel) cls += ' mc-unblocking';
                     else if (isBlocked) cls += ' mc-blocked';
                     else if (isPendAdd) cls += ' mc-pending';
-                    else if (isToday) cls += ' mc-today';
+                    else if (isToday)   cls += ' mc-today';
                     const disabled = isPast || isSun;
                     const onclick = disabled ? '' : `onclick="mcCellClick('${iso}')"`;
                     const motivo = isBlocked ? (blockedDates[iso] || 'Bloqueado') : '';
@@ -3284,10 +3270,7 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
                 if (hint) hint.className = 'range-hint' + (rangeMode ? ' visible' : '');
             };
             window.clearPending = function() {
-                pendingAdd = [];
-                pendingDel = [];
-                rangeStart = null;
-                rangeMode = false;
+                pendingAdd = []; pendingDel = []; rangeStart = null; rangeMode = false;
                 const btn = document.getElementById('btn-rango');
                 const hint = document.getElementById('range-hint');
                 if (btn) btn.textContent = '⇔ Rango de días';
@@ -3303,59 +3286,24 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
             window.saveDays = async function() {
                 const motivo = (document.getElementById('vac-motivo').value.trim()) || 'Vacaciones';
                 const btn = document.getElementById('btn-save-days');
-                if (btn) {
-                    btn.disabled = true;
-                    btn.textContent = 'Guardando…';
-                }
+                if (btn) { btn.disabled = true; btn.textContent = 'Guardando…'; }
                 try {
                     for (const f of pendingAdd)
-                        await fetch(CFG_API, {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json'
-                            },
-                            body: JSON.stringify({
-                                accion: 'bloquear_dia',
-                                fecha: f,
-                                motivo
-                            })
-                        });
+                        await fetch(CFG_API, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ accion:'bloquear_dia', fecha:f, motivo }) });
                     for (const f of pendingDel)
-                        await fetch(CFG_API, {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json'
-                            },
-                            body: JSON.stringify({
-                                accion: 'desbloquear_dia',
-                                fecha: f
-                            })
-                        });
-                    pendingAdd = [];
-                    pendingDel = [];
+                        await fetch(CFG_API, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ accion:'desbloquear_dia', fecha:f }) });
+                    pendingAdd = []; pendingDel = [];
                     await loadCfg();
                     showCfgStatus('vac-status', true, 'Días guardados correctamente.');
                 } catch (e) {
                     showCfgStatus('vac-status', false, 'Error al guardar.');
                 } finally {
-                    if (btn) {
-                        btn.textContent = 'Guardar días bloqueados';
-                        updateSaveDaysBtn();
-                    }
+                    if (btn) { btn.textContent = 'Guardar días bloqueados'; updateSaveDaysBtn(); }
                 }
             };
             window.deleteBlocked = async function(fecha) {
                 try {
-                    await fetch(CFG_API, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            accion: 'desbloquear_dia',
-                            fecha
-                        })
-                    });
+                    await fetch(CFG_API, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ accion:'desbloquear_dia', fecha }) });
                     await loadCfg();
                     showCfgStatus('vac-status', true, 'Día desbloqueado.');
                 } catch (e) {
@@ -3429,21 +3377,13 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
             }
 
             function animNum(el, target, decimals, suffix) {
-                decimals = decimals || 0;
-                suffix = suffix || '';
-                const dur = 1200,
-                    start = performance.now();
-
+                decimals = decimals || 0; suffix = suffix || '';
+                const dur = 1200, start = performance.now();
                 function step(now) {
-                    const p = Math.min((now - start) / dur, 1),
-                        ease = 1 - Math.pow(1 - p, 3),
-                        val = ease * target;
+                    const p = Math.min((now - start) / dur, 1), ease = 1 - Math.pow(1 - p, 3), val = ease * target;
                     el.textContent = (decimals ? val.toFixed(decimals) : Math.floor(val)) + suffix;
                     if (p < 1) requestAnimationFrame(step);
-                    else {
-                        el.textContent = (decimals ? target.toFixed(decimals) : target) + suffix;
-                        el.classList.add('pop');
-                    }
+                    else { el.textContent = (decimals ? target.toFixed(decimals) : target) + suffix; el.classList.add('pop'); }
                 }
                 requestAnimationFrame(step);
             }
@@ -3455,9 +3395,7 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
                 tooltip.style.top = e.clientY + 'px';
                 tooltip.classList.add('visible');
             };
-            window.hideTip = function() {
-                tooltip.classList.remove('visible');
-            };
+            window.hideTip = function() { tooltip.classList.remove('visible'); };
             document.addEventListener('mousemove', e => {
                 if (tooltip.classList.contains('visible')) {
                     tooltip.style.left = e.clientX + 'px';
@@ -3468,15 +3406,8 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
             function onVisible(el, cb) {
                 if (!el) return;
                 new IntersectionObserver((entries, obs) => {
-                    entries.forEach(en => {
-                        if (en.isIntersecting) {
-                            cb();
-                            obs.unobserve(el);
-                        }
-                    });
-                }, {
-                    threshold: 0.15
-                }).observe(el);
+                    entries.forEach(en => { if (en.isIntersecting) { cb(); obs.unobserve(el); } });
+                }, { threshold: 0.15 }).observe(el);
             }
 
             window._openBarberoModal = function(iniciales) {
@@ -3490,11 +3421,7 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
                 const maxIng = Math.max(...allBarbers.map(x => +x.ingresos), 1);
                 const pct = maxIng > 0 ? Math.round(+b.ingresos / maxIng * 100) : 0;
                 const ticket = (+b.ingresos / Math.max(+(b.aceptadas || b.total_citas) || 1, 1)).toFixed(0);
-                const colorMap = {
-                    EP: '#d42b2b',
-                    MV: '#2550a0',
-                    AR: '#c9a84c'
-                };
+                const colorMap = { EP: '#d42b2b', MV: '#2550a0', AR: '#c9a84c' };
                 const accent = colorMap[b.iniciales] || '#d42b2b';
                 const acceptPct = b.total_citas > 0 ? Math.round((+(b.aceptadas || 0) / +b.total_citas) * 100) : 0;
 
@@ -3538,19 +3465,12 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
                     overlay.style.opacity = '1';
                     modal.style.opacity = '1';
                     modal.style.transform = 'translateY(0) scale(1)';
-                    setTimeout(() => {
-                        const f = document.getElementById('bm-prog');
-                        if (f) f.style.width = pct + '%';
-                    }, 100);
+                    setTimeout(() => { const f = document.getElementById('bm-prog'); if (f) f.style.width = pct + '%'; }, 100);
                 });
                 overlay.addEventListener('click', () => {
-                    overlay.style.opacity = '0';
-                    modal.style.opacity = '0';
+                    overlay.style.opacity = '0'; modal.style.opacity = '0';
                     modal.style.transform = 'translateY(10px) scale(.97)';
-                    setTimeout(() => {
-                        overlay.remove();
-                        document.body.style.overflow = '';
-                    }, 300);
+                    setTimeout(() => { overlay.remove(); document.body.style.overflow = ''; }, 300);
                 });
                 document.body.style.overflow = 'hidden';
             }
@@ -3558,78 +3478,54 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
             function kpiCell(num, lbl, col, border) {
                 return `<div style="padding:1.25rem 1rem;text-align:center;${border?'border-right:1px solid #252530;':''}"><div style="font-family:'Playfair Display',serif;font-size:1.5rem;font-weight:700;color:${col};line-height:1;">${num}</div><div style="font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;color:#7a7880;margin-top:.3rem;">${lbl}</div></div>`;
             }
-
             function miniKpi(num, lbl) {
                 return `<div style="background:#0d0d14;border-radius:10px;padding:1rem;text-align:center;border:1px solid #1c1c26;"><div style="font-family:'Playfair Display',serif;font-size:1.4rem;font-weight:700;color:#c9a84c;">${num}</div><div style="font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;color:#7a7880;margin-top:.25rem;">${lbl}</div></div>`;
             }
 
             // ── RENDER STATS ─────────────────────────────────────────────
             function renderStats(d) {
-                const kpi = d.kpi || {};
-                const hoy = d.hoy || {};
-                const mes = d.mes || {};
+                const kpi   = d.kpi   || {};
+                const hoy   = d.hoy   || {};
+                const mes   = d.mes   || {};
                 const barbs = d.barberos || [];
-                const svcs = d.servicios_top || [];
+                const svcs  = d.servicios_top || [];
                 const meses = d.ingresos_mensual || [];
-                const dow = d.dias_semana || [];
+                const dow   = d.dias_semana || [];
                 const horas = d.horas_top || [];
-                const hmap = d.heatmap_30d || [];
-                const tasa = d.tasa_conversion != null ? d.tasa_conversion : 0;
+                const hmap  = d.heatmap_30d || [];
+                const tasa  = d.tasa_conversion != null ? d.tasa_conversion : 0;
 
-                const BASE = [{
-                        id: 'endika',
-                        nombre: 'Endika Prado',
-                        iniciales: 'EP'
-                    },
-                    {
-                        id: 'marcos',
-                        nombre: 'Marcos Vila',
-                        iniciales: 'MV'
-                    },
-                    {
-                        id: 'alex',
-                        nombre: 'Alex Ramos',
-                        iniciales: 'AR'
-                    },
+                const BASE = [
+                    { id:'endika', nombre:'Endika Prado', iniciales:'EP' },
+                    { id:'marcos', nombre:'Marcos Vila',  iniciales:'MV' },
+                    { id:'alex',   nombre:'Alex Ramos',   iniciales:'AR' },
                 ];
-                const barbsAll = BASE.map(base => barbs.find(b => b.iniciales === base.iniciales) || {
-                    ...base,
-                    total_citas: 0,
-                    ingresos: 0,
-                    aceptadas: 0,
-                    pendientes: 0
-                });
+                const barbsAll = BASE.map(base => barbs.find(b => b.iniciales === base.iniciales) || { ...base, total_citas:0, ingresos:0, aceptadas:0, pendientes:0 });
                 const maxBarbIng = Math.max(...barbsAll.map(b => +b.ingresos), 1);
-                const maxHora = Math.max(...horas.map(h => +h.total), 1);
+                const maxHora    = Math.max(...horas.map(h => +h.total), 1);
 
                 let html = '';
 
                 // KPIs
                 html += '<div class="stats-kpis">';
-                html += kpiCard('Reservas totales', kpi.total_reservas || 0, '#d42b2b', '📋', '');
-                html += kpiCard('Ingresos totales', kpi.ingresos_totales || 0, '#c9a84c', '💶', ' €');
-                html += kpiCard('Clientes únicos', kpi.clientes_unicos || 0, '#2550a0', '👥', '');
-                html += kpiCard('Citas hoy', hoy.citas_hoy || 0, '#22c55e', '📅', '');
-                html += kpiCard('Ingresos hoy', hoy.ingresos_hoy || 0, '#f59e0b', '💰', ' €');
-                html += kpiCard('Citas este mes', mes.citas_mes || 0, '#a78bfa', '📆', '');
+                html += kpiCard('Reservas totales',  kpi.total_reservas  || 0, '#d42b2b', '📋', '');
+                html += kpiCard('Ingresos totales',  kpi.ingresos_totales|| 0, '#c9a84c', '💶', ' €');
+                html += kpiCard('Clientes únicos',   kpi.clientes_unicos || 0, '#2550a0', '👥', '');
+                html += kpiCard('Citas hoy',         hoy.citas_hoy       || 0, '#22c55e', '📅', '');
+                html += kpiCard('Ingresos hoy',      hoy.ingresos_hoy    || 0, '#f59e0b', '💰', ' €');
+                html += kpiCard('Citas este mes',    mes.citas_mes       || 0, '#a78bfa', '📆', '');
                 html += '</div>';
 
                 // Monthly charts
                 html += '<div class="stats-section"><div class="stats-section-label">Evolución mensual — últimos 12 meses</div>';
                 html += '<div class="stats-grid-2">';
                 html += '<div class="stats-card"><div class="stats-card-title">Ingresos por mes (€)</div>' + buildLineChart(meses, 'ingresos', '€') + '</div>';
-                html += '<div class="stats-card"><div class="stats-card-title">Citas por mes</div>' + buildBarChartTall(meses.map(m => ({
-                    label: m.label,
-                    value: m.citas,
-                    tip: m.citas + ' citas — ' + m.label
-                })), '#2550a0') + '</div>';
+                html += '<div class="stats-card"><div class="stats-card-title">Citas por mes</div>' + buildBarChartTall(meses.map(m => ({ label:m.label, value:m.citas, tip:m.citas+' citas — '+m.label })), '#2550a0') + '</div>';
                 html += '</div></div>';
 
                 // Barbers
                 html += '<div class="stats-section"><div class="stats-section-label">Rendimiento por barbero</div><div class="stats-grid-3">';
-                barbsAll.forEach((b, i) => {
-                    html += barberCard(b, maxBarbIng, i);
-                });
+                barbsAll.forEach((b, i) => { html += barberCard(b, maxBarbIng, i); });
                 html += '</div></div>';
 
                 // Servicios + conversión
@@ -3643,11 +3539,7 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
 
                 // Demand patterns
                 html += '<div class="stats-section"><div class="stats-section-label">Patrones de demanda</div><div class="stats-grid-2">';
-                html += '<div class="stats-card"><div class="stats-card-title">Citas por día de la semana</div>' + buildBarChartTall(dow.map(d => ({
-                    label: d.label,
-                    value: d.count,
-                    tip: d.count + ' citas los ' + d.label
-                })), '#d42b2b') + '</div>';
+                html += '<div class="stats-card"><div class="stats-card-title">Citas por día de la semana</div>' + buildBarChartTall(dow.map(d => ({ label:d.label, value:d.count, tip:d.count+' citas los '+d.label })), '#d42b2b') + '</div>';
                 html += '<div class="stats-card"><div class="stats-card-title">Franjas horarias más populares</div><div class="horas-wrap">';
                 horas.forEach((h, i) => {
                     const pct = Math.round(+h.total / maxHora * 100);
@@ -3687,7 +3579,7 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
 
             // ── FIX 1: Bar chart — número pegado a la barra ──────────────
             function buildBarChartTall(items, color) {
-                const maxV = Math.max(...items.map(x => x.value), 1);
+                const maxV    = Math.max(...items.map(x => x.value), 1);
                 const barMaxH = 110;
 
                 let html = `<div style="display:flex;align-items:flex-end;gap:6px;height:158px;padding:0 0 26px;position:relative;box-sizing:border-box;">`;
@@ -3709,19 +3601,10 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
             }
 
             // buildBarChart usa la misma función
-            function buildBarChart(items, color) {
-                return buildBarChartTall(items, color);
-            }
+            function buildBarChart(items, color) { return buildBarChartTall(items, color); }
 
             function buildLineChart(meses, field, unit) {
-                const W = 500,
-                    H = 130,
-                    PAD = {
-                        t: 12,
-                        r: 10,
-                        b: 30,
-                        l: 42
-                    };
+                const W = 500, H = 130, PAD = { t:12, r:10, b:30, l:42 };
                 const vals = meses.map(m => +m[field]);
                 const maxV = Math.max(...vals, 1);
                 const pts = vals.map((v, i) => [
@@ -3731,8 +3614,7 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
                 const pathD = pts.map((p, i) => (i === 0 ? 'M' : 'L') + p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ');
                 const areaD = pathD + ` L${pts[pts.length-1][0].toFixed(1)},${H-PAD.b} L${pts[0][0].toFixed(1)},${H-PAD.b} Z`;
                 const grids = [0.25, 0.5, 0.75, 1].map(f => {
-                    const yy = PAD.t + (1 - f) * (H - PAD.t - PAD.b),
-                        lbl = Math.round(maxV * f);
+                    const yy = PAD.t + (1 - f) * (H - PAD.t - PAD.b), lbl = Math.round(maxV * f);
                     return `<line class="line-grid" x1="${PAD.l}" x2="${W-PAD.r}" y1="${yy.toFixed(1)}" y2="${yy.toFixed(1)}"/><text class="line-y-label" x="${PAD.l-4}" y="${(yy+3).toFixed(1)}">${lbl>999?(lbl/1000).toFixed(1)+'k':lbl}</text>`;
                 }).join('');
                 const xlbls = meses.map((m, i) => {
@@ -3744,17 +3626,13 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
             }
 
             function buildConversionDonut(tasa, kpi) {
-                const aceptadas = +(kpi.aceptadas || 0);
+                const aceptadas  = +(kpi.aceptadas  || 0);
                 const pendientes = +(kpi.pendientes || 0);
-                const denegadas = +(kpi.denegadas || 0);
+                const denegadas  = +(kpi.denegadas  || 0);
                 const canceladas = +((kpi.total_reservas || 0) - aceptadas - pendientes - denegadas);
                 const total = aceptadas + pendientes + denegadas + Math.max(canceladas, 0);
-                const cx = 90,
-                    cy = 90,
-                    r = 62,
-                    strokeW = 16;
+                const cx = 90, cy = 90, r = 62, strokeW = 16;
                 const circ = 2 * Math.PI * r;
-
                 function seg(value, color, offset, delay) {
                     if (!value || total === 0) return '';
                     const dash = (value / total) * circ;
@@ -3767,9 +3645,9 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
               onmouseleave="hideTip()"/>`;
                 }
                 const o1 = 0;
-                const o2 = total > 0 ? (aceptadas / total) * circ : 0;
+                const o2 = total > 0 ? (aceptadas  / total) * circ : 0;
                 const o3 = o2 + (total > 0 ? (pendientes / total) * circ : 0);
-                const o4 = o3 + (total > 0 ? (denegadas / total) * circ : 0);
+                const o4 = o3 + (total > 0 ? (denegadas  / total) * circ : 0);
                 const svgHtml = `
           <svg viewBox="0 0 180 180" style="width:160px;height:160px;flex-shrink:0;">
             <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#1c1c26" stroke-width="${strokeW}"/>
@@ -3798,63 +3676,46 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
 
             // ── FIX 2: Heatmap con navegación prev/next mes ──────────────
             window._hmViewDate = window._hmViewDate || new Date();
-            window._hmRawData = window._hmRawData || {};
+            window._hmRawData  = window._hmRawData  || {};
 
             function buildHeatmapV2(hmap) {
                 window._hmRawData = {};
-                hmap.forEach(h => {
-                    window._hmRawData[h.dia] = +h.total;
-                });
+                hmap.forEach(h => { window._hmRawData[h.dia] = +h.total; });
                 window._hmViewDate = new Date();
                 return renderHeatmapHTML();
             }
 
             function renderHeatmapHTML() {
-                const hmap = window._hmRawData || {};
-                const today = new Date();
-                today.setHours(0, 0, 0, 0);
-                const todayISO = today.toISOString().slice(0, 10);
-                const MONTHS_ES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
-                const DOW = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
+                const hmap   = window._hmRawData || {};
+                const today  = new Date(); today.setHours(0,0,0,0);
+                const todayISO = today.toISOString().slice(0,10);
+                const MONTHS_ES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+                const DOW = ['L','M','X','J','V','S','D'];
                 const maxV = Math.max(...Object.values(hmap), 1);
 
                 function getLevel(v) {
-                    if (!v) return 0;
-                    if (v <= maxV * .25) return 1;
-                    if (v <= maxV * .5) return 2;
-                    if (v <= maxV * .75) return 3;
+                    if (!v)            return 0;
+                    if (v <= maxV*.25) return 1;
+                    if (v <= maxV*.5)  return 2;
+                    if (v <= maxV*.75) return 3;
                     return 4;
                 }
-                const COLORS = [{
-                        bg: 'rgba(255,255,255,0.04)',
-                        border: 'rgba(255,255,255,0.07)'
-                    },
-                    {
-                        bg: 'rgba(212,43,43,0.20)',
-                        border: 'rgba(212,43,43,0.30)'
-                    },
-                    {
-                        bg: 'rgba(212,43,43,0.45)',
-                        border: 'rgba(212,43,43,0.55)'
-                    },
-                    {
-                        bg: 'rgba(212,43,43,0.72)',
-                        border: 'rgba(212,43,43,0.80)'
-                    },
-                    {
-                        bg: '#d42b2b',
-                        border: '#ff4040'
-                    },
+                const COLORS = [
+                    { bg:'rgba(255,255,255,0.04)', border:'rgba(255,255,255,0.07)' },
+                    { bg:'rgba(212,43,43,0.20)',   border:'rgba(212,43,43,0.30)' },
+                    { bg:'rgba(212,43,43,0.45)',   border:'rgba(212,43,43,0.55)' },
+                    { bg:'rgba(212,43,43,0.72)',   border:'rgba(212,43,43,0.80)' },
+                    { bg:'#d42b2b',                border:'#ff4040' },
                 ];
 
-                const vYear = window._hmViewDate.getFullYear();
+                const vYear  = window._hmViewDate.getFullYear();
                 const vMonth = window._hmViewDate.getMonth();
                 const thisMonthStart = new Date(today.getFullYear(), today.getMonth(), 1);
                 const canGoNext = new Date(vYear, vMonth + 1, 1) <= thisMonthStart;
-                const minDate = new Date(today.getFullYear(), today.getMonth() - 3, 1);
+                const minDate   = new Date(today.getFullYear(), today.getMonth() - 3, 1);
                 const canGoPrev = new Date(vYear, vMonth - 1, 1) >= minDate;
                 const daysInMonth = new Date(vYear, vMonth + 1, 0).getDate();
-                const firstDow = (new Date(vYear, vMonth, 1).getDay() + 6) % 7;
+                const firstDow    = (new Date(vYear, vMonth, 1).getDay() + 6) % 7;
 
                 let html = `
     <style>
@@ -3891,25 +3752,23 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
       </div>
       <div class="hm3-legend">
         <span>Sin reservas</span>`;
-                COLORS.forEach(c => {
-                    html += `<div class="hm3-lswatch" style="background:${c.bg};border:1px solid ${c.border};"></div>`;
-                });
+                COLORS.forEach(c => { html += `<div class="hm3-lswatch" style="background:${c.bg};border:1px solid ${c.border};"></div>`; });
                 html += `<span>Muchas</span></div></div>`;
                 html += `<div class="hm3-dow-row">`;
                 DOW.forEach(d => html += `<div class="hm3-dow">${d}</div>`);
                 html += `</div><div class="hm3-grid">`;
                 for (let p = 0; p < firstDow; p++) html += `<div class="hm3-c" style="background:transparent;border:none;"></div>`;
                 for (let d = 1; d <= daysInMonth; d++) {
-                    const dt = new Date(vYear, vMonth, d);
+                    const dt  = new Date(vYear, vMonth, d);
                     const iso = `${vYear}-${String(vMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
                     const isFuture = dt > today;
-                    const isToday = iso === todayISO;
+                    const isToday  = iso === todayISO;
                     const v = hmap[iso] || 0;
                     if (isFuture) {
                         html += `<div class="hm3-c" style="background:rgba(255,255,255,0.015);border:1px solid rgba(255,255,255,0.03);color:#252530;">${d}</div>`;
                     } else {
                         const lvl = getLevel(v);
-                        const c = COLORS[lvl];
+                        const c   = COLORS[lvl];
                         const txt = lvl >= 3 ? 'rgba(255,255,255,0.85)' : (lvl > 0 ? '#d0d0d0' : '#4a4a5a');
                         const border = isToday ? '2px solid rgba(212,43,43,0.8)' : `1px solid ${c.border}`;
                         html += `<div class="hm3-c" style="background:${c.bg};border:${border};color:${txt};">${d}`;
@@ -3919,13 +3778,13 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
                 }
                 html += `</div>`;
                 const mEntries = Object.entries(hmap).filter(([k]) => {
-                    const [y, m] = k.split('-').map(Number);
+                    const [y,m] = k.split('-').map(Number);
                     return y === vYear && m === vMonth + 1;
                 });
-                const totalMes = mEntries.reduce((a, [, v2]) => a + v2, 0);
-                const diasAct = mEntries.filter(([, v2]) => v2 > 0).length;
-                const maxEntry = [...mEntries].sort((a, b) => b[1] - a[1])[0];
-                const avg = diasAct > 0 ? (totalMes / diasAct).toFixed(1) : '0';
+                const totalMes = mEntries.reduce((a,[,v2]) => a + v2, 0);
+                const diasAct  = mEntries.filter(([,v2]) => v2 > 0).length;
+                const maxEntry = [...mEntries].sort((a,b) => b[1]-a[1])[0];
+                const avg      = diasAct > 0 ? (totalMes / diasAct).toFixed(1) : '0';
                 html += `<div class="hm3-stats">
       <div class="hm3-stat"><div class="hm3-snum" style="color:#d42b2b;">${totalMes}</div><div class="hm3-slbl">Total mes</div></div>
       <div class="hm3-stat"><div class="hm3-snum" style="color:#c9a84c;">${diasAct}</div><div class="hm3-slbl">Días activos</div></div>
@@ -3940,9 +3799,9 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
                 document.querySelectorAll('.stats-section').forEach(sec => {
                     const card = sec.querySelector('.stats-card');
                     if (card && card.querySelector('.hm3-grid')) {
-                        const titleEl = card.querySelector('.stats-card-title');
+                        const titleEl   = card.querySelector('.stats-card-title');
                         const titleHTML = titleEl ? titleEl.outerHTML : '';
-                        card.innerHTML = titleHTML + renderHeatmapHTML();
+                        card.innerHTML  = titleHTML + renderHeatmapHTML();
                     }
                 });
             };
@@ -3950,14 +3809,14 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
             // ── FIX 3: Servicios — precio alineado con las barras ────────
             function buildServicesCardV2(svcs, kpi) {
                 const maxAcept = Math.max(...svcs.map(s => +s.citas_aceptadas || 0), 1);
-                const maxPerd = Math.max(...svcs.map(s => +s.citas_perdidas || 0), 1);
+                const maxPerd  = Math.max(...svcs.map(s => +s.citas_perdidas  || 0), 1);
                 let items = '';
                 svcs.forEach((s, i) => {
                     const pctAcept = Math.round((+s.citas_aceptadas || 0) / maxAcept * 100);
-                    const pctPerd = Math.round((+s.citas_perdidas || 0) / maxPerd * 100);
-                    const ingOk = (+s.ingresos || 0).toFixed(0);
-                    const ingLost = (+s.ingresos_perdidos || 0).toFixed(0);
-                    const hasLoss = +ingLost > 0;
+                    const pctPerd  = Math.round((+s.citas_perdidas  || 0) / maxPerd  * 100);
+                    const ingOk    = (+s.ingresos || 0).toFixed(0);
+                    const ingLost  = (+s.ingresos_perdidos || 0).toFixed(0);
+                    const hasLoss  = +ingLost > 0;
                     items += `
         <div class="svc-stat-item" style="align-items:stretch;padding:.85rem 0;border-bottom:1px solid #1c1c26;gap:.75rem;">
             <div class="svc-stat-rank" style="margin-top:3px;flex-shrink:0;">${i + 1}</div>
@@ -3998,11 +3857,7 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
                 const pct = maxIng > 0 ? Math.round(+b.ingresos / maxIng * 100) : 0;
                 const ticket = (+b.ingresos / Math.max(+(b.aceptadas || b.total_citas) || 1, 1)).toFixed(0);
                 const isEmpty = +b.total_citas === 0;
-                const colorMap = {
-                    EP: '#d42b2b',
-                    MV: '#2550a0',
-                    AR: '#c9a84c'
-                };
+                const colorMap = { EP:'#d42b2b', MV:'#2550a0', AR:'#c9a84c' };
                 const accent = colorMap[b.iniciales] || '#d42b2b';
                 return `<div class="barbero-stat-card" style="cursor:pointer;${isEmpty?'opacity:.65;':''}" onclick="window._openBarberoModal('${b.iniciales}')" title="Ver detalles de ${b.nombre}">
           <div class="barbero-stat-header">
