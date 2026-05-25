@@ -4,16 +4,18 @@
 //  Gestión de barberos y servicios desde el panel admin.
 //
 //  GET  ?tipo=barberos|servicios          → listar (incluye inactivos)
-//  POST { accion, ... }                   → crear / editar / desactivar
+//  POST { accion, ... }                   → crear / editar / toggle / eliminar
 //
 //  Acciones disponibles:
-//    barbero_crear  { nombre, especialidad, iniciales }
-//    barbero_editar { id, nombre, especialidad, iniciales }
-//    barbero_toggle { id }   → activa/desactiva
+//    barbero_crear   { nombre, especialidad, iniciales }
+//    barbero_editar  { id, nombre, especialidad, iniciales }
+//    barbero_toggle  { id }   → activa/desactiva
+//    barbero_eliminar{ id }   → elimina (solo si no tiene reservas)
 //
-//    servicio_crear  { nombre, duracion, precio }
-//    servicio_editar { id, nombre, duracion, precio }
-//    servicio_toggle { id }  → activa/desactiva
+//    servicio_crear   { nombre, duracion, precio }
+//    servicio_editar  { id, nombre, duracion, precio }
+//    servicio_toggle  { id }  → activa/desactiva
+//    servicio_eliminar{ id }  → elimina (solo si no tiene reservas)
 // ============================================================
 
 require_once __DIR__ . '/../config.php';
@@ -83,16 +85,20 @@ try {
     // ── BARBEROS ─────────────────────────────────────────────
 
     if ($accion === 'barbero_crear') {
-        $nombre      = trim($body['nombre']      ?? '');
-        $especialidad= trim($body['especialidad']?? '');
-        $iniciales   = strtoupper(trim($body['iniciales'] ?? ''));
+        $nombre       = trim($body['nombre']       ?? '');
+        $especialidad = trim($body['especialidad'] ?? '');
+        $iniciales    = strtoupper(trim($body['iniciales'] ?? ''));
 
         if (!$nombre || !$iniciales) respErr('nombre e iniciales son obligatorios');
         if (strlen($iniciales) > 5)  respErr('iniciales máximo 5 caracteres');
 
-        // ID: slug del nombre en minúsculas
         $id = strtolower(preg_replace('/[^a-zA-Z0-9]/', '', $nombre));
         if (!$id) respErr('Nombre no válido para generar ID');
+
+        // Evitar ID duplicado
+        $exists = $db->prepare("SELECT COUNT(*) FROM barberos WHERE id = ?");
+        $exists->execute([$id]);
+        if ((int)$exists->fetchColumn() > 0) $id .= '-' . substr(time(), -4);
 
         $stmt = $db->prepare(
             "INSERT INTO barberos (id, nombre, especialidad, iniciales, activo)
@@ -103,10 +109,10 @@ try {
     }
 
     if ($accion === 'barbero_editar') {
-        $id          = trim($body['id']           ?? '');
-        $nombre      = trim($body['nombre']       ?? '');
-        $especialidad= trim($body['especialidad'] ?? '');
-        $iniciales   = strtoupper(trim($body['iniciales'] ?? ''));
+        $id           = trim($body['id']           ?? '');
+        $nombre       = trim($body['nombre']       ?? '');
+        $especialidad = trim($body['especialidad'] ?? '');
+        $iniciales    = strtoupper(trim($body['iniciales'] ?? ''));
 
         if (!$id || !$nombre || !$iniciales) respErr('id, nombre e iniciales son obligatorios');
 
@@ -121,9 +127,7 @@ try {
         $id = trim($body['id'] ?? '');
         if (!$id) respErr('id es obligatorio');
 
-        $stmt = $db->prepare(
-            "UPDATE barberos SET activo = 1 - activo WHERE id = ?"
-        );
+        $stmt = $db->prepare("UPDATE barberos SET activo = 1 - activo WHERE id = ?");
         $stmt->execute([$id]);
 
         $row = $db->prepare("SELECT activo FROM barberos WHERE id = ?");
@@ -132,21 +136,35 @@ try {
         respOk(['id' => $id, 'activo' => $activo]);
     }
 
+    if ($accion === 'barbero_eliminar') {
+        $id = trim($body['id'] ?? '');
+        if (!$id) respErr('id es obligatorio');
+
+        // Comprobar si tiene reservas asociadas
+        $check = $db->prepare("SELECT COUNT(*) FROM reservas WHERE barbero_id = ?");
+        $check->execute([$id]);
+        if ((int)$check->fetchColumn() > 0) {
+            respErr('No se puede eliminar: este barbero tiene reservas registradas. Desactívalo en su lugar.');
+        }
+
+        $stmt = $db->prepare("DELETE FROM barberos WHERE id = ?");
+        $stmt->execute([$id]);
+        respOk(['id' => $id, 'eliminado' => true]);
+    }
+
     // ── SERVICIOS ────────────────────────────────────────────
 
     if ($accion === 'servicio_crear') {
-        $nombre  = trim($body['nombre']  ?? '');
-        $duracion= trim($body['duracion']?? '');
-        $precio  = (float)($body['precio'] ?? 0);
+        $nombre   = trim($body['nombre']   ?? '');
+        $duracion = trim($body['duracion'] ?? '');
+        $precio   = (float)($body['precio'] ?? 0);
 
         if (!$nombre || !$duracion || $precio <= 0) respErr('nombre, duracion y precio son obligatorios');
 
-        // ID: slug
         $id = strtolower(preg_replace('/[^a-zA-Z0-9\-]/', '', str_replace(' ', '-', $nombre)));
-        // Evitar duplicado de ID
         $exists = $db->prepare("SELECT COUNT(*) FROM servicios WHERE id = ?");
         $exists->execute([$id]);
-        if ((int)$exists->fetchColumn() > 0) $id .= '-' . time();
+        if ((int)$exists->fetchColumn() > 0) $id .= '-' . substr(time(), -4);
 
         $stmt = $db->prepare(
             "INSERT INTO servicios (id, nombre, duracion, precio, activo)
@@ -157,10 +175,10 @@ try {
     }
 
     if ($accion === 'servicio_editar') {
-        $id      = trim($body['id']      ?? '');
-        $nombre  = trim($body['nombre']  ?? '');
-        $duracion= trim($body['duracion']?? '');
-        $precio  = (float)($body['precio'] ?? 0);
+        $id       = trim($body['id']       ?? '');
+        $nombre   = trim($body['nombre']   ?? '');
+        $duracion = trim($body['duracion'] ?? '');
+        $precio   = (float)($body['precio'] ?? 0);
 
         if (!$id || !$nombre || !$duracion || $precio <= 0)
             respErr('id, nombre, duracion y precio son obligatorios');
@@ -176,15 +194,29 @@ try {
         $id = trim($body['id'] ?? '');
         if (!$id) respErr('id es obligatorio');
 
-        $stmt = $db->prepare(
-            "UPDATE servicios SET activo = 1 - activo WHERE id = ?"
-        );
+        $stmt = $db->prepare("UPDATE servicios SET activo = 1 - activo WHERE id = ?");
         $stmt->execute([$id]);
 
         $row = $db->prepare("SELECT activo FROM servicios WHERE id = ?");
         $row->execute([$id]);
         $activo = (int)$row->fetchColumn();
         respOk(['id' => $id, 'activo' => $activo]);
+    }
+
+    if ($accion === 'servicio_eliminar') {
+        $id = trim($body['id'] ?? '');
+        if (!$id) respErr('id es obligatorio');
+
+        // Comprobar si tiene reservas asociadas
+        $check = $db->prepare("SELECT COUNT(*) FROM reservas WHERE servicio_id = ?");
+        $check->execute([$id]);
+        if ((int)$check->fetchColumn() > 0) {
+            respErr('No se puede eliminar: este servicio tiene reservas registradas. Desactívalo en su lugar.');
+        }
+
+        $stmt = $db->prepare("DELETE FROM servicios WHERE id = ?");
+        $stmt->execute([$id]);
+        respOk(['id' => $id, 'eliminado' => true]);
     }
 
     respErr('Acción no reconocida: ' . $accion);

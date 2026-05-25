@@ -2791,6 +2791,27 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
             background: rgba(212, 43, 43, .04);
         }
 
+        .datos-btn-del {
+            background: rgba(212, 43, 43, .08);
+            border: 1px solid rgba(212, 43, 43, .2);
+            color: #d42b2b;
+            width: 28px;
+            height: 28px;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 6px;
+            font-size: .75rem;
+            flex-shrink: 0;
+        }
+
+        .datos-btn-del:hover {
+            background: #d42b2b;
+            color: #fff;
+            border-color: #d42b2b;
+        }
+
         .datos-loading {
             text-align: center;
             padding: 1.5rem;
@@ -4293,6 +4314,7 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
 
         // ================================================================
         //  PRADO BARBER CO. — Pestaña DATOS (barberos + servicios)
+        //  VERSIÓN CORREGIDA: IIFE invocado correctamente + eliminar
         // ================================================================
         (function initDatos() {
             'use strict';
@@ -4305,14 +4327,27 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
                 servicios: []
             };
 
-            // ── Enganchar a switchTab ──────────────────────────────────
-            // Esperamos a que el DOM esté listo para parchear switchTab
-            // (que ya fue definido por el bloque anterior del script)
-            const _origSwitch = window.switchTab;
-            window.switchTab = function(tab) {
-                _origSwitch(tab);
-                if (tab === 'datos') loadDatos();
-            };
+            // ── Cargar al abrir la pestaña ─────────────────────────────
+            // Parchear switchTab para detectar cuando se abre "datos"
+            document.addEventListener('DOMContentLoaded', function() {
+                // Si ya está activa la pestaña datos al abrir el panel, cargar
+                const paneDatos = document.getElementById('pane-datos');
+                if (paneDatos && paneDatos.classList.contains('active')) {
+                    loadDatos();
+                }
+            });
+
+            // Sobreescribir switchTab para detectar la pestaña datos
+            const _waitForSwitch = setInterval(function() {
+                if (typeof window.switchTab === 'function') {
+                    clearInterval(_waitForSwitch);
+                    const _orig = window.switchTab;
+                    window.switchTab = function(tab) {
+                        _orig(tab);
+                        if (tab === 'datos') loadDatos();
+                    };
+                }
+            }, 50);
 
             // ── Carga principal ────────────────────────────────────────
             async function loadDatos() {
@@ -4358,21 +4393,23 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
                     return;
                 }
                 el.innerHTML = list.map(b => `
-            <div class="datos-item ${b.activo == 1 ? '' : 'inactivo'}">
-                <div class="datos-item-avatar">${escHtml(b.iniciales)}</div>
-                <div class="datos-item-info">
-                    <div class="datos-item-nombre">${escHtml(b.nombre)}</div>
-                    <div class="datos-item-sub">${escHtml(b.especialidad || '—')}</div>
-                </div>
-                <div class="datos-item-actions">
-                    <button class="datos-btn datos-btn-edit"
-                            onclick="window.abrirFormBarbero('${escAttr(b.id)}')">Editar</button>
-                    <button class="datos-btn datos-btn-toggle ${b.activo == 1 ? 'activo' : ''}"
-                            onclick="window.toggleItem('barbero','${escAttr(b.id)}')">
-                        ${b.activo == 1 ? 'Activo' : 'Inactivo'}
-                    </button>
-                </div>
-            </div>`).join('');
+                    <div class="datos-item ${b.activo == 1 ? '' : 'inactivo'}">
+                        <div class="datos-item-avatar">${escHtml(b.iniciales)}</div>
+                        <div class="datos-item-info">
+                            <div class="datos-item-nombre">${escHtml(b.nombre)}</div>
+                            <div class="datos-item-sub">${escHtml(b.especialidad || '—')}</div>
+                        </div>
+                        <div class="datos-item-actions">
+                            <button class="datos-btn datos-btn-edit"
+                                    onclick="window.abrirFormBarbero('${escAttr(b.id)}')">Editar</button>
+                            <button class="datos-btn datos-btn-toggle ${b.activo == 1 ? 'activo' : ''}"
+                                    onclick="window.toggleItem('barbero','${escAttr(b.id)}')">
+                                ${b.activo == 1 ? 'Activo' : 'Inactivo'}
+                            </button>
+                            <button class="datos-btn datos-btn-del"
+                                    onclick="window.eliminarItem('barbero','${escAttr(b.id)}','${escAttr(b.nombre)}')">✕</button>
+                        </div>
+                    </div>`).join('');
             }
 
             // ── Render servicios ───────────────────────────────────────
@@ -4384,25 +4421,27 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
                     return;
                 }
                 el.innerHTML = list.map(s => `
-            <div class="datos-item ${s.activo == 1 ? '' : 'inactivo'}">
-                <div class="datos-item-avatar"
-                     style="font-size:.65rem;font-family:'DM Sans',sans-serif;font-weight:700;
-                            color:#c9a84c;border-color:rgba(201,168,76,.25);background:rgba(201,168,76,.08);">
-                    ${parseFloat(s.precio).toFixed(0)}€
-                </div>
-                <div class="datos-item-info">
-                    <div class="datos-item-nombre">${escHtml(s.nombre)}</div>
-                    <div class="datos-item-sub">${escHtml(s.duracion)}</div>
-                </div>
-                <div class="datos-item-actions">
-                    <button class="datos-btn datos-btn-edit"
-                            onclick="window.abrirFormServicio('${escAttr(s.id)}')">Editar</button>
-                    <button class="datos-btn datos-btn-toggle ${s.activo == 1 ? 'activo' : ''}"
-                            onclick="window.toggleItem('servicio','${escAttr(s.id)}')">
-                        ${s.activo == 1 ? 'Activo' : 'Inactivo'}
-                    </button>
-                </div>
-            </div>`).join('');
+                    <div class="datos-item ${s.activo == 1 ? '' : 'inactivo'}">
+                        <div class="datos-item-avatar"
+                             style="font-size:.65rem;font-family:'DM Sans',sans-serif;font-weight:700;
+                                    color:#c9a84c;border-color:rgba(201,168,76,.25);background:rgba(201,168,76,.08);">
+                            ${parseFloat(s.precio).toFixed(0)}€
+                        </div>
+                        <div class="datos-item-info">
+                            <div class="datos-item-nombre">${escHtml(s.nombre)}</div>
+                            <div class="datos-item-sub">${escHtml(s.duracion)}</div>
+                        </div>
+                        <div class="datos-item-actions">
+                            <button class="datos-btn datos-btn-edit"
+                                    onclick="window.abrirFormServicio('${escAttr(s.id)}')">Editar</button>
+                            <button class="datos-btn datos-btn-toggle ${s.activo == 1 ? 'activo' : ''}"
+                                    onclick="window.toggleItem('servicio','${escAttr(s.id)}')">
+                                ${s.activo == 1 ? 'Activo' : 'Inactivo'}
+                            </button>
+                            <button class="datos-btn datos-btn-del"
+                                    onclick="window.eliminarItem('servicio','${escAttr(s.id)}','${escAttr(s.nombre)}')">✕</button>
+                        </div>
+                    </div>`).join('');
             }
 
             // ── Toggle activo / inactivo ───────────────────────────────
@@ -4421,6 +4460,27 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
                 }
             };
 
+            // ── Eliminar ───────────────────────────────────────────────
+            window.eliminarItem = async function(tipo, id, nombre) {
+                if (!confirm(`¿Eliminar "${nombre}"? Esta acción no se puede deshacer.\n\nSi tiene reservas asociadas no podrá eliminarse.`)) return;
+                const accion = tipo === 'barbero' ? 'barbero_eliminar' : 'servicio_eliminar';
+                try {
+                    const res = await apiPost({
+                        accion,
+                        id
+                    });
+                    const json = await res.json();
+                    if (json.ok) {
+                        showStatus(true, `"${nombre}" eliminado correctamente.`);
+                        loadDatos();
+                    } else {
+                        showStatus(false, json.error || 'No se pudo eliminar.');
+                    }
+                } catch (e) {
+                    showStatus(false, 'Error de conexión.');
+                }
+            };
+
             // ── Abrir modal barbero ────────────────────────────────────
             window.abrirFormBarbero = function(id) {
                 modalTipo = 'barbero';
@@ -4432,25 +4492,25 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
                     b ? 'Editar barbero' : 'Nuevo barbero';
 
                 document.getElementById('datos-modal-body').innerHTML = `
-            <div class="datos-field">
-                <label>Nombre completo *</label>
-                <input id="dm-nombre" type="text"
-                       value="${b ? escAttr(b.nombre) : ''}"
-                       placeholder="Ej: Carlos Ruiz" maxlength="80" />
-            </div>
-            <div class="datos-field">
-                <label>Especialidad</label>
-                <input id="dm-especialidad" type="text"
-                       value="${b ? escAttr(b.especialidad || '') : ''}"
-                       placeholder="Ej: Fade & corte clásico" maxlength="150" />
-            </div>
-            <div class="datos-field">
-                <label>Iniciales (máx. 5) *</label>
-                <input id="dm-iniciales" type="text"
-                       value="${b ? escAttr(b.iniciales) : ''}"
-                       placeholder="Ej: CR" maxlength="5"
-                       style="text-transform:uppercase;" />
-            </div>`;
+                    <div class="datos-field">
+                        <label>Nombre completo *</label>
+                        <input id="dm-nombre" type="text"
+                               value="${b ? escAttr(b.nombre) : ''}"
+                               placeholder="Ej: Carlos Ruiz" maxlength="80" />
+                    </div>
+                    <div class="datos-field">
+                        <label>Especialidad</label>
+                        <input id="dm-especialidad" type="text"
+                               value="${b ? escAttr(b.especialidad || '') : ''}"
+                               placeholder="Ej: Fade & corte clásico" maxlength="150" />
+                    </div>
+                    <div class="datos-field">
+                        <label>Iniciales (máx. 5) *</label>
+                        <input id="dm-iniciales" type="text"
+                               value="${b ? escAttr(b.iniciales) : ''}"
+                               placeholder="Ej: CR" maxlength="5"
+                               style="text-transform:uppercase;" />
+                    </div>`;
 
                 abrirModal();
             };
@@ -4466,24 +4526,24 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
                     s ? 'Editar servicio' : 'Nuevo servicio';
 
                 document.getElementById('datos-modal-body').innerHTML = `
-            <div class="datos-field">
-                <label>Nombre del servicio *</label>
-                <input id="dm-nombre" type="text"
-                       value="${s ? escAttr(s.nombre) : ''}"
-                       placeholder="Ej: Afeitado exprés" maxlength="100" />
-            </div>
-            <div class="datos-field">
-                <label>Duración *</label>
-                <input id="dm-duracion" type="text"
-                       value="${s ? escAttr(s.duracion) : ''}"
-                       placeholder="Ej: 30 min" maxlength="20" />
-            </div>
-            <div class="datos-field">
-                <label>Precio (€) *</label>
-                <input id="dm-precio" type="number"
-                       value="${s ? s.precio : ''}"
-                       placeholder="Ej: 18" min="1" max="999" step="0.5" />
-            </div>`;
+                    <div class="datos-field">
+                        <label>Nombre del servicio *</label>
+                        <input id="dm-nombre" type="text"
+                               value="${s ? escAttr(s.nombre) : ''}"
+                               placeholder="Ej: Afeitado exprés" maxlength="100" />
+                    </div>
+                    <div class="datos-field">
+                        <label>Duración *</label>
+                        <input id="dm-duracion" type="text"
+                               value="${s ? escAttr(s.duracion) : ''}"
+                               placeholder="Ej: 30 min" maxlength="20" />
+                    </div>
+                    <div class="datos-field">
+                        <label>Precio (€) *</label>
+                        <input id="dm-precio" type="number"
+                               value="${s ? s.precio : ''}"
+                               placeholder="Ej: 18" min="1" max="999" step="0.5" />
+                    </div>`;
 
                 abrirModal();
             };
@@ -4529,8 +4589,9 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
                             id: modalId,
                             nombre,
                             especialidad,
-                            iniciales,
+                            iniciales
                         };
+
                     } else {
                         const nombre = (document.getElementById('dm-nombre')?.value || '').trim();
                         const duracion = (document.getElementById('dm-duracion')?.value || '').trim();
@@ -4545,7 +4606,7 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
                             id: modalId,
                             nombre,
                             duracion,
-                            precio,
+                            precio
                         };
                     }
 
@@ -4600,7 +4661,7 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
                 return String(str ?? '').replace(/'/g, "\\'");
             }
 
-        })();
+        })(); // <-- IIFE correctamente invocado
     </script>
 
 </body>
