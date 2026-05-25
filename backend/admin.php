@@ -4291,222 +4291,237 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
 
         })
 
+        // ================================================================
+        //  PRADO BARBER CO. — Pestaña DATOS (barberos + servicios)
+        // ================================================================
         (function initDatos() {
             'use strict';
-            const DATOS_API = './api/datos.php';
-            let modalTipo = null; // 'barbero' | 'servicio'
-            let modalId = null; // null = crear, string = editar
 
-            // ── Cargar al abrir la pestaña ─────────────────────────────
-            const origSwitch = window.switchTab;
+            const DATOS_API = './api/datos.php';
+            let modalTipo = null;
+            let modalId = null;
+            let datosCache = {
+                barberos: [],
+                servicios: []
+            };
+
+            // ── Enganchar a switchTab ──────────────────────────────────
+            // Esperamos a que el DOM esté listo para parchear switchTab
+            // (que ya fue definido por el bloque anterior del script)
+            const _origSwitch = window.switchTab;
             window.switchTab = function(tab) {
-                origSwitch(tab);
+                _origSwitch(tab);
                 if (tab === 'datos') loadDatos();
             };
 
+            // ── Carga principal ────────────────────────────────────────
             async function loadDatos() {
-                renderLoading('barberos-list');
-                renderLoading('servicios-list');
+                setListHTML('barberos-list', '<div class="datos-loading">Cargando barberos…</div>');
+                setListHTML('servicios-list', '<div class="datos-loading">Cargando servicios…</div>');
+
                 try {
                     const [rb, rs] = await Promise.all([
                         fetch(DATOS_API + '?tipo=barberos').then(r => r.json()),
                         fetch(DATOS_API + '?tipo=servicios').then(r => r.json()),
                     ]);
-                    if (rb.ok) renderBarberos(rb.data);
-                    else renderError('barberos-list', rb.error);
-                    if (rs.ok) renderServicios(rs.data);
-                    else renderError('servicios-list', rs.error);
+
+                    if (rb.ok) {
+                        datosCache.barberos = rb.data;
+                        renderBarberos(rb.data);
+                    } else {
+                        setListHTML('barberos-list', `<div class="datos-loading" style="color:#d42b2b;">⚠ ${rb.error}</div>`);
+                    }
+
+                    if (rs.ok) {
+                        datosCache.servicios = rs.data;
+                        renderServicios(rs.data);
+                    } else {
+                        setListHTML('servicios-list', `<div class="datos-loading" style="color:#d42b2b;">⚠ ${rs.error}</div>`);
+                    }
                 } catch (e) {
-                    renderError('barberos-list', 'Error de red');
-                    renderError('servicios-list', 'Error de red');
+                    setListHTML('barberos-list', '<div class="datos-loading" style="color:#d42b2b;">⚠ Error de conexión</div>');
+                    setListHTML('servicios-list', '<div class="datos-loading" style="color:#d42b2b;">⚠ Error de conexión</div>');
                 }
             }
 
-            function renderLoading(id) {
+            function setListHTML(id, html) {
                 const el = document.getElementById(id);
-                if (el) el.innerHTML = '<div class="datos-loading">Cargando…</div>';
+                if (el) el.innerHTML = html;
             }
 
-            function renderError(id, msg) {
-                const el = document.getElementById(id);
-                if (el) el.innerHTML = `<div class="datos-loading" style="color:#d42b2b;">⚠ ${msg}</div>`;
-            }
-
+            // ── Render barberos ────────────────────────────────────────
             function renderBarberos(list) {
                 const el = document.getElementById('barberos-list');
                 if (!el) return;
-                if (!list.length) {
-                    el.innerHTML = '<div class="datos-loading">Sin barberos aún.</div>';
+                if (!list || !list.length) {
+                    el.innerHTML = '<div class="datos-loading">No hay barberos. Pulsa + Añadir barbero.</div>';
                     return;
                 }
                 el.innerHTML = list.map(b => `
-            <div class="datos-item ${b.activo ? '' : 'inactivo'}">
-                <div class="datos-item-avatar">${b.iniciales}</div>
+            <div class="datos-item ${b.activo == 1 ? '' : 'inactivo'}">
+                <div class="datos-item-avatar">${escHtml(b.iniciales)}</div>
                 <div class="datos-item-info">
-                    <div class="datos-item-nombre">${b.nombre}</div>
-                    <div class="datos-item-sub">${b.especialidad || '—'}</div>
+                    <div class="datos-item-nombre">${escHtml(b.nombre)}</div>
+                    <div class="datos-item-sub">${escHtml(b.especialidad || '—')}</div>
                 </div>
                 <div class="datos-item-actions">
-                    <button class="datos-btn datos-btn-edit" onclick="abrirFormBarbero('${b.id}')">Editar</button>
-                    <button class="datos-btn datos-btn-toggle ${b.activo ? 'activo' : ''}"
-                            onclick="toggleItem('barbero','${b.id}')">
-                        ${b.activo ? 'Activo' : 'Inactivo'}
+                    <button class="datos-btn datos-btn-edit"
+                            onclick="window.abrirFormBarbero('${escAttr(b.id)}')">Editar</button>
+                    <button class="datos-btn datos-btn-toggle ${b.activo == 1 ? 'activo' : ''}"
+                            onclick="window.toggleItem('barbero','${escAttr(b.id)}')">
+                        ${b.activo == 1 ? 'Activo' : 'Inactivo'}
                     </button>
                 </div>
             </div>`).join('');
             }
 
+            // ── Render servicios ───────────────────────────────────────
             function renderServicios(list) {
                 const el = document.getElementById('servicios-list');
                 if (!el) return;
-                if (!list.length) {
-                    el.innerHTML = '<div class="datos-loading">Sin servicios aún.</div>';
+                if (!list || !list.length) {
+                    el.innerHTML = '<div class="datos-loading">No hay servicios. Pulsa + Añadir servicio.</div>';
                     return;
                 }
                 el.innerHTML = list.map(s => `
-            <div class="datos-item ${s.activo ? '' : 'inactivo'}">
-                <div class="datos-item-avatar" style="font-size:.65rem;font-family:'DM Sans',sans-serif;font-weight:700;color:#c9a84c;border-color:rgba(201,168,76,.25);background:rgba(201,168,76,.08);">
-                    ${s.precio}€
+            <div class="datos-item ${s.activo == 1 ? '' : 'inactivo'}">
+                <div class="datos-item-avatar"
+                     style="font-size:.65rem;font-family:'DM Sans',sans-serif;font-weight:700;
+                            color:#c9a84c;border-color:rgba(201,168,76,.25);background:rgba(201,168,76,.08);">
+                    ${parseFloat(s.precio).toFixed(0)}€
                 </div>
                 <div class="datos-item-info">
-                    <div class="datos-item-nombre">${s.nombre}</div>
-                    <div class="datos-item-sub">${s.duracion}</div>
+                    <div class="datos-item-nombre">${escHtml(s.nombre)}</div>
+                    <div class="datos-item-sub">${escHtml(s.duracion)}</div>
                 </div>
                 <div class="datos-item-actions">
-                    <button class="datos-btn datos-btn-edit" onclick="abrirFormServicio('${s.id}')">Editar</button>
-                    <button class="datos-btn datos-btn-toggle ${s.activo ? 'activo' : ''}"
-                            onclick="toggleItem('servicio','${s.id}')">
-                        ${s.activo ? 'Activo' : 'Inactivo'}
+                    <button class="datos-btn datos-btn-edit"
+                            onclick="window.abrirFormServicio('${escAttr(s.id)}')">Editar</button>
+                    <button class="datos-btn datos-btn-toggle ${s.activo == 1 ? 'activo' : ''}"
+                            onclick="window.toggleItem('servicio','${escAttr(s.id)}')">
+                        ${s.activo == 1 ? 'Activo' : 'Inactivo'}
                     </button>
                 </div>
             </div>`).join('');
             }
 
-            // ── Toggle activo/inactivo ──────────────────────────────────
+            // ── Toggle activo / inactivo ───────────────────────────────
             window.toggleItem = async function(tipo, id) {
+                const accion = tipo === 'barbero' ? 'barbero_toggle' : 'servicio_toggle';
                 try {
-                    const accion = tipo === 'barbero' ? 'barbero_toggle' : 'servicio_toggle';
-                    const res = await fetch(DATOS_API, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            accion,
-                            id
-                        }),
+                    const res = await apiPost({
+                        accion,
+                        id
                     });
                     const json = await res.json();
                     if (json.ok) loadDatos();
-                    else showDatosStatus(false, json.error || 'Error');
+                    else showStatus(false, json.error || 'Error al cambiar estado');
                 } catch (e) {
-                    showDatosStatus(false, 'Error de red');
+                    showStatus(false, 'Error de conexión');
                 }
             };
 
-            // ── Abrir modal ────────────────────────────────────────────
-            window.abrirFormBarbero = async function(id) {
+            // ── Abrir modal barbero ────────────────────────────────────
+            window.abrirFormBarbero = function(id) {
                 modalTipo = 'barbero';
-                modalId = id;
-                document.getElementById('datos-modal-title').textContent = id ? 'Editar barbero' : 'Nuevo barbero';
+                modalId = id || null;
 
-                let nombre = '',
-                    especialidad = '',
-                    iniciales = '';
-                if (id) {
-                    // Buscar los datos actuales en la lista renderizada
-                    const res = await fetch(DATOS_API + '?tipo=barberos');
-                    const json = await res.json();
-                    const b = (json.data || []).find(x => x.id === id);
-                    if (b) {
-                        nombre = b.nombre;
-                        especialidad = b.especialidad;
-                        iniciales = b.iniciales;
-                    }
-                }
+                const b = id ? datosCache.barberos.find(x => x.id === id) : null;
+
+                document.getElementById('datos-modal-title').textContent =
+                    b ? 'Editar barbero' : 'Nuevo barbero';
 
                 document.getElementById('datos-modal-body').innerHTML = `
             <div class="datos-field">
                 <label>Nombre completo *</label>
-                <input id="dm-nombre" type="text" value="${nombre}" placeholder="Ej: Carlos Ruiz" maxlength="80">
+                <input id="dm-nombre" type="text"
+                       value="${b ? escAttr(b.nombre) : ''}"
+                       placeholder="Ej: Carlos Ruiz" maxlength="80" />
             </div>
             <div class="datos-field">
                 <label>Especialidad</label>
-                <input id="dm-especialidad" type="text" value="${especialidad}" placeholder="Ej: Fade & corte clásico" maxlength="150">
+                <input id="dm-especialidad" type="text"
+                       value="${b ? escAttr(b.especialidad || '') : ''}"
+                       placeholder="Ej: Fade & corte clásico" maxlength="150" />
             </div>
             <div class="datos-field">
-                <label>Iniciales (máx 5) *</label>
-                <input id="dm-iniciales" type="text" value="${iniciales}" placeholder="Ej: CR" maxlength="5" style="text-transform:uppercase;">
+                <label>Iniciales (máx. 5) *</label>
+                <input id="dm-iniciales" type="text"
+                       value="${b ? escAttr(b.iniciales) : ''}"
+                       placeholder="Ej: CR" maxlength="5"
+                       style="text-transform:uppercase;" />
             </div>`;
 
                 abrirModal();
             };
 
-            window.abrirFormServicio = async function(id) {
+            // ── Abrir modal servicio ───────────────────────────────────
+            window.abrirFormServicio = function(id) {
                 modalTipo = 'servicio';
-                modalId = id;
-                document.getElementById('datos-modal-title').textContent = id ? 'Editar servicio' : 'Nuevo servicio';
+                modalId = id || null;
 
-                let nombre = '',
-                    duracion = '',
-                    precio = '';
-                if (id) {
-                    const res = await fetch(DATOS_API + '?tipo=servicios');
-                    const json = await res.json();
-                    const s = (json.data || []).find(x => x.id === id);
-                    if (s) {
-                        nombre = s.nombre;
-                        duracion = s.duracion;
-                        precio = s.precio;
-                    }
-                }
+                const s = id ? datosCache.servicios.find(x => x.id === id) : null;
+
+                document.getElementById('datos-modal-title').textContent =
+                    s ? 'Editar servicio' : 'Nuevo servicio';
 
                 document.getElementById('datos-modal-body').innerHTML = `
             <div class="datos-field">
                 <label>Nombre del servicio *</label>
-                <input id="dm-nombre" type="text" value="${nombre}" placeholder="Ej: Afeitado exprés" maxlength="100">
+                <input id="dm-nombre" type="text"
+                       value="${s ? escAttr(s.nombre) : ''}"
+                       placeholder="Ej: Afeitado exprés" maxlength="100" />
             </div>
             <div class="datos-field">
                 <label>Duración *</label>
-                <input id="dm-duracion" type="text" value="${duracion}" placeholder="Ej: 30 min" maxlength="20">
+                <input id="dm-duracion" type="text"
+                       value="${s ? escAttr(s.duracion) : ''}"
+                       placeholder="Ej: 30 min" maxlength="20" />
             </div>
             <div class="datos-field">
                 <label>Precio (€) *</label>
-                <input id="dm-precio" type="number" value="${precio}" placeholder="Ej: 18" min="1" max="999" step="0.5">
+                <input id="dm-precio" type="number"
+                       value="${s ? s.precio : ''}"
+                       placeholder="Ej: 18" min="1" max="999" step="0.5" />
             </div>`;
 
                 abrirModal();
             };
 
+            // ── Abrir / cerrar modal ───────────────────────────────────
             function abrirModal() {
-                document.getElementById('datos-modal-overlay').classList.add('open');
+                const overlay = document.getElementById('datos-modal-overlay');
+                if (overlay) overlay.classList.add('open');
                 document.body.style.overflow = 'hidden';
-                setTimeout(() => document.getElementById('dm-nombre')?.focus(), 100);
+                setTimeout(() => document.getElementById('dm-nombre')?.focus(), 120);
             }
 
             window.cerrarModal = function() {
-                document.getElementById('datos-modal-overlay').classList.remove('open');
+                const overlay = document.getElementById('datos-modal-overlay');
+                if (overlay) overlay.classList.remove('open');
                 document.body.style.overflow = '';
                 modalTipo = null;
                 modalId = null;
             };
 
-            // ── Guardar ────────────────────────────────────────────────
+            // ── Guardar modal ──────────────────────────────────────────
             window.guardarModal = async function() {
                 const btn = document.getElementById('datos-modal-save');
-                btn.disabled = true;
-                btn.textContent = 'Guardando…';
+                if (btn) {
+                    btn.disabled = true;
+                    btn.textContent = 'Guardando…';
+                }
 
                 try {
                     let body = {};
+
                     if (modalTipo === 'barbero') {
-                        const nombre = document.getElementById('dm-nombre')?.value.trim();
-                        const especialidad = document.getElementById('dm-especialidad')?.value.trim();
-                        const iniciales = document.getElementById('dm-iniciales')?.value.trim().toUpperCase();
+                        const nombre = (document.getElementById('dm-nombre')?.value || '').trim();
+                        const especialidad = (document.getElementById('dm-especialidad')?.value || '').trim();
+                        const iniciales = (document.getElementById('dm-iniciales')?.value || '').trim().toUpperCase();
+
                         if (!nombre || !iniciales) {
-                            showDatosStatus(false, 'Nombre e iniciales son obligatorios.');
-                            btn.disabled = false;
-                            btn.textContent = 'Guardar';
+                            showStatus(false, 'Nombre e iniciales son obligatorios.');
                             return;
                         }
                         body = {
@@ -4514,16 +4529,15 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
                             id: modalId,
                             nombre,
                             especialidad,
-                            iniciales
+                            iniciales,
                         };
                     } else {
-                        const nombre = document.getElementById('dm-nombre')?.value.trim();
-                        const duracion = document.getElementById('dm-duracion')?.value.trim();
-                        const precio = parseFloat(document.getElementById('dm-precio')?.value);
+                        const nombre = (document.getElementById('dm-nombre')?.value || '').trim();
+                        const duracion = (document.getElementById('dm-duracion')?.value || '').trim();
+                        const precio = parseFloat(document.getElementById('dm-precio')?.value || 0);
+
                         if (!nombre || !duracion || !precio || precio <= 0) {
-                            showDatosStatus(false, 'Todos los campos son obligatorios.');
-                            btn.disabled = false;
-                            btn.textContent = 'Guardar';
+                            showStatus(false, 'Todos los campos son obligatorios.');
                             return;
                         }
                         body = {
@@ -4531,40 +4545,61 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
                             id: modalId,
                             nombre,
                             duracion,
-                            precio
+                            precio,
                         };
                     }
 
-                    const res = await fetch(DATOS_API, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify(body),
-                    });
+                    const res = await apiPost(body);
                     const json = await res.json();
+
                     if (json.ok) {
-                        cerrarModal();
-                        loadDatos();
-                        showDatosStatus(true, 'Guardado correctamente.');
+                        window.cerrarModal();
+                        await loadDatos();
+                        showStatus(true, 'Guardado correctamente.');
                     } else {
-                        showDatosStatus(false, json.error || 'Error al guardar.');
+                        showStatus(false, json.error || 'Error al guardar.');
                     }
                 } catch (e) {
-                    showDatosStatus(false, 'Error de red.');
+                    showStatus(false, 'Error de conexión.');
                 } finally {
-                    btn.disabled = false;
-                    btn.textContent = 'Guardar';
+                    if (btn) {
+                        btn.disabled = false;
+                        btn.textContent = 'Guardar';
+                    }
                 }
             };
 
-            function showDatosStatus(ok, msg) {
+            // ── Helpers ────────────────────────────────────────────────
+            function apiPost(body) {
+                return fetch(DATOS_API, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(body),
+                });
+            }
+
+            function showStatus(ok, msg) {
                 const el = document.getElementById('datos-status');
                 if (!el) return;
                 el.className = 'cfg-status visible ' + (ok ? 'ok' : 'err');
                 el.textContent = (ok ? '✓ ' : '✕ ') + msg;
                 setTimeout(() => el.classList.remove('visible'), 3500);
             }
+
+            function escHtml(str) {
+                return String(str ?? '')
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;');
+            }
+
+            function escAttr(str) {
+                return String(str ?? '').replace(/'/g, "\\'");
+            }
+
         })();
     </script>
 
