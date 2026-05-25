@@ -90,3 +90,17 @@ JOIN servicios s ON s.id = r.servicio_id
 WHERE r.fecha >= CURDATE()
 ORDER BY r.fecha, r.hora
 LIMIT 10;
+
+-- Añadir columnas de negociación
+ALTER TABLE reservas
+    ADD COLUMN IF NOT EXISTS motivo_cancelacion   TEXT NULL,
+    ADD COLUMN IF NOT EXISTS propuesta_fecha      DATE NULL,
+    ADD COLUMN IF NOT EXISTS propuesta_hora       TIME NULL,
+    ADD COLUMN IF NOT EXISTS propuesta_token      VARCHAR(64) NOT NULL DEFAULT '',
+    ADD COLUMN IF NOT EXISTS ronda_negociacion    TINYINT UNSIGNED NOT NULL DEFAULT 0;
+
+-- Ampliar el ENUM de estado
+ALTER TABLE reservas MODIFY COLUMN estado
+    ENUM('pendiente','aceptada','denegada','cancelada',
+        'reprogramar_barbero','reprogramar_cliente')
+    NOT NULL DEFAULT 'pendiente';

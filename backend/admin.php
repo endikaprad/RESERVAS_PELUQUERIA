@@ -4886,7 +4886,7 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
         </div>
     </div>
 
-    // --- SCRIPT DE CANCELACION ---
+    <!-- ======== SCRIPT DE CANCELACION Y REPROGRAMACION ======== -->
     <script id="cancel-reschedule-js">
         (function() {
             'use strict';
