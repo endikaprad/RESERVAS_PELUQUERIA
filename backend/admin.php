@@ -208,6 +208,12 @@ if ($filtroFecha === 'hoy') {
     $where .= ' AND r.fecha BETWEEN ? AND ?';
     $params[] = $hoy;
     $params[] = date('Y-m-d', strtotime('+7 days'));
+} elseif ($filtroFecha === 'pasadas') {
+    $where .= ' AND r.fecha < ?';
+    $params[] = $hoy;
+} elseif ($filtroFecha === 'proximas') {
+    $where .= ' AND r.fecha > ?';
+    $params[] = $hoy;
 } elseif ($filtroFecha === 'custom' && $fechaCustom) {
     $where .= ' AND r.fecha = ?';
     $params[] = $fechaCustom;
@@ -2988,11 +2994,13 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
                 <div class="frow">
                     <span class="flabel">Fecha</span>
                     <select name="fecha" onchange="this.form.submit()">
-                        <option value="hoy" <?= $filtroFecha === 'hoy'    ? 'selected' : '' ?>>Hoy</option>
-                        <option value="manana" <?= $filtroFecha === 'manana' ? 'selected' : '' ?>>Mañana</option>
-                        <option value="semana" <?= $filtroFecha === 'semana' ? 'selected' : '' ?>>Próximos 7 días</option>
-                        <option value="todas" <?= $filtroFecha === 'todas'  ? 'selected' : '' ?>>Todas</option>
-                        <option value="custom" <?= $filtroFecha === 'custom' ? 'selected' : '' ?>>Fecha específica</option>
+                        <option value="hoy" <?= $filtroFecha === 'hoy'      ? 'selected' : '' ?>>Hoy</option>
+                        <option value="manana" <?= $filtroFecha === 'manana'   ? 'selected' : '' ?>>Mañana</option>
+                        <option value="semana" <?= $filtroFecha === 'semana'   ? 'selected' : '' ?>>Próximos 7 días</option>
+                        <option value="proximas" <?= $filtroFecha === 'proximas' ? 'selected' : '' ?>>Próximas (futuras)</option>
+                        <option value="todas" <?= $filtroFecha === 'todas'    ? 'selected' : '' ?>>Todas</option>
+                        <option value="pasadas" <?= $filtroFecha === 'pasadas'  ? 'selected' : '' ?>>Anteriores</option>
+                        <option value="custom" <?= $filtroFecha === 'custom'   ? 'selected' : '' ?>>Fecha específica</option>
                     </select>
                 </div>
                 <?php if ($filtroFecha === 'custom'): ?>
