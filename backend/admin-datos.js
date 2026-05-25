@@ -1,7 +1,5 @@
 // ============================================================
 //  PRADO BARBER CO. — admin-datos.js
-//  Pestaña "Datos": gestión de barberos y servicios
-//  Incluir DESPUÉS de admin.php (o inline al final del body)
 // ============================================================
 
 (function initDatos() {
@@ -255,10 +253,10 @@
                            placeholder="Ej: Afeitado exprés" maxlength="100" />
                 </div>
                 <div class="datos-field">
-                    <label>Duración *</label>
-                    <input id="dm-duracion" type="text"
-                           value="${s ? escAttr(s.duracion) : ''}"
-                           placeholder="Ej: 30 min" maxlength="20" />
+                    <label>Duración (minutos) *</label>
+                    <input id="dm-duracion" type="number"
+                           value="${s ? parseInt(s.duracion) : ''}"
+                           placeholder="Ej: 30" min="5" max="300" step="5" />
                 </div>
                 <div class="datos-field">
                     <label>Precio (€) *</label>
@@ -309,9 +307,10 @@
                 body = { accion: modalId ? 'barbero_editar' : 'barbero_crear', id: modalId, nombre, especialidad, iniciales };
 
             } else {
-                const nombre   = (document.getElementById('dm-nombre')?.value   || '').trim();
-                const duracion = (document.getElementById('dm-duracion')?.value || '').trim();
-                const precio   = parseFloat(document.getElementById('dm-precio')?.value || 0);
+                const nombre      = (document.getElementById('dm-nombre')?.value || '').trim();
+                const duracionMin = parseInt(document.getElementById('dm-duracion')?.value || 0);
+                const precio      = parseFloat(document.getElementById('dm-precio')?.value || 0);
+                const duracion    = duracionMin > 0 ? `${duracionMin} min` : '';
 
                 if (!nombre || !duracion || precio <= 0) {
                     showStatus(false, 'Todos los campos son obligatorios.');
