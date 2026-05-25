@@ -2665,6 +2665,232 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
                 grid-template-columns: repeat(2, 1fr) !important;
             }
         }
+
+        .datos-list {
+            display: flex;
+            flex-direction: column;
+            gap: .5rem;
+            margin-bottom: .75rem;
+        }
+
+        .datos-item {
+            display: flex;
+            align-items: center;
+            gap: .75rem;
+            background: #18181f;
+            border: 1px solid #252530;
+            border-radius: 9px;
+            padding: .65rem 1rem;
+            transition: border-color .2s;
+        }
+
+        .datos-item.inactivo {
+            opacity: .45;
+        }
+
+        .datos-item-avatar {
+            width: 34px;
+            height: 34px;
+            border-radius: 8px;
+            background: rgba(212, 43, 43, .1);
+            border: 1px solid rgba(212, 43, 43, .2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Playfair Display', serif;
+            font-size: .75rem;
+            font-weight: 700;
+            color: #d42b2b;
+            flex-shrink: 0;
+        }
+
+        .datos-item-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .datos-item-nombre {
+            font-size: .875rem;
+            font-weight: 600;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .datos-item-sub {
+            font-size: .72rem;
+            color: #7a7880;
+            margin-top: .1rem;
+        }
+
+        .datos-item-actions {
+            display: flex;
+            gap: .4rem;
+            flex-shrink: 0;
+        }
+
+        .datos-btn {
+            padding: .28rem .6rem;
+            border-radius: 5px;
+            font-family: 'DM Sans', sans-serif;
+            font-size: .66rem;
+            font-weight: 600;
+            letter-spacing: .06em;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: all .18s;
+            border: 1px solid transparent;
+        }
+
+        .datos-btn-edit {
+            background: rgba(201, 168, 76, .08);
+            border-color: rgba(201, 168, 76, .25);
+            color: #c9a84c;
+        }
+
+        .datos-btn-edit:hover {
+            background: #c9a84c;
+            color: #000;
+        }
+
+        .datos-btn-toggle {
+            background: rgba(107, 114, 128, .08);
+            border-color: rgba(107, 114, 128, .25);
+            color: #9ca3af;
+        }
+
+        .datos-btn-toggle.activo {
+            background: rgba(34, 197, 94, .08);
+            border-color: rgba(34, 197, 94, .25);
+            color: #22c55e;
+        }
+
+        .datos-btn-toggle:hover {
+            opacity: .8;
+        }
+
+        .datos-add-btn {
+            width: 100%;
+            background: transparent;
+            border: 1px dashed #252530;
+            border-radius: 8px;
+            color: #7a7880;
+            font-family: 'DM Sans', sans-serif;
+            font-size: .78rem;
+            font-weight: 600;
+            letter-spacing: .06em;
+            padding: .65rem;
+            cursor: pointer;
+            transition: all .2s;
+            margin-top: .25rem;
+        }
+
+        .datos-add-btn:hover {
+            border-color: #d42b2b;
+            color: #d42b2b;
+            background: rgba(212, 43, 43, .04);
+        }
+
+        .datos-loading {
+            text-align: center;
+            padding: 1.5rem;
+            color: #7a7880;
+            font-size: .8rem;
+        }
+
+        .datos-modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, .72);
+            backdrop-filter: blur(6px);
+            z-index: 1100;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity .25s;
+        }
+
+        .datos-modal-overlay.open {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .datos-modal {
+            background: #111119;
+            border: 1px solid #2f2f3c;
+            border-radius: 14px;
+            width: 100%;
+            max-width: 420px;
+            overflow: hidden;
+            transform: translateY(16px) scale(.97);
+            transition: transform .3s cubic-bezier(.16, 1, .3, 1), opacity .3s;
+            opacity: 0;
+        }
+
+        .datos-modal-overlay.open .datos-modal {
+            transform: translateY(0) scale(1);
+            opacity: 1;
+        }
+
+        .datos-modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1.1rem 1.5rem;
+            border-bottom: 1px solid #252530;
+            font-family: 'Playfair Display', serif;
+            font-size: 1rem;
+            font-weight: 700;
+        }
+
+        .datos-modal-body {
+            padding: 1.25rem 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: .85rem;
+        }
+
+        .datos-modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: .65rem;
+            padding: 1rem 1.5rem;
+            border-top: 1px solid #252530;
+        }
+
+        .datos-field {
+            display: flex;
+            flex-direction: column;
+            gap: .3rem;
+        }
+
+        .datos-field label {
+            font-size: .62rem;
+            letter-spacing: .15em;
+            text-transform: uppercase;
+            color: #7a7880;
+        }
+
+        .datos-field input {
+            background: #18181f;
+            border: 1px solid #252530;
+            border-radius: 6px;
+            padding: .65rem .85rem;
+            color: #f0ece3;
+            font-family: 'DM Sans', sans-serif;
+            font-size: .88rem;
+            transition: border-color .2s;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .datos-field input:focus {
+            outline: none;
+            border-color: #d42b2b;
+        }
     </style>
 </head>
 
@@ -2958,6 +3184,7 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
         <div class="cfg-tabs">
             <button class="cfg-tab active" onclick="switchTab('auto')">Auto-aceptar</button>
             <button class="cfg-tab" onclick="switchTab('vac')">Vacaciones</button>
+            <button class="cfg-tab" onclick="switchTab('datos')">Datos</button>
         </div>
         <div class="cfg-body">
 
@@ -3039,6 +3266,43 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
                 <div class="cfg-status" id="vac-status"></div>
             </div>
 
+            <!-- ══ PESTAÑA DATOS: HTML ══════════════════════════════════════ -->
+            <div class="cfg-pane" id="pane-datos">
+
+                <!-- ── Barberos ── -->
+                <div class="cfg-section-label">Barberos</div>
+                <div id="barberos-list" class="datos-list"></div>
+
+                <button class="datos-add-btn" onclick="abrirFormBarbero(null)">
+                    + Añadir barbero
+                </button>
+
+                <!-- ── Servicios ── -->
+                <div class="cfg-section-label" style="margin-top:1.75rem;">Servicios</div>
+                <div id="servicios-list" class="datos-list"></div>
+
+                <button class="datos-add-btn" onclick="abrirFormServicio(null)">
+                    + Añadir servicio
+                </button>
+
+                <div class="cfg-status" id="datos-status"></div>
+            </div>
+
+            <!-- ══ MODAL EDICIÓN ════════════════════════════════════════════ -->
+            <div class="datos-modal-overlay" id="datos-modal-overlay" onclick="cerrarModal()">
+                <div class="datos-modal" onclick="event.stopPropagation()">
+                    <div class="datos-modal-header">
+                        <span id="datos-modal-title">Editar</span>
+                        <button class="cfg-close" onclick="cerrarModal()">✕</button>
+                    </div>
+                    <div class="datos-modal-body" id="datos-modal-body"></div>
+                    <div class="datos-modal-footer">
+                        <button class="vac-btn vac-btn-clear" onclick="cerrarModal()">Cancelar</button>
+                        <button class="cfg-save-btn" id="datos-modal-save" onclick="guardarModal()"
+                            style="width:auto;padding:.7rem 1.75rem;">Guardar</button>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -3690,7 +3954,7 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
             function buildBarChart(items, color) {
                 return buildBarChartTall(items, color);
             }
-            
+
             function buildBarChartTall(items, color) {
                 const maxV = Math.max(...items.map(x => x.value), 1);
                 const chartH = 180;
@@ -4025,6 +4289,282 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
         </div>`;
             }
 
+        })
+
+        (function initDatos() {
+            'use strict';
+            const DATOS_API = './api/datos.php';
+            let modalTipo = null; // 'barbero' | 'servicio'
+            let modalId = null; // null = crear, string = editar
+
+            // ── Cargar al abrir la pestaña ─────────────────────────────
+            const origSwitch = window.switchTab;
+            window.switchTab = function(tab) {
+                origSwitch(tab);
+                if (tab === 'datos') loadDatos();
+            };
+
+            async function loadDatos() {
+                renderLoading('barberos-list');
+                renderLoading('servicios-list');
+                try {
+                    const [rb, rs] = await Promise.all([
+                        fetch(DATOS_API + '?tipo=barberos').then(r => r.json()),
+                        fetch(DATOS_API + '?tipo=servicios').then(r => r.json()),
+                    ]);
+                    if (rb.ok) renderBarberos(rb.data);
+                    else renderError('barberos-list', rb.error);
+                    if (rs.ok) renderServicios(rs.data);
+                    else renderError('servicios-list', rs.error);
+                } catch (e) {
+                    renderError('barberos-list', 'Error de red');
+                    renderError('servicios-list', 'Error de red');
+                }
+            }
+
+            function renderLoading(id) {
+                const el = document.getElementById(id);
+                if (el) el.innerHTML = '<div class="datos-loading">Cargando…</div>';
+            }
+
+            function renderError(id, msg) {
+                const el = document.getElementById(id);
+                if (el) el.innerHTML = `<div class="datos-loading" style="color:#d42b2b;">⚠ ${msg}</div>`;
+            }
+
+            function renderBarberos(list) {
+                const el = document.getElementById('barberos-list');
+                if (!el) return;
+                if (!list.length) {
+                    el.innerHTML = '<div class="datos-loading">Sin barberos aún.</div>';
+                    return;
+                }
+                el.innerHTML = list.map(b => `
+            <div class="datos-item ${b.activo ? '' : 'inactivo'}">
+                <div class="datos-item-avatar">${b.iniciales}</div>
+                <div class="datos-item-info">
+                    <div class="datos-item-nombre">${b.nombre}</div>
+                    <div class="datos-item-sub">${b.especialidad || '—'}</div>
+                </div>
+                <div class="datos-item-actions">
+                    <button class="datos-btn datos-btn-edit" onclick="abrirFormBarbero('${b.id}')">Editar</button>
+                    <button class="datos-btn datos-btn-toggle ${b.activo ? 'activo' : ''}"
+                            onclick="toggleItem('barbero','${b.id}')">
+                        ${b.activo ? 'Activo' : 'Inactivo'}
+                    </button>
+                </div>
+            </div>`).join('');
+            }
+
+            function renderServicios(list) {
+                const el = document.getElementById('servicios-list');
+                if (!el) return;
+                if (!list.length) {
+                    el.innerHTML = '<div class="datos-loading">Sin servicios aún.</div>';
+                    return;
+                }
+                el.innerHTML = list.map(s => `
+            <div class="datos-item ${s.activo ? '' : 'inactivo'}">
+                <div class="datos-item-avatar" style="font-size:.65rem;font-family:'DM Sans',sans-serif;font-weight:700;color:#c9a84c;border-color:rgba(201,168,76,.25);background:rgba(201,168,76,.08);">
+                    ${s.precio}€
+                </div>
+                <div class="datos-item-info">
+                    <div class="datos-item-nombre">${s.nombre}</div>
+                    <div class="datos-item-sub">${s.duracion}</div>
+                </div>
+                <div class="datos-item-actions">
+                    <button class="datos-btn datos-btn-edit" onclick="abrirFormServicio('${s.id}')">Editar</button>
+                    <button class="datos-btn datos-btn-toggle ${s.activo ? 'activo' : ''}"
+                            onclick="toggleItem('servicio','${s.id}')">
+                        ${s.activo ? 'Activo' : 'Inactivo'}
+                    </button>
+                </div>
+            </div>`).join('');
+            }
+
+            // ── Toggle activo/inactivo ──────────────────────────────────
+            window.toggleItem = async function(tipo, id) {
+                try {
+                    const accion = tipo === 'barbero' ? 'barbero_toggle' : 'servicio_toggle';
+                    const res = await fetch(DATOS_API, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            accion,
+                            id
+                        }),
+                    });
+                    const json = await res.json();
+                    if (json.ok) loadDatos();
+                    else showDatosStatus(false, json.error || 'Error');
+                } catch (e) {
+                    showDatosStatus(false, 'Error de red');
+                }
+            };
+
+            // ── Abrir modal ────────────────────────────────────────────
+            window.abrirFormBarbero = async function(id) {
+                modalTipo = 'barbero';
+                modalId = id;
+                document.getElementById('datos-modal-title').textContent = id ? 'Editar barbero' : 'Nuevo barbero';
+
+                let nombre = '',
+                    especialidad = '',
+                    iniciales = '';
+                if (id) {
+                    // Buscar los datos actuales en la lista renderizada
+                    const res = await fetch(DATOS_API + '?tipo=barberos');
+                    const json = await res.json();
+                    const b = (json.data || []).find(x => x.id === id);
+                    if (b) {
+                        nombre = b.nombre;
+                        especialidad = b.especialidad;
+                        iniciales = b.iniciales;
+                    }
+                }
+
+                document.getElementById('datos-modal-body').innerHTML = `
+            <div class="datos-field">
+                <label>Nombre completo *</label>
+                <input id="dm-nombre" type="text" value="${nombre}" placeholder="Ej: Carlos Ruiz" maxlength="80">
+            </div>
+            <div class="datos-field">
+                <label>Especialidad</label>
+                <input id="dm-especialidad" type="text" value="${especialidad}" placeholder="Ej: Fade & corte clásico" maxlength="150">
+            </div>
+            <div class="datos-field">
+                <label>Iniciales (máx 5) *</label>
+                <input id="dm-iniciales" type="text" value="${iniciales}" placeholder="Ej: CR" maxlength="5" style="text-transform:uppercase;">
+            </div>`;
+
+                abrirModal();
+            };
+
+            window.abrirFormServicio = async function(id) {
+                modalTipo = 'servicio';
+                modalId = id;
+                document.getElementById('datos-modal-title').textContent = id ? 'Editar servicio' : 'Nuevo servicio';
+
+                let nombre = '',
+                    duracion = '',
+                    precio = '';
+                if (id) {
+                    const res = await fetch(DATOS_API + '?tipo=servicios');
+                    const json = await res.json();
+                    const s = (json.data || []).find(x => x.id === id);
+                    if (s) {
+                        nombre = s.nombre;
+                        duracion = s.duracion;
+                        precio = s.precio;
+                    }
+                }
+
+                document.getElementById('datos-modal-body').innerHTML = `
+            <div class="datos-field">
+                <label>Nombre del servicio *</label>
+                <input id="dm-nombre" type="text" value="${nombre}" placeholder="Ej: Afeitado exprés" maxlength="100">
+            </div>
+            <div class="datos-field">
+                <label>Duración *</label>
+                <input id="dm-duracion" type="text" value="${duracion}" placeholder="Ej: 30 min" maxlength="20">
+            </div>
+            <div class="datos-field">
+                <label>Precio (€) *</label>
+                <input id="dm-precio" type="number" value="${precio}" placeholder="Ej: 18" min="1" max="999" step="0.5">
+            </div>`;
+
+                abrirModal();
+            };
+
+            function abrirModal() {
+                document.getElementById('datos-modal-overlay').classList.add('open');
+                document.body.style.overflow = 'hidden';
+                setTimeout(() => document.getElementById('dm-nombre')?.focus(), 100);
+            }
+
+            window.cerrarModal = function() {
+                document.getElementById('datos-modal-overlay').classList.remove('open');
+                document.body.style.overflow = '';
+                modalTipo = null;
+                modalId = null;
+            };
+
+            // ── Guardar ────────────────────────────────────────────────
+            window.guardarModal = async function() {
+                const btn = document.getElementById('datos-modal-save');
+                btn.disabled = true;
+                btn.textContent = 'Guardando…';
+
+                try {
+                    let body = {};
+                    if (modalTipo === 'barbero') {
+                        const nombre = document.getElementById('dm-nombre')?.value.trim();
+                        const especialidad = document.getElementById('dm-especialidad')?.value.trim();
+                        const iniciales = document.getElementById('dm-iniciales')?.value.trim().toUpperCase();
+                        if (!nombre || !iniciales) {
+                            showDatosStatus(false, 'Nombre e iniciales son obligatorios.');
+                            btn.disabled = false;
+                            btn.textContent = 'Guardar';
+                            return;
+                        }
+                        body = {
+                            accion: modalId ? 'barbero_editar' : 'barbero_crear',
+                            id: modalId,
+                            nombre,
+                            especialidad,
+                            iniciales
+                        };
+                    } else {
+                        const nombre = document.getElementById('dm-nombre')?.value.trim();
+                        const duracion = document.getElementById('dm-duracion')?.value.trim();
+                        const precio = parseFloat(document.getElementById('dm-precio')?.value);
+                        if (!nombre || !duracion || !precio || precio <= 0) {
+                            showDatosStatus(false, 'Todos los campos son obligatorios.');
+                            btn.disabled = false;
+                            btn.textContent = 'Guardar';
+                            return;
+                        }
+                        body = {
+                            accion: modalId ? 'servicio_editar' : 'servicio_crear',
+                            id: modalId,
+                            nombre,
+                            duracion,
+                            precio
+                        };
+                    }
+
+                    const res = await fetch(DATOS_API, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(body),
+                    });
+                    const json = await res.json();
+                    if (json.ok) {
+                        cerrarModal();
+                        loadDatos();
+                        showDatosStatus(true, 'Guardado correctamente.');
+                    } else {
+                        showDatosStatus(false, json.error || 'Error al guardar.');
+                    }
+                } catch (e) {
+                    showDatosStatus(false, 'Error de red.');
+                } finally {
+                    btn.disabled = false;
+                    btn.textContent = 'Guardar';
+                }
+            };
+
+            function showDatosStatus(ok, msg) {
+                const el = document.getElementById('datos-status');
+                if (!el) return;
+                el.className = 'cfg-status visible ' + (ok ? 'ok' : 'err');
+                el.textContent = (ok ? '✓ ' : '✕ ') + msg;
+                setTimeout(() => el.classList.remove('visible'), 3500);
+            }
         })();
     </script>
 

@@ -1,24 +1,13 @@
 // ============================================================
 //  PRADO BARBER CO. — booking.js
+//  Barberos y servicios se cargan desde la API, no hardcodeados.
 // ============================================================
 
 const API_BASE = './backend/api';
 
-// ===== DATA =====
-const SERVICES = [
-    { id: 'corte',       name: 'Corte Clásico',    duration: '30 min', price: 18 },
-    { id: 'barba',       name: 'Arreglo de Barba', duration: '20 min', price: 12 },
-    { id: 'corte-barba', name: 'Corte + Barba',    duration: '50 min', price: 26 },
-    { id: 'degradado',   name: 'Degradado',         duration: '40 min', price: 22 },
-    { id: 'afeitado',    name: 'Afeitado Navaja',   duration: '30 min', price: 20 },
-    { id: 'premium',     name: 'Sesión Premium',    duration: '75 min', price: 45 },
-];
-
-const BARBERS = [
-    { id: 'endika', name: 'Endika Prado', spec: 'Fundador · Especialista en degradados', initials: 'EP' },
-    { id: 'marcos', name: 'Marcos Vila',  spec: 'Barba & Navaja',                        initials: 'MV' },
-    { id: 'alex',   name: 'Alex Ramos',   spec: 'Corte clásico & Fade',                  initials: 'AR' },
-];
+// ── Datos que llegan de la API ────────────────────────────────
+let SERVICES = [];
+let BARBERS  = [];
 
 const TIME_SLOTS = [
     '09:00','09:30','10:00','10:30','11:00','11:30',
@@ -75,16 +64,71 @@ let loadingSlots     = false;
 let dayBlocked       = false;
 let dayBlockedMotivo = '';
 
-// Mapa de días bloqueados del mes visible: { "2026-06-01": "Vacaciones", ... }
 let blockedDaysMap   = {};
-// Clave del último mes cargado — formato "YYYY-MM" (1-indexed)
 let blockedDaysKey   = '';
-
-// FIX 1: Flag para saber si el calendario está cargando días bloqueados.
-// Mientras esté en true, selectDate rechaza cualquier clic aunque el onclick esté en el DOM.
 let blockedDaysLoading = false;
-
 let blockedDaysAbortController = null;
+
+// ===== CARGA INICIAL DESDE API ======================================
+
+async function loadInitialData() {
+    showStepLoading(true);
+    try {
+        const [resSvc, resBar] = await Promise.all([
+            fetch(`${API_BASE}/servicios.php`),
+            fetch(`${API_BASE}/barberos.php`),
+        ]);
+        const jsonSvc = await resSvc.json();
+        const jsonBar = await resBar.json();
+
+        if (jsonSvc.ok) {
+            SERVICES = jsonSvc.data.map(s => ({
+                id:       s.id,
+                name:     s.nombre,
+                duration: s.duracion,
+                price:    s.precio,
+            }));
+        }
+        if (jsonBar.ok) {
+            BARBERS = jsonBar.data.map(b => ({
+                id:       b.id,
+                name:     b.nombre,
+                spec:     b.especialidad,
+                initials: b.iniciales,
+            }));
+        }
+    } catch (e) {
+        console.error('Error cargando datos iniciales:', e);
+        // Si falla la API se muestran mensajes de error en los grids
+    }
+    showStepLoading(false);
+    renderServices();
+    renderBarbers();
+    renderCalendar();
+    renderTimeSlots();
+    syncClientForm();
+}
+
+function showStepLoading(show) {
+    const panel = document.getElementById('step-1');
+    if (!panel) return;
+    let loader = panel.querySelector('.step-loader');
+    if (show) {
+        if (!loader) {
+            loader = document.createElement('div');
+            loader.className = 'step-loader';
+            loader.style.cssText = 'text-align:center;padding:2rem;color:var(--color-muted);font-size:.85rem;letter-spacing:.1em;';
+            loader.textContent = 'Cargando servicios…';
+            panel.prepend(loader);
+        }
+        const grid = document.getElementById('service-grid');
+        if (grid) grid.style.display = 'none';
+    } else {
+        if (loader) loader.remove();
+        const grid = document.getElementById('service-grid');
+        if (grid) grid.style.display = '';
+    }
+}
 
 // ===== NORMALIZAR HORA =====
 function normalizeTime(t) {
@@ -120,7 +164,6 @@ function normalizeTime(t) {
             );
             pointer-events: none;
         }
-        /* FIX 1: Mientras carga, el calendario completo muestra cursor de espera */
         .cal-grid.loading .cal-cell:not(.disabled):not(.empty) {
             cursor: wait !important;
             pointer-events: none;
@@ -157,58 +200,48 @@ function normalizeTime(t) {
             border-color: var(--color-border) !important;
             color: var(--color-muted) !important;
         }
+        /* Grid vacío cuando no hay datos */
+        .grid-error {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 2rem;
+            color: var(--color-muted);
+            font-size: .85rem;
+            border: 1px dashed var(--color-border);
+            border-radius: var(--radius-md);
+        }
     `;
     document.head.appendChild(style);
 })();
 
-// ===== CARGAR DÍAS BLOQUEADOS DEL MES =====
+// ===== DÍAS BLOQUEADOS =====
 async function loadBlockedDays(year, monthOneIndexed) {
     const key = year + '-' + monthOneIndexed;
     if (key === blockedDaysKey) return;
 
-    // FIX 1: Marcar que estamos cargando para bloquear clics en el calendario
     blockedDaysLoading = true;
 
-    if (blockedDaysAbortController) {
-        blockedDaysAbortController.abort();
-    }
+    if (blockedDaysAbortController) blockedDaysAbortController.abort();
     blockedDaysAbortController = new AbortController();
     const signal = blockedDaysAbortController.signal;
 
     try {
-        const res  = await fetch(
-            `${API_BASE}/blocked-days.php?year=${year}&month=${monthOneIndexed}`,
-            { signal }
-        );
+        const res  = await fetch(`${API_BASE}/blocked-days.php?year=${year}&month=${monthOneIndexed}`, { signal });
         const json = await res.json();
         if (json.ok) {
             blockedDaysMap = json.data;
             blockedDaysKey = key;
         } else {
             blockedDaysMap = {};
-            // No actualizamos blockedDaysKey para que se reintente
         }
     } catch (e) {
-        // AbortError: fetch cancelado — NO limpiar el mapa ni actualizar la clave
-        // para que el próximo renderCalendar lo reintente
-        if (e.name !== 'AbortError') {
-            blockedDaysMap = {};
-        }
-        // FIX 1: Si fue AbortError otro renderCalendar vendrá, no desbloquear aún
-        if (e.name === 'AbortError') {
-            blockedDaysLoading = false;
-            return;
-        }
+        if (e.name === 'AbortError') { blockedDaysLoading = false; return; }
+        blockedDaysMap = {};
     }
 
-    // FIX 1: Carga terminada — desbloquear interacción y re-renderizar el calendario
-    // para que los días bloqueados se pinten correctamente con los datos ya disponibles
     blockedDaysLoading = false;
-    // Re-render del grid para aplicar el estado correcto tras la carga
     const grid = document.getElementById('cal-grid');
     if (grid) grid.classList.remove('loading');
-    // Volver a renderizar solo el grid de celdas (sin recurrir a renderCalendar completo
-    // para evitar bucle infinito)
     _renderCalGrid(year, monthOneIndexed - 1);
 }
 
@@ -222,14 +255,8 @@ function formatISO(year, month, day) {
 }
 
 // ===== VALIDATION HELPERS =====
-
-function isValidName(v) {
-    return /^[a-zA-ZÀ-ÿ\u00f1\u00d1\s'\-]{2,}$/.test(v.trim());
-}
-
-function isValidEmail(v) {
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
-}
+function isValidName(v) { return /^[a-zA-ZÀ-ÿ\u00f1\u00d1\s'\-]{2,}$/.test(v.trim()); }
+function isValidEmail(v) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim()); }
 
 function setFieldError(fieldId, message) {
     const el = document.getElementById(fieldId);
@@ -248,7 +275,6 @@ function setFieldError(fieldId, message) {
     errEl.style.display = message ? 'flex' : 'none';
     el.classList.toggle('input-error', !!message);
 }
-
 function clearFieldError(fieldId) { setFieldError(fieldId, ''); }
 
 function setPhoneError(message) {
@@ -267,7 +293,6 @@ function setPhoneError(message) {
     errEl.style.display = message ? 'flex' : 'none';
     wrap.classList.toggle('input-error', !!message);
 }
-
 function clearPhoneError() { setPhoneError(''); }
 
 function enforceNameInput(e) {
@@ -282,7 +307,6 @@ function validateField(fieldId) {
     const el = document.getElementById(fieldId);
     if (!el) return true;
     const val = el.value;
-
     if (fieldId === 'client-name') {
         if (!val.trim()) { setFieldError(fieldId, '⚠ El nombre no puede estar vacío.'); return false; }
         if (!isValidName(val)) { setFieldError(fieldId, '⚠ Solo se permiten letras y espacios.'); return false; }
@@ -308,7 +332,6 @@ function validatePhoneField() {
 }
 
 // ===== PHONE PREFIX LOGIC =====
-
 function renderPrefixList(list) {
     const el = document.getElementById('prefix-country-list');
     if (!el) return;
@@ -421,21 +444,16 @@ function goToStep(n) {
     document.querySelectorAll('.step-panel').forEach((p, i) => p.classList.toggle('active', i + 1 === n));
     updateStepsBar();
     window.scrollTo({ top: 0, behavior: 'smooth' });
-
-    if (n === 3) {
-        // Forzar recarga de días bloqueados al entrar al paso 3
-        blockedDaysKey = '';
-        renderCalendar();
-    }
+    if (n === 3) { blockedDaysKey = ''; renderCalendar(); }
 }
 
 function updateStepsBar() {
     document.querySelectorAll('.step-circle').forEach((el, i) => {
         const s = i + 1;
         el.classList.remove('active', 'done');
-        if (s < booking.step)       { el.classList.add('done');   el.textContent = '✓'; }
-        else if (s === booking.step){ el.classList.add('active'); el.textContent = s; }
-        else                          el.textContent = s;
+        if (s < booking.step)        { el.classList.add('done');   el.textContent = '✓'; }
+        else if (s === booking.step) { el.classList.add('active'); el.textContent = s; }
+        else                           el.textContent = s;
     });
     document.querySelectorAll('.step-line').forEach((el, i) => el.classList.toggle('done', i + 1 < booking.step));
 }
@@ -444,6 +462,10 @@ function updateStepsBar() {
 function renderServices() {
     const grid = document.getElementById('service-grid');
     if (!grid) return;
+    if (!SERVICES.length) {
+        grid.innerHTML = '<div class="grid-error">No se pudieron cargar los servicios. Recarga la página.</div>';
+        return;
+    }
     grid.innerHTML = SERVICES.map(s => `
         <div class="service-option ${booking.service?.id === s.id ? 'selected' : ''}" onclick="selectService('${s.id}')">
           <div class="svc-name">${s.name}</div>
@@ -462,6 +484,10 @@ function selectService(id) {
 function renderBarbers() {
     const grid = document.getElementById('barber-grid');
     if (!grid) return;
+    if (!BARBERS.length) {
+        grid.innerHTML = '<div class="grid-error">No se pudieron cargar los barberos. Recarga la página.</div>';
+        return;
+    }
     grid.innerHTML = BARBERS.map(b => `
         <div class="barber-option ${booking.barber?.id === b.id ? 'selected' : ''}" onclick="selectBarber('${b.id}')">
           <div class="barber-avatar-book">${b.initials}</div>
@@ -478,10 +504,6 @@ function selectBarber(id) {
 }
 
 // ===== STEP 3: DATE & TIME =====
-
-// FIX 2: Función interna que renderiza solo el grid de celdas del calendario.
-// renderCalendar llama a esta función después de asegurarse de que los datos están listos.
-// También se llama desde loadBlockedDays cuando el fetch termina para actualizar el grid.
 function _renderCalGrid(year, month) {
     const grid  = document.getElementById('cal-grid');
     if (!grid) return;
@@ -497,11 +519,10 @@ function _renderCalGrid(year, month) {
     for (let i = 0; i < offset; i++) html += `<div class="cal-cell empty"></div>`;
 
     for (let d = 1; d <= daysInMonth; d++) {
-        const date     = new Date(year, month, d);
-        const isToday  = date.getTime() === today.getTime();
-        const isPast   = date < today;
-        const isSunday = date.getDay() === 0;
-        // FIX 2: isBlocked consulta blockedDaysMap que en este punto ya está cargado
+        const date      = new Date(year, month, d);
+        const isToday   = date.getTime() === today.getTime();
+        const isPast    = date < today;
+        const isSunday  = date.getDay() === 0;
         const isBlocked = isDateBlocked(year, month, d);
 
         const selDate    = booking.date;
@@ -521,13 +542,11 @@ function _renderCalGrid(year, month) {
         const iso       = formatISO(year, month, d);
         const motivo    = isBlocked ? (blockedDaysMap[iso] || 'No disponible') : '';
         const titleAttr = isBlocked ? `title="${motivo}"` : '';
-        // FIX 2: Solo añadir onclick si NO está bloqueado/disabled
         const onclick   = disabled ? '' : `onclick="selectDate(${year},${month},${d})"`;
 
         html += `<div class="${cls}" ${onclick} ${titleAttr}>${d}</div>`;
     }
     grid.innerHTML = html;
-    // FIX 1: Quitar clase loading una vez el grid está pintado con datos reales
     grid.classList.remove('loading');
 }
 
@@ -537,35 +556,22 @@ async function renderCalendar() {
     if (!grid) return;
 
     const year  = calendarDate.getFullYear();
-    const month = calendarDate.getMonth();       // 0-indexed
+    const month = calendarDate.getMonth();
 
     const MONTHS = ['Enero','Febrero','Marzo','Abril','Mayo','Junio',
                     'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
     title.textContent = `${MONTHS[month]} ${year}`;
 
-    // FIX 1: Marcar el grid como "loading" antes del fetch para bloquear clics
-    // a través del CSS .cal-grid.loading .cal-cell { pointer-events: none }
     const needsFetch = (year + '-' + (month + 1)) !== blockedDaysKey;
-    if (needsFetch) {
-        grid.classList.add('loading');
-    }
+    if (needsFetch) grid.classList.add('loading');
 
-    // month + 1 → 1-indexed para la API
     await loadBlockedDays(year, month + 1);
-
-    // FIX 2: Renderizar el grid DESPUÉS de que los datos estén disponibles
     _renderCalGrid(year, month);
 }
 
 function selectDate(y, m, d) {
-    // FIX 3: Verificación defensiva en tiempo de ejecución.
-    // Aunque el onclick solo se genera para días no bloqueados,
-    // verificamos de nuevo aquí para cubrir cualquier edge case en móvil
-    // (tap que llega tarde después de un re-render, etc.)
     if (blockedDaysLoading) return;
     if (isDateBlocked(y, m, d)) return;
-
-    // FIX 3: Verificar también domingo y pasado como segunda línea de defensa
     const date = new Date(y, m, d);
     const today = new Date(); today.setHours(0, 0, 0, 0);
     if (date < today || date.getDay() === 0) return;
@@ -590,30 +596,19 @@ async function loadTakenSlots() {
     const barbero = booking.barber.id;
     try {
         const res = await fetch(`${API_BASE}/slots.php?fecha=${fecha}&barbero=${barbero}`);
-
-        if (!res.ok) {
-            console.error(`slots.php error HTTP ${res.status}`);
-            takenSlots = []; dayBlocked = false; dayBlockedMotivo = '';
-            renderTimeSlots(); return;
-        }
-
+        if (!res.ok) { takenSlots = []; dayBlocked = false; dayBlockedMotivo = ''; renderTimeSlots(); return; }
         const json = await res.json();
-
         if (json.ok) {
             takenSlots       = (json.data.ocupadas || []).map(normalizeTime);
             dayBlocked       = json.data.bloqueado === true;
             dayBlockedMotivo = json.data.motivo    || '';
         } else {
-            console.warn('slots.php respondió ok:false —', json.error || 'sin detalle');
             takenSlots = []; dayBlocked = false; dayBlockedMotivo = '';
         }
     } catch (e) {
-        console.error('Error fetch slots:', e);
         takenSlots = []; dayBlocked = false; dayBlockedMotivo = '';
     } finally {
         loadingSlots = false;
-        // FIX 3: Si slots.php confirma que el día está bloqueado, limpiar la selección
-        // y re-renderizar el calendario para que el día aparezca como bloqueado
         if (dayBlocked) {
             booking.date = null;
             booking.time = null;
@@ -821,11 +816,8 @@ function formatDate(date) {
 
 // ===== INIT =====
 document.addEventListener('DOMContentLoaded', () => {
-    renderServices();
-    renderBarbers();
-    renderCalendar();
-    renderTimeSlots();
-    syncClientForm();
+    // Carga datos y luego renderiza — todo desde la API
+    loadInitialData();
 
     const btn1       = document.getElementById('btn-next-1');
     const btn2       = document.getElementById('btn-next-2');
@@ -835,16 +827,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnBack4   = document.getElementById('btn-back-4');
     const btnConfirm = document.getElementById('btn-confirm');
 
-    if (btnConfirm) {
-        btnConfirm.disabled = false;
-        btnConfirm.addEventListener('click', confirmBooking);
-    }
+    if (btnConfirm) { btnConfirm.disabled = false; btnConfirm.addEventListener('click', confirmBooking); }
     if (btn1) btn1.addEventListener('click', () => { if (booking.service) goToStep(2); });
     if (btn2) btn2.addEventListener('click', () => { if (booking.barber)  goToStep(3); });
     if (btn3) btn3.addEventListener('click', () => {
-        if (booking.date && booking.time && !dayBlocked) {
-            renderSummary(); goToStep(4); syncClientForm();
-        }
+        if (booking.date && booking.time && !dayBlocked) { renderSummary(); goToStep(4); syncClientForm(); }
     });
     if (btnBack2) btnBack2.addEventListener('click', () => goToStep(1));
     if (btnBack3) btnBack3.addEventListener('click', () => goToStep(2));
@@ -855,8 +842,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (booking.step !== 3) return;
         clearTimeout(resizeTimer);
         resizeTimer = setTimeout(() => {
-            // FIX: Al redimensionar, si los datos ya están en memoria no re-fetchar,
-            // solo re-pintar el grid con los datos actuales
             if (blockedDaysKey === calendarDate.getFullYear() + '-' + (calendarDate.getMonth() + 1)) {
                 _renderCalGrid(calendarDate.getFullYear(), calendarDate.getMonth());
             } else {
