@@ -3053,9 +3053,9 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
         //
         //  CORRECCIONES:
         //  1. Panel de configuración (openCfg/closeCfg/switchTab/etc.) — AÑADIDO
-        //  2. Heatmap rediseñado: más compacto y claro
-        //  3. Bar chart: espacio vertical corregido
-        //  4. Servicios: muestra dinero perdido con tachado + canceladas
+        //  2. Heatmap rediseñado: botones prev/next mes + datos correctos para todos los días
+        //  3. Bar chart: números pegados a la barra (no flotando arriba)
+        //  4. Servicios: precio alineado verticalmente con las barras
         //  5. Donut conversión: multicolor (verde/rojo/naranja), sin recorte
         // ================================================================
 
@@ -3479,7 +3479,6 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
                 }).observe(el);
             }
 
-            // ── Barbero modal ─────────────────────────────────────────────
             window._openBarberoModal = function(iniciales) {
                 const b = (window._statsBarberos || []).find(x => x.iniciales === iniciales);
                 if (b) openBarberoModal(b, window._statsBarberos || []);
@@ -3619,7 +3618,7 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
                 html += '<div class="stats-section"><div class="stats-section-label">Evolución mensual — últimos 12 meses</div>';
                 html += '<div class="stats-grid-2">';
                 html += '<div class="stats-card"><div class="stats-card-title">Ingresos por mes (€)</div>' + buildLineChart(meses, 'ingresos', '€') + '</div>';
-                html += '<div class="stats-card"><div class="stats-card-title">Citas por mes</div>' + buildBarChart(meses.map(m => ({
+                html += '<div class="stats-card"><div class="stats-card-title">Citas por mes</div>' + buildBarChartTall(meses.map(m => ({
                     label: m.label,
                     value: m.citas,
                     tip: m.citas + ' citas — ' + m.label
@@ -3633,7 +3632,7 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
                 });
                 html += '</div></div>';
 
-                // Servicios + conversión  ← MEJORADO
+                // Servicios + conversión
                 html += '<div class="stats-section"><div class="stats-section-label">Servicios &amp; conversión</div>';
                 html += '<div class="stats-grid-2">';
                 html += buildServicesCardV2(svcs, kpi);
@@ -3656,7 +3655,7 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
                 });
                 html += '</div></div></div></div>';
 
-                // Heatmap rediseñado ← MEJORADO
+                // Heatmap
                 html += '<div class="stats-section"><div class="stats-section-label">Actividad últimos 30 días</div>';
                 html += '<div class="stats-card"><div class="stats-card-title">Mapa de calor de reservas</div>';
                 html += buildHeatmapV2(hmap);
@@ -3686,34 +3685,32 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
                 return `<div class="kpi-card" style="--kpi-accent:${color}" data-target="${+value}" data-dec="0" data-suffix="${suffix}"><div class="kpi-badge">${icon}</div><div class="kpi-label">${label}</div><div class="kpi-value">0${suffix}</div></div>`;
             }
 
-            // ── Bar chart con altura correcta ────────────────────────────
-            function buildBarChart(items, color) {
-                return buildBarChartTall(items, color);
-            }
-            
+            // ── FIX 1: Bar chart — número pegado a la barra ──────────────
             function buildBarChartTall(items, color) {
                 const maxV = Math.max(...items.map(x => x.value), 1);
-                const chartH = 180;
-                const barMaxH = 120;
-                const padBottom = 32;
-                const padTop = 28;
+                const barMaxH = 110;
 
-                let html = `<div style="display:flex;align-items:flex-end;gap:6px;height:${chartH}px;padding:${padTop}px 0 ${padBottom}px;position:relative;box-sizing:border-box;">`;
-                html += `<div style="position:absolute;bottom:${padBottom}px;left:0;right:0;height:1px;background:rgba(245,240,232,0.06);"></div>`;
+                let html = `<div style="display:flex;align-items:flex-end;gap:6px;height:158px;padding:0 0 26px;position:relative;box-sizing:border-box;">`;
+                html += `<div style="position:absolute;bottom:26px;left:0;right:0;height:1px;background:rgba(245,240,232,0.06);"></div>`;
 
-                items.forEach((item, i) => {
+                items.forEach((item) => {
                     const h = Math.max(Math.round(item.value / maxV * barMaxH), 3);
                     html += `
         <div style="flex:1;display:flex;flex-direction:column;align-items:center;position:relative;height:100%;justify-content:flex-end;">
-            <div style="font-size:.7rem;color:#a0a0b0;font-weight:500;margin-bottom:4px;line-height:1;">${item.value || ''}</div>
-            <div style="width:80%;border-radius:4px 4px 0 0;background:${color};height:${h}px;min-height:3px;transition:height .4s;"
+            <div style="font-size:.68rem;color:#c0bcc9;font-weight:600;line-height:1;margin-bottom:3px;">${item.value > 0 ? item.value : ''}</div>
+            <div style="width:80%;border-radius:4px 4px 0 0;background:${color};height:${h}px;min-height:3px;"
                  onmouseenter="showTip(event,'','${item.tip||item.value}')" onmouseleave="hideTip()"></div>
-            <div style="position:absolute;bottom:-${padBottom - 6}px;font-size:.75rem;color:#7a7880;white-space:nowrap;text-align:center;">${item.label}</div>
+            <div style="position:absolute;bottom:-20px;font-size:.73rem;color:#7a7880;white-space:nowrap;text-align:center;left:50%;transform:translateX(-50%);">${item.label}</div>
         </div>`;
                 });
 
                 html += '</div>';
                 return html;
+            }
+
+            // buildBarChart usa la misma función
+            function buildBarChart(items, color) {
+                return buildBarChartTall(items, color);
             }
 
             function buildLineChart(meses, field, unit) {
@@ -3746,16 +3743,12 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
                 return `<svg class="line-chart-svg" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet"><defs><linearGradient id="lineGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#d42b2b" stop-opacity=".25"/><stop offset="100%" stop-color="#d42b2b" stop-opacity="0"/></linearGradient></defs>${grids}${xlbls}<path class="line-area" d="${areaD}"/><path class="line-path" d="${pathD}"/>${dots}</svg>`;
             }
 
-            // ── DONUT MULTICOLOR (FIX 5) ─────────────────────────────────
-            // Radio más pequeño para que no se corte, con segmentos coloreados
             function buildConversionDonut(tasa, kpi) {
                 const aceptadas = +(kpi.aceptadas || 0);
                 const pendientes = +(kpi.pendientes || 0);
                 const denegadas = +(kpi.denegadas || 0);
                 const canceladas = +((kpi.total_reservas || 0) - aceptadas - pendientes - denegadas);
                 const total = aceptadas + pendientes + denegadas + Math.max(canceladas, 0);
-
-                // SVG donut con viewBox holgado para no cortar
                 const cx = 90,
                     cy = 90,
                     r = 62,
@@ -3773,13 +3766,10 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
               onmouseenter="showTip(event,'','${value} ${color==='#22c55e'?'aceptadas':color==='#f59e0b'?'pendientes':color==='#d42b2b'?'denegadas':'canceladas'}')"
               onmouseleave="hideTip()"/>`;
                 }
-
-                // Calcular offsets acumulados
                 const o1 = 0;
                 const o2 = total > 0 ? (aceptadas / total) * circ : 0;
                 const o3 = o2 + (total > 0 ? (pendientes / total) * circ : 0);
                 const o4 = o3 + (total > 0 ? (denegadas / total) * circ : 0);
-
                 const svgHtml = `
           <svg viewBox="0 0 180 180" style="width:160px;height:160px;flex-shrink:0;">
             <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#1c1c26" stroke-width="${strokeW}"/>
@@ -3790,7 +3780,6 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
             <text x="${cx}" y="${cy-6}" text-anchor="middle" font-family="'Playfair Display',serif" font-size="20" font-weight="700" fill="#22c55e">${tasa}%</text>
             <text x="${cx}" y="${cy+12}" text-anchor="middle" font-family="'DM Sans',sans-serif" font-size="8.5" fill="#7a7880" letter-spacing="1">ACEPTADAS</text>
           </svg>`;
-
                 return `
           <div style="display:flex;flex-direction:column;align-items:center;gap:1.25rem;padding:.5rem 0;width:100%;">
             ${svgHtml}
@@ -3807,17 +3796,27 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
                 return `<div class="conv-meta-item"><div class="conv-meta-num" style="color:${col};">${num}</div><div class="conv-meta-lbl">${lbl}</div></div>`;
             }
 
-            // ── SERVICIOS MEJORADO (FIX 4) ───────────────────────────────
+            // ── FIX 2: Heatmap con navegación prev/next mes ──────────────
+            window._hmViewDate = window._hmViewDate || new Date();
+            window._hmRawData = window._hmRawData || {};
+
             function buildHeatmapV2(hmap) {
+                window._hmRawData = {};
+                hmap.forEach(h => {
+                    window._hmRawData[h.dia] = +h.total;
+                });
+                window._hmViewDate = new Date();
+                return renderHeatmapHTML();
+            }
+
+            function renderHeatmapHTML() {
+                const hmap = window._hmRawData || {};
                 const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                const todayISO = today.toISOString().slice(0, 10);
                 const MONTHS_ES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
                 const DOW = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
-
-                const map = {};
-                hmap.forEach(h => {
-                    map[h.dia] = +h.total;
-                });
-                const maxV = Math.max(...Object.values(map), 1);
+                const maxV = Math.max(...Object.values(hmap), 1);
 
                 function getLevel(v) {
                     if (!v) return 0;
@@ -3826,7 +3825,6 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
                     if (v <= maxV * .75) return 3;
                     return 4;
                 }
-
                 const COLORS = [{
                         bg: 'rgba(255,255,255,0.04)',
                         border: 'rgba(255,255,255,0.07)'
@@ -3849,108 +3847,110 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
                     },
                 ];
 
-                const start = new Date(today);
-                start.setDate(start.getDate() - 29);
-
-                const months = [];
-                let cur = new Date(start.getFullYear(), start.getMonth(), 1);
-                const endMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-                while (cur <= endMonth) {
-                    months.push(new Date(cur));
-                    cur.setMonth(cur.getMonth() + 1);
-                }
-
-                const todayISO = today.toISOString().slice(0, 10);
+                const vYear = window._hmViewDate.getFullYear();
+                const vMonth = window._hmViewDate.getMonth();
+                const thisMonthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+                const canGoNext = new Date(vYear, vMonth + 1, 1) <= thisMonthStart;
+                const minDate = new Date(today.getFullYear(), today.getMonth() - 3, 1);
+                const canGoPrev = new Date(vYear, vMonth - 1, 1) >= minDate;
+                const daysInMonth = new Date(vYear, vMonth + 1, 0).getDate();
+                const firstDow = (new Date(vYear, vMonth, 1).getDay() + 6) % 7;
 
                 let html = `
     <style>
-      .hm3-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+      .hm3-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:.5rem;}
       .hm3-legend{display:flex;align-items:center;gap:5px;}
       .hm3-legend span{font-size:10px;color:#4a4a5a;}
       .hm3-lswatch{width:11px;height:11px;border-radius:3px;}
-      .hm3-calendar{display:flex;gap:0;flex-wrap:wrap;}
-      .hm3-month{flex:1;min-width:200px;padding-right:20px;}
-      .hm3-month:last-child{padding-right:0;}
-      .hm3-mname{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#d42b2b;font-weight:600;margin-bottom:8px;}
-      .hm3-dow-row{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-bottom:3px;}
+      .hm3-nav{display:flex;align-items:center;gap:.5rem;}
+      .hm3-nbtn{width:28px;height:28px;border-radius:6px;background:transparent;border:1px solid #252530;
+                color:#7a7880;font-size:.9rem;display:flex;align-items:center;justify-content:center;
+                cursor:pointer;transition:all .2s;line-height:1;padding:0;}
+      .hm3-nbtn:hover:not([disabled]){border-color:#d42b2b;color:#d42b2b;}
+      .hm3-nbtn[disabled]{opacity:.22;cursor:not-allowed;}
+      .hm3-nmth{font-size:.82rem;font-weight:600;color:#f0ece3;min-width:120px;text-align:center;}
+      .hm3-dow-row{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-bottom:4px;}
       .hm3-dow{font-size:10px;color:#3a3a48;text-align:center;padding:2px 0;}
       .hm3-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;}
-      .hm3-c{aspect-ratio:1;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:9px;position:relative;cursor:default;}
+      .hm3-c{aspect-ratio:1;border-radius:4px;display:flex;align-items:center;justify-content:center;
+             font-size:9px;position:relative;cursor:default;}
       .hm3-c:hover .hm3-tip{display:block;}
-      .hm3-tip{display:none;position:absolute;bottom:calc(100% + 4px);left:50%;transform:translateX(-50%);background:#1c1c26;border:1px solid #2f2f3c;border-radius:5px;padding:3px 8px;font-size:10px;color:#f0ece3;white-space:nowrap;z-index:20;pointer-events:none;}
+      .hm3-tip{display:none;position:absolute;bottom:calc(100% + 4px);left:50%;transform:translateX(-50%);
+               background:#1c1c26;border:1px solid #2f2f3c;border-radius:5px;padding:3px 8px;
+               font-size:10px;color:#f0ece3;white-space:nowrap;z-index:20;pointer-events:none;}
       .hm3-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:14px;}
       .hm3-stat{background:#0d0d14;border:1px solid #1c1c26;border-radius:8px;padding:10px;text-align:center;}
       .hm3-snum{font-family:'Playfair Display',serif;font-size:1.25rem;font-weight:700;line-height:1;}
       .hm3-slbl{font-size:10px;color:#7a7880;letter-spacing:.1em;text-transform:uppercase;margin-top:3px;}
     </style>
     <div class="hm3-top">
-      <div style="font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:#7a7880;">Reservas por día</div>
+      <div class="hm3-nav">
+        <button class="hm3-nbtn" onclick="hmNav(-1)" ${canGoPrev ? '' : 'disabled'}>‹</button>
+        <span class="hm3-nmth">${MONTHS_ES[vMonth]} ${vYear}</span>
+        <button class="hm3-nbtn" onclick="hmNav(1)" ${canGoNext ? '' : 'disabled'}>›</button>
+      </div>
       <div class="hm3-legend">
         <span>Sin reservas</span>`;
-
                 COLORS.forEach(c => {
                     html += `<div class="hm3-lswatch" style="background:${c.bg};border:1px solid ${c.border};"></div>`;
                 });
                 html += `<span>Muchas</span></div></div>`;
-                html += `<div class="hm3-calendar">`;
-
-                months.forEach((mDate) => {
-                    const y = mDate.getFullYear(),
-                        m = mDate.getMonth();
-                    const daysInMonth = new Date(y, m + 1, 0).getDate();
-                    const firstDow = (new Date(y, m, 1).getDay() + 6) % 7;
-
-                    html += `<div class="hm3-month">`;
-                    html += `<div class="hm3-mname">${MONTHS_ES[m]} ${y}</div>`;
-                    html += `<div class="hm3-dow-row">`;
-                    DOW.forEach(d => html += `<div class="hm3-dow">${d}</div>`);
-                    html += `</div><div class="hm3-grid">`;
-
-                    for (let p = 0; p < firstDow; p++) html += `<div class="hm3-c" style="background:transparent;border:none;"></div>`;
-
-                    for (let d = 1; d <= daysInMonth; d++) {
-                        const dt = new Date(y, m, d);
-                        const iso = `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-                        const isInRange = dt >= start && dt <= today;
-                        const isToday = iso === todayISO;
-                        const v = map[iso] || 0;
-
-                        if (!isInRange) {
-                            html += `<div class="hm3-c" style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.04);color:#2a2a38;">${d}</div>`;
-                        } else {
-                            const c = COLORS[getLevel(v)];
-                            const txtColor = getLevel(v) >= 3 ? 'rgba(255,255,255,0.85)' : '#4a4a5a';
-                            const border = isToday ? '2px solid rgba(212,43,43,0.8)' : `1px solid ${c.border}`;
-                            html += `<div class="hm3-c" style="background:${c.bg};border:${border};color:${txtColor};">${d}`;
-                            if (v > 0) html += `<div class="hm3-tip">${v} cita${v!==1?'s':''}</div>`;
-                            html += `</div>`;
-                        }
+                html += `<div class="hm3-dow-row">`;
+                DOW.forEach(d => html += `<div class="hm3-dow">${d}</div>`);
+                html += `</div><div class="hm3-grid">`;
+                for (let p = 0; p < firstDow; p++) html += `<div class="hm3-c" style="background:transparent;border:none;"></div>`;
+                for (let d = 1; d <= daysInMonth; d++) {
+                    const dt = new Date(vYear, vMonth, d);
+                    const iso = `${vYear}-${String(vMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+                    const isFuture = dt > today;
+                    const isToday = iso === todayISO;
+                    const v = hmap[iso] || 0;
+                    if (isFuture) {
+                        html += `<div class="hm3-c" style="background:rgba(255,255,255,0.015);border:1px solid rgba(255,255,255,0.03);color:#252530;">${d}</div>`;
+                    } else {
+                        const lvl = getLevel(v);
+                        const c = COLORS[lvl];
+                        const txt = lvl >= 3 ? 'rgba(255,255,255,0.85)' : (lvl > 0 ? '#d0d0d0' : '#4a4a5a');
+                        const border = isToday ? '2px solid rgba(212,43,43,0.8)' : `1px solid ${c.border}`;
+                        html += `<div class="hm3-c" style="background:${c.bg};border:${border};color:${txt};">${d}`;
+                        if (v > 0) html += `<div class="hm3-tip">${v} cita${v!==1?'s':''}</div>`;
+                        html += `</div>`;
                     }
-                    html += `</div></div>`;
-                });
-
+                }
                 html += `</div>`;
-
-                const totalCitas = Object.values(map).reduce((a, b) => a + b, 0);
-                const diasActivos = Object.keys(map).filter(k => map[k] > 0).length;
-                const maxEntry = Object.entries(map).sort((a, b) => b[1] - a[1])[0];
-                const avgCitas = diasActivos > 0 ? (totalCitas / diasActivos).toFixed(1) : '0';
-
+                const mEntries = Object.entries(hmap).filter(([k]) => {
+                    const [y, m] = k.split('-').map(Number);
+                    return y === vYear && m === vMonth + 1;
+                });
+                const totalMes = mEntries.reduce((a, [, v2]) => a + v2, 0);
+                const diasAct = mEntries.filter(([, v2]) => v2 > 0).length;
+                const maxEntry = [...mEntries].sort((a, b) => b[1] - a[1])[0];
+                const avg = diasAct > 0 ? (totalMes / diasAct).toFixed(1) : '0';
                 html += `<div class="hm3-stats">
-      <div class="hm3-stat"><div class="hm3-snum" style="color:#d42b2b;">${totalCitas}</div><div class="hm3-slbl">Total 30d</div></div>
-      <div class="hm3-stat"><div class="hm3-snum" style="color:#c9a84c;">${diasActivos}</div><div class="hm3-slbl">Días activos</div></div>
+      <div class="hm3-stat"><div class="hm3-snum" style="color:#d42b2b;">${totalMes}</div><div class="hm3-slbl">Total mes</div></div>
+      <div class="hm3-stat"><div class="hm3-snum" style="color:#c9a84c;">${diasAct}</div><div class="hm3-slbl">Días activos</div></div>
       <div class="hm3-stat"><div class="hm3-snum" style="color:#22c55e;">${maxEntry ? maxEntry[1] : 0}</div><div class="hm3-slbl">Máx. día</div></div>
-      <div class="hm3-stat"><div class="hm3-snum" style="color:#6b9fff;">${avgCitas}</div><div class="hm3-slbl">Media/día activo</div></div>
+      <div class="hm3-stat"><div class="hm3-snum" style="color:#6b9fff;">${avg}</div><div class="hm3-slbl">Media/día activo</div></div>
     </div>`;
-
                 return html;
             }
 
+            window.hmNav = function(dir) {
+                window._hmViewDate.setMonth(window._hmViewDate.getMonth() + dir);
+                document.querySelectorAll('.stats-section').forEach(sec => {
+                    const card = sec.querySelector('.stats-card');
+                    if (card && card.querySelector('.hm3-grid')) {
+                        const titleEl = card.querySelector('.stats-card-title');
+                        const titleHTML = titleEl ? titleEl.outerHTML : '';
+                        card.innerHTML = titleHTML + renderHeatmapHTML();
+                    }
+                });
+            };
+
+            // ── FIX 3: Servicios — precio alineado con las barras ────────
             function buildServicesCardV2(svcs, kpi) {
-                const maxTotal = Math.max(...svcs.map(s => +s.total), 1);
                 const maxAcept = Math.max(...svcs.map(s => +s.citas_aceptadas || 0), 1);
                 const maxPerd = Math.max(...svcs.map(s => +s.citas_perdidas || 0), 1);
-
                 let items = '';
                 svcs.forEach((s, i) => {
                     const pctAcept = Math.round((+s.citas_aceptadas || 0) / maxAcept * 100);
@@ -3958,45 +3958,42 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
                     const ingOk = (+s.ingresos || 0).toFixed(0);
                     const ingLost = (+s.ingresos_perdidos || 0).toFixed(0);
                     const hasLoss = +ingLost > 0;
-
                     items += `
-        <div class="svc-stat-item" style="align-items:flex-start;padding:.85rem 0;border-bottom:1px solid #1c1c26;">
-            <div class="svc-stat-rank">${i + 1}</div>
-            <div class="svc-stat-info" style="flex:1;min-width:0;">
-                <div class="svc-stat-name" style="margin-bottom:.55rem;">${s.nombre}</div>
-                <div style="display:flex;flex-direction:column;gap:.35rem;">
-                    <div style="display:flex;align-items:center;gap:.6rem;">
-                        <span style="font-size:.63rem;letter-spacing:.08em;text-transform:uppercase;color:#22c55e;width:68px;flex-shrink:0;">Aceptadas</span>
-                        <div style="flex:1;height:8px;background:#1c1c26;border-radius:4px;overflow:hidden;">
-                            <div class="svc-stat-bar-fill" style="--svc-w:${pctAcept}%;--svc-delay:${i*0.1}s;height:100%;border-radius:4px;background:#22c55e;"></div>
-                        </div>
+        <div class="svc-stat-item" style="align-items:stretch;padding:.85rem 0;border-bottom:1px solid #1c1c26;gap:.75rem;">
+            <div class="svc-stat-rank" style="margin-top:3px;flex-shrink:0;">${i + 1}</div>
+            <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:.4rem;">
+                <div style="font-size:.82rem;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:.25rem;">${s.nombre}</div>
+                <div style="display:flex;align-items:center;gap:.6rem;">
+                    <span style="font-size:.63rem;letter-spacing:.08em;text-transform:uppercase;color:#22c55e;width:68px;flex-shrink:0;">Aceptadas</span>
+                    <div style="flex:1;height:7px;background:#1c1c26;border-radius:4px;overflow:hidden;">
+                        <div class="svc-stat-bar-fill" style="--svc-w:${pctAcept}%;--svc-delay:${i*0.1}s;height:100%;border-radius:4px;background:#22c55e;"></div>
                     </div>
-                    <div style="display:flex;align-items:center;gap:.6rem;">
-                        <span style="font-size:.63rem;letter-spacing:.08em;text-transform:uppercase;color:#d42b2b;width:68px;flex-shrink:0;">Denegadas</span>
-                        <div style="flex:1;height:8px;background:#1c1c26;border-radius:4px;overflow:hidden;">
-                            <div class="svc-stat-bar-fill" style="--svc-w:${pctPerd}%;--svc-delay:${i*0.12+0.05}s;height:100%;border-radius:4px;background:#d42b2b;"></div>
-                        </div>
+                </div>
+                <div style="display:flex;align-items:center;gap:.6rem;">
+                    <span style="font-size:.63rem;letter-spacing:.08em;text-transform:uppercase;color:#d42b2b;width:68px;flex-shrink:0;">Denegadas</span>
+                    <div style="flex:1;height:7px;background:#1c1c26;border-radius:4px;overflow:hidden;">
+                        <div class="svc-stat-bar-fill" style="--svc-w:${pctPerd}%;--svc-delay:${i*0.12+0.05}s;height:100%;border-radius:4px;background:#d42b2b;"></div>
                     </div>
                 </div>
             </div>
-            <div style="flex-shrink:0;text-align:right;min-width:70px;padding-left:.75rem;">
-                <div style="font-size:.82rem;color:#f0ece3;font-weight:500;margin-bottom:.15rem;">${s.total} cita${s.total!=1?'s':''}</div>
-                <div style="font-size:.78rem;color:#22c55e;font-weight:600;">${ingOk} €</div>
+            <div style="flex-shrink:0;text-align:right;min-width:72px;padding-left:.75rem;
+                        display:flex;flex-direction:column;justify-content:center;
+                        align-items:flex-end;gap:.15rem;">
+                <div style="font-size:.82rem;color:#f0ece3;font-weight:500;">${s.total}&nbsp;cita${s.total!=1?'s':''}</div>
+                <div style="font-size:.82rem;color:#22c55e;font-weight:600;">${ingOk}&nbsp;€</div>
                 ${hasLoss
-                    ? `<div style="font-size:.73rem;color:#d42b2b;text-decoration:line-through;opacity:.85;">-${ingLost} €</div>`
-                    : `<div style="font-size:.72rem;color:#3a3a48;">sin pérdidas</div>`
+                    ? `<div style="font-size:.75rem;color:#d42b2b;text-decoration:line-through;opacity:.85;">-${ingLost}&nbsp;€</div>`
+                    : `<div style="font-size:.7rem;color:#3a3a48;">sin pérdidas</div>`
                 }
             </div>
         </div>`;
                 });
-
                 return `<div class="stats-card" style="padding-bottom:.25rem;">
         <div class="stats-card-title">Servicios más reservados</div>
         <div style="display:flex;flex-direction:column;">${items}</div>
     </div>`;
             }
 
-            // Barber card (igual que antes)
             function barberCard(b, maxIng, i) {
                 const pct = maxIng > 0 ? Math.round(+b.ingresos / maxIng * 100) : 0;
                 const ticket = (+b.ingresos / Math.max(+(b.aceptadas || b.total_citas) || 1, 1)).toFixed(0);
