@@ -225,6 +225,9 @@ $stmt = $db->prepare("
            r.estado, r.token, r.creado_en,
            r.barbero_id,
            COALESCE(r.ronda_negociacion, 0) AS ronda_negociacion,
+           COALESCE(DATE_FORMAT(r.nueva_fecha_propuesta, '%Y-%m-%d'), '') AS nueva_fecha_propuesta,
+           COALESCE(TIME_FORMAT(r.nueva_hora_propuesta, '%H:%i'), '') AS nueva_hora_propuesta,
+           COALESCE(r.motivo_cambio, '') AS motivo_cambio,
            s.nombre AS servicio, s.precio, s.duracion,
            b.nombre AS barbero
     FROM reservas r
