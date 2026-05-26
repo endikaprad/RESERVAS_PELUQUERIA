@@ -4,9 +4,14 @@
 //
 //  POST { token, nueva_fecha, nueva_hora }
 //
-//  El cliente propone un horario alternativo al barbero.
-//  El estado pasa a 'reprogramar_cliente'.
-//  El barbero recibe email con opciones: aceptar / denegar / counter.
+//  The client proposes an alternative time to the barber.
+//  Estado → 'reprogramar_cliente'.
+//  The barber receives email with options: accept / cancel / counter-propose.
+//
+//  RONDA LOGIC:
+//  - ronda increments HERE (client counter-propose), not on barber's proposal.
+//  - ronda 1 = client's first counter-proposal
+//  - ronda 2 = client's second counter-proposal
 // ============================================================
 
 require_once __DIR__ . '/../config.php';
@@ -95,6 +100,9 @@ try {
         }
     }
 
+    // Client counter-proposal INCREMENTS ronda.
+    // ronda 0 → 1 = client's first counter-proposal
+    // ronda 1 → 2 = client's second, etc.
     $ronda = (int)($r['ronda_negociacion'] ?? 0) + 1;
 
     // Actualizar reserva con la contrapropuesta del cliente
@@ -104,7 +112,7 @@ try {
              ronda_negociacion     = ?,
              nueva_fecha_propuesta = ?,
              nueva_hora_propuesta  = ?,
-             motivo_cambio         = CONCAT(IFNULL(motivo_cambio,''), ' | Contrapropuesta cliente')
+             motivo_cambio         = CONCAT(IFNULL(motivo_cambio,''), ' | Contrapropuesta cliente ronda {$ronda}')
          WHERE token = ?"
     )->execute([$ronda, $nuevaFecha, $nuevaHora . ':00', $token]);
 
@@ -124,15 +132,16 @@ try {
     // URLs para el barbero
     $urlAceptar  = $baseUrl . '/backend/api/barber-accept-counter.php?token=' . urlencode($token) . '&accion=aceptar';
     $urlCancelar = $baseUrl . '/backend/api/barber-accept-counter.php?token=' . urlencode($token) . '&accion=cancelar';
-    // Para que el barbero proponga otro horario → vuelve al panel admin con parámetro
     $urlPanel    = $baseUrl . '/backend/admin.php?reschedule_pt=' . urlencode($token) . '&raccion=reproponer';
+
+    $rondaLabel = "Ronda de negociación {$ronda}";
 
     $htmlBarbero = "<!DOCTYPE html><html lang='es'><head><meta charset='UTF-8'></head>
 <body style='margin:0;padding:0;background:#09080f;font-family:Arial,sans-serif;'>
   <div style='max-width:560px;margin:0 auto;background:#111119;border:1px solid #252530;border-radius:12px;overflow:hidden;'>
     <div style='background:#2550a0;padding:24px 32px;'>
       <h1 style='margin:0;color:#fff;font-size:20px;font-weight:700;'>El cliente propone otro horario</h1>
-      <p style='margin:6px 0 0;color:rgba(255,255,255,0.8);font-size:14px;'>Prado Barber Co. &mdash; Negociación ronda {$ronda}</p>
+      <p style='margin:6px 0 0;color:rgba(255,255,255,0.8);font-size:14px;'>Prado Barber Co. &mdash; {$rondaLabel}</p>
     </div>
     <div style='padding:32px;'>
       <p style='color:#f0ece3;font-size:15px;margin-bottom:20px;'>
@@ -172,7 +181,7 @@ try {
         ⇄ Proponer otro horario (panel admin)
       </a>
       <p style='color:#7a7880;font-size:12px;margin-top:20px;text-align:center;'>
-        Ronda de negociación {$ronda} &middot; <a href='{$baseUrl}/backend/admin.php' style='color:#6b9fff;'>Ver panel</a>
+        {$rondaLabel} &middot; <a href='{$baseUrl}/backend/admin.php' style='color:#6b9fff;'>Ver panel</a>
       </p>
     </div>
     <div style='background:#18181f;padding:16px 32px;text-align:center;'>
@@ -186,7 +195,7 @@ try {
     sendBrevo(
         'endikapradodev@gmail.com',
         'Prado Barber Co.',
-        "Cliente propone horario alternativo - {$r['cliente_nombre']} - {$fechaNueva} {$nuevaHora}",
+        "Cliente propone horario alternativo ({$rondaLabel}) - {$r['cliente_nombre']} - {$fechaNueva} {$nuevaHora}",
         $htmlBarbero
     );
 

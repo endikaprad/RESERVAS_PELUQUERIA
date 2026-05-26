@@ -1,10 +1,10 @@
 <?php
 // ============================================================
 //  PRADO BARBER CO. — /backend/api/reschedule-response.php
-//  CORRECCIONES:
-//  1. Calendario: renderCal() llamado en DOMContentLoaded
-//  2. Botón cancelar: usa cancel-by-barber.php (devuelve JSON)
-//  3. Email de propuesta (cancel-by-barber.php): texto mejorado
+//
+//  RONDA FIX: ronda displayed as-is (not +1).
+//  ronda = number of times the CLIENT has counter-proposed so far.
+//  When client rejects again, the new counter-proposal will be ronda+1.
 // ============================================================
 
 header('Content-Type: text/html; charset=utf-8');
@@ -47,6 +47,7 @@ try {
     $nuevaFecha   = $reserva['nueva_fecha_propuesta'] ?? '';
     $nuevaHora    = $reserva['nueva_hora_propuesta']  ?? '';
     $motivoCambio = $reserva['motivo_cambio'] ?? '';
+    // ronda = how many times client has already counter-proposed
     $rondaActual  = (int)($reserva['ronda_negociacion'] ?? 0);
 
     if (!$nuevaFecha || !$nuevaHora) {
@@ -140,6 +141,8 @@ try {
 
 // ════════════════════════════════════════════════════════════
 //  Pantalla de rechazo
+//  rondaActual = how many times client has counter-proposed so far.
+//  If they reject again, they'll be proposing for rondaActual+1 time.
 // ════════════════════════════════════════════════════════════
 function mostrarPantallaRechazar(
     array  $reserva,
@@ -157,16 +160,18 @@ function mostrarPantallaRechazar(
     $tokenEnc     = urlencode($token);
     $cancelApiUrl = $baseUrl . '/backend/api/cancel-by-barber.php';
 
+    // Show ronda badge only if client has already counter-proposed at least once
     $rondaBadgeHtml = '';
     if ($ronda > 0) {
-        $rondaNum = $ronda + 1;
-        $rondaBadgeHtml = "<div class=\"ronda-badge\">⇄ Negociación — ronda {$rondaNum}</div>";
+        $rondaBadgeHtml = "<div class=\"ronda-badge\">⇄ Negociación &mdash; {$ronda} ronda" . ($ronda === 1 ? '' : 's') . " de intercambio</div>";
     }
 
     $motivoHtml = '';
     if ($motivoCambio) {
-        $motivoEsc  = htmlspecialchars($motivoCambio);
-        $motivoHtml = "<div class=\"motivo-box\">Motivo del cambio: {$motivoEsc}</div>";
+        // Extract the original motivo (before any " | Contrapropuesta" appended text)
+        $motivoClean = explode(' | ', $motivoCambio)[0];
+        $motivoEsc  = htmlspecialchars(trim($motivoClean));
+        $motivoHtml = "<div class=\"motivo-box\">Motivo del barbero: {$motivoEsc}</div>";
     }
 
     $svNombre   = htmlspecialchars($reserva['servicio_nombre']);
@@ -336,7 +341,7 @@ function mostrarPantallaRechazar(
     var selectedSlot = null;
     var takenSlots   = [];
 
-    /* ── Init: esperar al DOM antes de renderizar ──────────── */
+    /* ── Init ──────────────────────────────────────────────── */
     document.addEventListener('DOMContentLoaded', function() {
       renderCal();
     });
@@ -351,26 +356,20 @@ function mostrarPantallaRechazar(
 
     /* ── Calendario ─────────────────────────────────────────── */
     function pad2(n) { return String(n).padStart(2,'0'); }
-
     function isoDate(y, m, d) { return y + '-' + pad2(m + 1) + '-' + pad2(d); }
 
     function renderCal() {
       var y = calDate.getFullYear();
       var m = calDate.getMonth();
-
       var titleEl = document.getElementById('cal-title');
       if (titleEl) titleEl.textContent = MONTHS_ES[m] + ' ' + y;
-
       var today    = new Date(); today.setHours(0,0,0,0);
       var tomorrow = new Date(today); tomorrow.setDate(tomorrow.getDate() + 1);
-
       var firstDay = new Date(y, m, 1).getDay();
       var offset   = (firstDay + 6) % 7;
       var daysIn   = new Date(y, m + 1, 0).getDate();
-
       var html = '';
       for (var i = 0; i < offset; i++) html += '<div class="cal-cell c-empty"></div>';
-
       for (var d = 1; d <= daysIn; d++) {
         var dt     = new Date(y, m, d);
         var isSun  = (dt.getDay() === 0);
@@ -378,19 +377,13 @@ function mostrarPantallaRechazar(
         var isToday= (dt.getTime() === today.getTime());
         var iso    = isoDate(y, m, d);
         var isSel  = (selectedDate === iso);
-
         var cls = 'cal-cell';
         if (isPast || isSun) cls += ' c-dis';
         else if (isToday)    cls += ' c-today';
         if (isSel)           cls += ' c-sel';
-
-        var onclick = (isPast || isSun)
-          ? ''
-          : 'onclick="selectDate(\'' + iso + '\')"';
-
+        var onclick = (isPast || isSun) ? '' : 'onclick="selectDate(\'' + iso + '\')"';
         html += '<div class="' + cls + '" ' + onclick + '>' + d + '</div>';
       }
-
       var grid = document.getElementById('cal-grid');
       if (grid) grid.innerHTML = html;
     }
@@ -412,7 +405,6 @@ function mostrarPantallaRechazar(
     function loadSlots(fecha) {
       var grid = document.getElementById('slots-grid');
       grid.innerHTML = '<div class="slots-msg">Cargando horarios\u2026</div>';
-
       fetch(BASE_URL + '/backend/api/slots.php?fecha=' + fecha + '&barbero=' + BARBERO_ID)
         .then(function(r) { return r.json(); })
         .then(function(json) {
@@ -437,12 +429,10 @@ function mostrarPantallaRechazar(
       var curHHMM = pad2(now.getHours()) + ':' + pad2(now.getMinutes());
       var esSab   = (dtF.getDay() === 6);
       var slots   = ALL_SLOTS.filter(function(s) { return !esSab || s < '14:00'; });
-
       if (!slots.length) {
         grid.innerHTML = '<div class="slots-msg">No hay horarios disponibles</div>';
         return;
       }
-
       grid.innerHTML = slots.map(function(s) {
         var taken = takenSlots.indexOf(s) !== -1;
         var past  = isToday && s <= curHHMM;
@@ -469,7 +459,6 @@ function mostrarPantallaRechazar(
       var btn = document.getElementById('btn-send-counter');
       btn.disabled    = true;
       btn.textContent = 'Enviando\u2026';
-
       fetch(BASE_URL + '/backend/api/reschedule-client-counter.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -500,14 +489,12 @@ function mostrarPantallaRechazar(
       });
     }
 
-    /* ── Cancelar — FIX: POST a cancel-by-barber.php (JSON) ── */
+    /* ── Cancelar ── */
     function doCancel() {
       if (!confirm('\u00BFSeguro que quieres cancelar la cita? Esta acci\u00F3n no se puede deshacer.')) return;
-
       var btn = document.getElementById('btn-do-cancel');
       btn.disabled    = true;
       btn.textContent = 'Cancelando\u2026';
-
       fetch(CANCEL_API, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

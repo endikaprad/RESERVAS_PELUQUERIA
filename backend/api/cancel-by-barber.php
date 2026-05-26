@@ -6,6 +6,11 @@
 //
 //  accion = 'cancelar'    → cancela la reserva y notifica al cliente
 //  accion = 'reprogramar' → propone nuevo horario al cliente
+//
+//  RONDA LOGIC:
+//  - Barber's proposal does NOT increment ronda (stays at current value)
+//  - ronda only increments when the CLIENT counter-proposes (via reschedule-client-counter.php)
+//  - So ronda 1 = client's first counter-proposal, ronda 2 = client's second, etc.
 // ============================================================
 
 require_once __DIR__ . '/../config.php';
@@ -72,18 +77,8 @@ try {
     // ── Helpers ───────────────────────────────────────────────
     $dias  = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
     $meses = [
-        'enero',
-        'febrero',
-        'marzo',
-        'abril',
-        'mayo',
-        'junio',
-        'julio',
-        'agosto',
-        'septiembre',
-        'octubre',
-        'noviembre',
-        'diciembre'
+        'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
+        'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'
     ];
 
     function formatFechaES(string $fecha, array $dias, array $meses): string
@@ -159,6 +154,8 @@ try {
 
     // ════════════════════════════════════════════════════════
     //  ACCIÓN: REPROGRAMAR
+    //  NOTE: Barber's proposal does NOT increment ronda_negociacion.
+    //  ronda only increments when the CLIENT counter-proposes.
     // ════════════════════════════════════════════════════════
     if ($accion === 'reprogramar') {
 
@@ -195,7 +192,9 @@ try {
             }
         }
 
-        $ronda = (int)($reserva['ronda_negociacion'] ?? 0) + 1;
+        // Barber's proposal keeps current ronda (does NOT increment).
+        // ronda increments only when the CLIENT counter-proposes.
+        $ronda = (int)($reserva['ronda_negociacion'] ?? 0);
 
         $db->prepare(
             "UPDATE reservas
@@ -211,6 +210,11 @@ try {
         $urlAceptar  = $baseUrl . '/backend/api/reschedule-response.php?pt=' . $token . '&accion=aceptar';
         $urlRechazar = $baseUrl . '/backend/api/reschedule-response.php?pt=' . $token . '&accion=rechazar';
 
+        // Show ronda in email only if client has already counter-proposed at least once
+        $rondaEmailNote = $ronda > 0
+            ? "<p style='color:#7a7880;font-size:12px;text-align:center;margin-bottom:20px;'>Ronda de negociación {$ronda}</p>"
+            : '';
+
         $htmlCliente = "<!DOCTYPE html><html lang='es'><head><meta charset='UTF-8'></head>
 <body style='margin:0;padding:0;background:#09080f;font-family:Arial,sans-serif;'>
   <div style='max-width:560px;margin:0 auto;background:#111119;border:1px solid #252530;border-radius:12px;overflow:hidden;'>
@@ -219,6 +223,7 @@ try {
       <p style='margin:6px 0 0;color:rgba(0,0,0,0.65);font-size:14px;'>Prado Barber Co. &mdash; Bilbao</p>
     </div>
     <div style='padding:32px;'>
+      {$rondaEmailNote}
       <p style='color:#f0ece3;font-size:15px;margin-bottom:20px;'>
         Hola <strong>" . htmlspecialchars($reserva['cliente_nombre']) . "</strong>,<br><br>
         <strong>" . htmlspecialchars($reserva['barbero_nombre']) . "</strong> necesita cambiar tu cita y te propone un nuevo horario.
