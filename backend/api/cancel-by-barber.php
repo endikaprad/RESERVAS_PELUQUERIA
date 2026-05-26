@@ -4,14 +4,16 @@
 //
 //  POST { token, accion, motivo, [nueva_fecha, nueva_hora] }
 //
-//  accion = 'cancelar'    → cancela la reserva y notifica al cliente
-//  accion = 'reprogramar' → propone nuevo horario al cliente
+//  accion = 'cancelar'    → DENIEGA la cita (estado='denegada')
+//                           Si hay negociación activa, restaura la cita original
+//                           y la deniega (no el horario propuesto).
+//  accion = 'reprogramar' → Propone nuevo horario al cliente.
+//                           El slot ORIGINAL queda bloqueado (slots.php lo marca
+//                           como ocupado porque la reserva sigue en BD con esa hora).
 //
-//  RONDA LOGIC (CORRECTED):
-//  - ronda increments when the BARBER proposes (each barber proposal = new round).
-//  - ronda 1 = barber's first proposal to the client
-//  - ronda 2 = barber's second proposal (after client counter-proposed)
-//  - Client counter-proposals do NOT increment ronda (they respond within same round).
+//  RONDA LOGIC:
+//  - ronda increments ONLY when the BARBER proposes a new slot.
+//  - Client counter-proposals stay in the same ronda.
 // ============================================================
 
 require_once __DIR__ . '/../config.php';
@@ -42,8 +44,8 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     apiErr('Método no permitido', 405);
 }
 
-$raw  = file_get_contents('php://input');
-$body = json_decode($raw, true) ?? [];
+$raw    = file_get_contents('php://input');
+$body   = json_decode($raw, true) ?? [];
 
 $token  = trim($body['token']  ?? '');
 $accion = trim($body['accion'] ?? '');
@@ -75,21 +77,11 @@ try {
         apiErr('Esta reserva ya está ' . $reserva['estado']);
     }
 
-    // ── Helpers ───────────────────────────────────────────────
+    // ── Helpers fecha ─────────────────────────────────────────
     $dias  = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
     $meses = [
-        'enero',
-        'febrero',
-        'marzo',
-        'abril',
-        'mayo',
-        'junio',
-        'julio',
-        'agosto',
-        'septiembre',
-        'octubre',
-        'noviembre',
-        'diciembre'
+        'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
+        'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'
     ];
 
     function formatFechaES(string $fecha, array $dias, array $meses): string
@@ -102,28 +94,57 @@ try {
     }
 
     $baseUrl       = 'https://pradopeluqueria.infinityfree.me';
+
+    // Siempre usamos la fecha/hora ORIGINAL de la reserva para el email al cliente
     $fechaOriginal = formatFechaES($reserva['fecha'], $dias, $meses);
     $horaOriginal  = substr($reserva['hora'], 0, 5);
 
     // ════════════════════════════════════════════════════════
-    //  ACCIÓN: DENEGAR
+    //  ACCIÓN: CANCELAR → DENEGAR
+    //
+    //  Comportamiento:
+    //  - Sin negociación (pendiente/aceptada): estado = 'denegada' directamente.
+    //  - Con negociación activa (reprogramar_barbero / reprogramar_cliente):
+    //    Restaurar fecha/hora ORIGINAL, limpiar propuestas, estado = 'denegada'.
+    //    Así el slot propuesto queda libre y la cita original queda denegada.
     // ════════════════════════════════════════════════════════
-    if ($accion === 'denegar') {
+    if ($accion === 'cancelar') {
 
-        $db->prepare("UPDATE reservas SET estado = 'denegada' WHERE token = ?")
-            ->execute([$token]);
+        $estadoActual = $reserva['estado'];
+        $hayNegociacion = in_array($estadoActual, ['reprogramar_barbero', 'reprogramar_cliente'], true);
 
+        if ($hayNegociacion) {
+            // Restaurar a la cita original y denegar
+            // La fecha/hora en $reserva['fecha'] y $reserva['hora'] son las ORIGINALES
+            // (nunca se modifican; solo se usan nueva_fecha_propuesta / nueva_hora_propuesta)
+            $db->prepare(
+                "UPDATE reservas
+                 SET estado                = 'denegada',
+                     nueva_fecha_propuesta = NULL,
+                     nueva_hora_propuesta  = NULL,
+                     ronda_negociacion     = 0
+                 WHERE token = ?"
+            )->execute([$token]);
+        } else {
+            // Sin negociación: denegar directamente
+            $db->prepare(
+                "UPDATE reservas SET estado = 'denegada' WHERE token = ?"
+            )->execute([$token]);
+        }
+
+        // Email al cliente informando de la denegación
         $htmlCliente = "<!DOCTYPE html><html lang='es'><head><meta charset='UTF-8'></head>
 <body style='margin:0;padding:0;background:#09080f;font-family:Arial,sans-serif;'>
   <div style='max-width:560px;margin:0 auto;background:#111119;border:1px solid #252530;border-radius:12px;overflow:hidden;'>
-    <div style='background:#374151;padding:24px 32px;'>
-      <h1 style='margin:0;color:#fff;font-size:20px;font-weight:700;'>Cita denegada por el barbero</h1>
+    <div style='background:#d42b2b;padding:24px 32px;'>
+      <h1 style='margin:0;color:#fff;font-size:20px;font-weight:700;'>Cita denegada</h1>
       <p style='margin:6px 0 0;color:rgba(255,255,255,0.8);font-size:14px;'>Prado Barber Co. &mdash; Bilbao</p>
     </div>
     <div style='padding:32px;'>
       <p style='color:#f0ece3;font-size:15px;margin-bottom:24px;'>
         Hola <strong>" . htmlspecialchars($reserva['cliente_nombre']) . "</strong>,<br><br>
-        Lamentamos informarte de que tu cita ha sido <strong>denegada</strong> por el barbero.
+        Lamentamos informarte de que tu cita ha sido <strong>denegada</strong>.
+        " . ($hayNegociacion ? 'La negociación de horario ha finalizado.' : '') . "
       </p>
       <table style='width:100%;border-collapse:collapse;margin-bottom:20px;'>
         <tr><td style='padding:10px 0;border-bottom:1px solid #252530;color:#7a7880;font-size:13px;width:120px;'>Servicio</td>
@@ -133,7 +154,7 @@ try {
         <tr><td style='padding:10px 0;border-bottom:1px solid #252530;color:#7a7880;font-size:13px;'>Fecha</td>
             <td style='padding:10px 0;border-bottom:1px solid #252530;color:#f0ece3;font-size:13px;'>{$fechaOriginal}</td></tr>
         <tr><td style='padding:10px 0;border-bottom:1px solid #252530;color:#7a7880;font-size:13px;'>Hora</td>
-            <td style='padding:10px 0;border-bottom:1px solid #252530;color:#9ca3af;font-size:16px;font-weight:700;'>{$horaOriginal}</td></tr>
+            <td style='padding:10px 0;border-bottom:1px solid #252530;color:#9ca3af;font-size:16px;font-weight:700;text-decoration:line-through;'>{$horaOriginal}</td></tr>
         <tr><td style='padding:10px 0;color:#7a7880;font-size:13px;'>Motivo</td>
             <td style='padding:10px 0;color:#f0ece3;font-size:13px;font-style:italic;'>" . htmlspecialchars($motivo) . "</td></tr>
       </table>
@@ -160,16 +181,18 @@ try {
             $htmlCliente
         );
 
-        apiOk(['mensaje' => 'Reserva denegada y cliente notificado']);
+        apiOk(['mensaje' => 'Reserva denegada y cliente notificado', 'estado' => 'denegada']);
     }
 
     // ════════════════════════════════════════════════════════
     //  ACCIÓN: REPROGRAMAR
     //
-    //  RONDA FIX: Barber proposal NOW increments ronda.
-    //  ronda 1 = barber's first proposal
-    //  ronda 2 = barber's second proposal (after client counter-proposed in round 1)
-    //  Client counter-proposals stay in the same ronda (handled in reschedule-client-counter.php).
+    //  El slot ORIGINAL queda bloqueado automáticamente porque la reserva
+    //  permanece en BD con fecha+hora+barbero_id originales. slots.php
+    //  incluye estados 'reprogramar_barbero' y 'reprogramar_cliente' en
+    //  la consulta de ocupadas, así el original aparece ocupado para nuevas reservas.
+    //
+    //  RONDA: incrementa cada vez que el barbero hace una propuesta.
     // ════════════════════════════════════════════════════════
     if ($accion === 'reprogramar') {
 
@@ -179,11 +202,11 @@ try {
         if (!$nuevaFecha || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $nuevaFecha)) apiErr('Fecha inválida');
         if (!$nuevaHora  || !preg_match('/^\d{2}:\d{2}$/', $nuevaHora))        apiErr('Hora inválida');
 
-        // Comprobar slot libre
+        // Comprobar que el NUEVO slot esté libre (el original ya está "ocupado" por esta misma reserva)
         $check = $db->prepare(
             "SELECT COUNT(*) FROM reservas
              WHERE barbero_id = ? AND fecha = ? AND hora = ?
-               AND estado IN ('pendiente','aceptada')
+               AND estado IN ('pendiente', 'aceptada', 'reprogramar_barbero', 'reprogramar_cliente')
                AND token != ?"
         );
         $check->execute([$reserva['barbero_id'], $nuevaFecha, $nuevaHora . ':00', $token]);
@@ -192,28 +215,24 @@ try {
         }
 
         // Migración automática de columnas
-        foreach (
-            [
-                "ALTER TABLE reservas ADD COLUMN IF NOT EXISTS ronda_negociacion INT NOT NULL DEFAULT 0",
-                "ALTER TABLE reservas ADD COLUMN IF NOT EXISTS nueva_fecha_propuesta DATE NULL",
-                "ALTER TABLE reservas ADD COLUMN IF NOT EXISTS nueva_hora_propuesta TIME NULL",
-                "ALTER TABLE reservas ADD COLUMN IF NOT EXISTS motivo_cambio TEXT NULL",
-            ] as $sql
-        ) {
-            try {
-                $db->exec($sql);
-            } catch (PDOException $e) { /* ya existe */
-            }
+        foreach ([
+            "ALTER TABLE reservas ADD COLUMN IF NOT EXISTS ronda_negociacion INT NOT NULL DEFAULT 0",
+            "ALTER TABLE reservas ADD COLUMN IF NOT EXISTS nueva_fecha_propuesta DATE NULL",
+            "ALTER TABLE reservas ADD COLUMN IF NOT EXISTS nueva_hora_propuesta TIME NULL",
+            "ALTER TABLE reservas ADD COLUMN IF NOT EXISTS motivo_cambio TEXT NULL",
+        ] as $sql) {
+            try { $db->exec($sql); } catch (PDOException $e) { /* ya existe */ }
         }
 
-        // FIX: Barber proposal increments ronda.
-        // ronda 0 → 1 = barber's first proposal
-        // ronda 1 → 2 = barber's second proposal, etc.
+        // Ronda: incrementa cada propuesta del barbero
         $ronda = (int)($reserva['ronda_negociacion'] ?? 0) + 1;
 
+        // IMPORTANTE: fecha y hora ORIGINAL se mantienen en r.fecha y r.hora.
+        // La propuesta va en nueva_fecha_propuesta y nueva_hora_propuesta.
+        // slots.php marcará r.fecha+r.hora como ocupado por tener estado reprogramar_*.
         $db->prepare(
             "UPDATE reservas
-             SET estado = 'reprogramar_barbero',
+             SET estado                = 'reprogramar_barbero',
                  ronda_negociacion     = ?,
                  nueva_fecha_propuesta = ?,
                  nueva_hora_propuesta  = ?,
@@ -225,8 +244,7 @@ try {
         $urlAceptar  = $baseUrl . '/backend/api/reschedule-response.php?pt=' . $token . '&accion=aceptar';
         $urlRechazar = $baseUrl . '/backend/api/reschedule-response.php?pt=' . $token . '&accion=rechazar';
 
-        // Show ronda badge — ronda 1 is first proposal, always show it
-        $rondaEmailNote = "<p style='color:#7a7880;font-size:12px;text-align:center;margin-bottom:20px;'>Ronda de negociación {$ronda}</p>";
+        $rondaLabel = "Ronda de negociación {$ronda}";
 
         $htmlCliente = "<!DOCTYPE html><html lang='es'><head><meta charset='UTF-8'></head>
 <body style='margin:0;padding:0;background:#09080f;font-family:Arial,sans-serif;'>
@@ -236,7 +254,7 @@ try {
       <p style='margin:6px 0 0;color:rgba(0,0,0,0.65);font-size:14px;'>Prado Barber Co. &mdash; Bilbao</p>
     </div>
     <div style='padding:32px;'>
-      {$rondaEmailNote}
+      <p style='color:#7a7880;font-size:12px;text-align:center;margin-bottom:20px;'>{$rondaLabel}</p>
       <p style='color:#f0ece3;font-size:15px;margin-bottom:20px;'>
         Hola <strong>" . htmlspecialchars($reserva['cliente_nombre']) . "</strong>,<br><br>
         <strong>" . htmlspecialchars($reserva['barbero_nombre']) . "</strong> necesita cambiar tu cita y te propone un nuevo horario.
@@ -296,6 +314,7 @@ try {
 
         apiOk(['mensaje' => 'Propuesta enviada al cliente', 'ronda' => $ronda]);
     }
+
 } catch (PDOException $e) {
     apiErr('Error de base de datos: ' . $e->getMessage(), 500);
 }
@@ -308,7 +327,7 @@ function sendBrevo(string $toEmail, string $toName, string $subject, string $htm
 
     $payload = json_encode([
         'sender'      => ['name' => 'Prado Barber Co.', 'email' => 'endikapradodev@gmail.com'],
-        'to'          => [['email' => $toEmail, 'name' => $toName]],
+        'to'          => [['email' => $toEmail, 'name'  => $toName]],
         'subject'     => $subject,
         'htmlContent' => $html,
     ]);

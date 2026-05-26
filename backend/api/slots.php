@@ -2,9 +2,15 @@
 // ============================================================
 //  GET /api/slots.php?fecha=YYYY-MM-DD&barbero=endika
 //
-//  FIX #4: Los slots propuestos por el barbero en una negociación
-//  (estado 'reprogramar_barbero') también se marcan como ocupados,
-//  para que nadie pueda reservar ese horario mientras está pendiente.
+//  Devuelve slots ocupados para un barbero en una fecha dada.
+//
+//  LÓGICA DE BLOQUEO:
+//  1. Reservas normales (pendiente/aceptada/denegada) → bloquean su fecha+hora.
+//  2. Reservas en negociación (reprogramar_barbero / reprogramar_cliente):
+//     - Bloquean su HORA ORIGINAL (r.fecha + r.hora) — el barbero no puede
+//       en ese slot original porque la cita sigue activa.
+//     - También bloquean la HORA PROPUESTA (nueva_fecha_propuesta + nueva_hora_propuesta)
+//       para que nadie más la reserve mientras está pendiente de confirmar.
 // ============================================================
 
 header('Access-Control-Allow-Origin: *');
@@ -13,14 +19,17 @@ header('Access-Control-Allow-Headers: Content-Type');
 header('Content-Type: application/json; charset=utf-8');
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-    http_response_code(200); exit;
+    http_response_code(200);
+    exit;
 }
 
-function slots_ok($data) {
+function slots_ok(array $data): never
+{
     echo json_encode(['ok' => true, 'data' => $data], JSON_UNESCAPED_UNICODE);
     exit;
 }
-function slots_err($msg, $code = 400) {
+function slots_err(string $msg, int $code = 400): never
+{
     http_response_code($code);
     echo json_encode(['ok' => false, 'error' => $msg], JSON_UNESCAPED_UNICODE);
     exit;
@@ -32,16 +41,16 @@ $fecha   = trim($_GET['fecha']   ?? '');
 $barbero = trim($_GET['barbero'] ?? '');
 
 if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $fecha)) {
-    slots_err('Parametro fecha invalido. Formato esperado: YYYY-MM-DD');
+    slots_err('Parámetro fecha inválido. Formato esperado: YYYY-MM-DD');
 }
 if ($barbero === '') {
-    slots_err('Parametro barbero requerido');
+    slots_err('Parámetro barbero requerido');
 }
 
 try {
     $db = getDB();
 
-    // ¿Dia bloqueado por vacaciones?
+    // ── ¿Día bloqueado por vacaciones? ───────────────────────
     try {
         $bloqStmt = $db->prepare('SELECT motivo FROM dias_bloqueados WHERE fecha = ? LIMIT 1');
         $bloqStmt->execute([$fecha]);
@@ -60,23 +69,35 @@ try {
         ]);
     }
 
-    // ── Slots ocupados por reservas normales ──────────────────
-    // Estados que bloquean: pendiente, aceptada, denegada
+    // ── 1. Slots de reservas normales ─────────────────────────
+    // pendiente, aceptada, denegada → bloquean su fecha+hora original.
     // (cancelada libera el slot)
-    $stmt = $db->prepare(
+    $stmtNormal = $db->prepare(
         "SELECT TIME_FORMAT(hora, '%H:%i') AS hora
-        FROM reservas 
-        WHERE barbero_id = ? 
-        AND fecha      = ?
-        AND estado     IN ('pendiente', 'aceptada', 'denegada')"
+         FROM reservas
+         WHERE barbero_id = ?
+           AND fecha      = ?
+           AND estado     IN ('pendiente', 'aceptada', 'denegada')"
     );
-    $stmt->execute([$barbero, $fecha]);
-    $ocupadas = $stmt->fetchAll(PDO::FETCH_COLUMN);
+    $stmtNormal->execute([$barbero, $fecha]);
+    $ocupadasNormal = $stmtNormal->fetchAll(PDO::FETCH_COLUMN);
 
-    // ── FIX #4: Slots propuestos en negociación activa ─────────
-    // Si el barbero propuso un horario nuevo (reprogramar_barbero),
-    // ese slot de la propuesta también debe bloquearse para nuevas reservas.
-    // Usamos nueva_fecha_propuesta y nueva_hora_propuesta.
+    // ── 2. Slots ORIGINALES de reservas en negociación ───────
+    // reprogramar_barbero / reprogramar_cliente: el slot ORIGINAL (r.fecha + r.hora)
+    // sigue perteneciendo a esta cita → debe aparecer ocupado.
+    $stmtNegOrig = $db->prepare(
+        "SELECT TIME_FORMAT(hora, '%H:%i') AS hora
+         FROM reservas
+         WHERE barbero_id = ?
+           AND fecha      = ?
+           AND estado     IN ('reprogramar_barbero', 'reprogramar_cliente')"
+    );
+    $stmtNegOrig->execute([$barbero, $fecha]);
+    $ocupadasNegOrig = $stmtNegOrig->fetchAll(PDO::FETCH_COLUMN);
+
+    // ── 3. Slots PROPUESTOS de reservas en negociación ───────
+    // La hora propuesta (nueva_hora_propuesta) en la fecha propuesta también
+    // se bloquea para que nadie pueda reservar ese hueco mientras está pendiente.
     $stmtProp = $db->prepare(
         "SELECT TIME_FORMAT(nueva_hora_propuesta, '%H:%i') AS hora
          FROM reservas
@@ -88,10 +109,10 @@ try {
     $stmtProp->execute([$barbero, $fecha]);
     $ocupadasPropuesta = $stmtProp->fetchAll(PDO::FETCH_COLUMN);
 
-    // Combinar y deduplicar
+    // ── Combinar y deduplicar ────────────────────────────────
     $todasOcupadas = array_values(
         array_unique(
-            array_merge($ocupadas, $ocupadasPropuesta)
+            array_merge($ocupadasNormal, $ocupadasNegOrig, $ocupadasPropuesta)
         )
     );
 
