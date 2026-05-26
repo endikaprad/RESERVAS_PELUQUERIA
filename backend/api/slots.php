@@ -66,7 +66,7 @@ try {
     $stmt = $db->prepare(
         "SELECT TIME_FORMAT(hora, '%H:%i') AS hora
         FROM reservas 
-        WHERE barbero_id = ?
+        WHERE barbero_id = ? 
         AND fecha      = ?
         AND estado     IN ('pendiente', 'aceptada', 'denegada')"
     );
