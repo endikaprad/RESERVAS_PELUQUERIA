@@ -1,11 +1,12 @@
 // ============================================================
 //  PRADO BARBER CO. — admin-reserva-detail.js
-//  FIXES APPLIED (2026-05-26):
+//  FIXES APPLIED:
 //  1. Motivo pre-filled & optional when barber re-proposes in negotiation
 //  2. "Gestionar" button hidden for past bookings
 //  3. "Propone cambiar a" now shows correctly from data attributes
-//  4. Negotiation states open RD drawer (not CR panel) when clicking "Gestionar"
-//  5. Reload button added (handled in admin.php)
+//  4. Negotiation states open RD drawer when clicking "Gestionar"
+//  5. Cancel from admin panel → labels as "Denegar" (not "Cancelar")
+//     because cancel-by-barber.php now sets estado='denegada'
 // ============================================================
 
 (function initReservaDetail() {
@@ -141,20 +142,20 @@
                 </div>
             </div>
 
-            <!-- ── INLINE: Modal Cancelar ── -->
+            <!-- ── INLINE: Modal Denegar (barbero cancela = deniega) ── -->
             <div id="rd-cancel-inline" style="display:none;">
-                <div class="rd-section-label" style="color:#d42b2b;">Cancelar cita</div>
+                <div class="rd-section-label" style="color:#d42b2b;">Denegar cita</div>
                 <div style="background:rgba(212,43,43,.06);border:1px solid rgba(212,43,43,.2);border-radius:8px;padding:.75rem 1rem;margin-bottom:1rem;font-size:.78rem;color:#d4534b;line-height:1.6;">
-                    ⚠ Se notificará al cliente por email con el motivo indicado.
+                    ⚠ La reserva quedará como <strong>denegada</strong> y se notificará al cliente por email con el motivo indicado.
                 </div>
                 <div style="display:flex;flex-direction:column;gap:.35rem;margin-bottom:1rem;">
-                    <label style="font-size:.65rem;letter-spacing:.15em;text-transform:uppercase;color:#7a7880;">Motivo de cancelación *</label>
-                    <textarea id="rd-cancel-motivo" rows="4" placeholder="Ej: Enfermedad imprevista, problema técnico…"
+                    <label style="font-size:.65rem;letter-spacing:.15em;text-transform:uppercase;color:#7a7880;">Motivo de denegación *</label>
+                    <textarea id="rd-cancel-motivo" rows="4" placeholder="Ej: Enfermedad imprevista, problema técnico, cambio de agenda…"
                         style="background:#18181f;border:1px solid #252530;border-radius:8px;padding:.75rem 1rem;color:#f0ece3;font-family:'DM Sans',sans-serif;font-size:.88rem;resize:vertical;"></textarea>
                 </div>
                 <div style="display:flex;gap:.6rem;">
                     <button onclick="rdCancelBack()" style="flex:1;padding:.7rem;border-radius:7px;background:transparent;border:1px solid #252530;color:#7a7880;font-family:'DM Sans',sans-serif;font-size:.72rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;">← Volver</button>
-                    <button id="rd-btn-do-cancel" onclick="rdDoCancel()" style="flex:2;padding:.7rem;border-radius:7px;background:rgba(212,43,43,.12);border:1px solid rgba(212,43,43,.4);color:#d42b2b;font-family:'DM Sans',sans-serif;font-size:.72rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;">🚫 Confirmar cancelación</button>
+                    <button id="rd-btn-do-cancel" onclick="rdDoCancel()" style="flex:2;padding:.7rem;border-radius:7px;background:rgba(212,43,43,.12);border:1px solid rgba(212,43,43,.4);color:#d42b2b;font-family:'DM Sans',sans-serif;font-size:.72rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;">✕ Confirmar denegación</button>
                 </div>
                 <div id="rd-cancel-status" style="display:none;margin-top:.75rem;padding:.65rem 1rem;border-radius:8px;font-size:.78rem;"></div>
             </div>
@@ -166,7 +167,6 @@
                     ⇄ El cliente recibirá un email con el nuevo horario propuesto.
                 </div>
                 <div style="display:flex;flex-direction:column;gap:.35rem;margin-bottom:1rem;">
-                    <!-- [FIX 1] Label changes to "opcional" when motivo already exists -->
                     <label style="font-size:.65rem;letter-spacing:.15em;text-transform:uppercase;color:#7a7880;">Motivo del cambio <span id="rd-resch-motivo-required">*</span></label>
                     <textarea id="rd-resch-motivo" rows="2" placeholder="Ej: Cambio de agenda, formación…"
                         style="background:#18181f;border:1px solid #252530;border-radius:8px;padding:.75rem 1rem;color:#f0ece3;font-family:'DM Sans',sans-serif;font-size:.88rem;resize:vertical;"></textarea>
@@ -401,7 +401,6 @@
     .rd-slot.rds-taken { opacity: .3; cursor: not-allowed; text-decoration: line-through; }
     .rd-slot.rds-past  { opacity: .2; cursor: not-allowed; text-decoration: line-through; }
 
-    /* [FIX 4] Negotiation banner in drawer */
     .rd-negociacion-banner {
         background: linear-gradient(135deg, rgba(201,168,76,.08), rgba(37,80,160,.08));
         border: 1px solid rgba(201,168,76,.25);
@@ -474,7 +473,6 @@
     function pad2(n) { return String(n).padStart(2, '0'); }
     function isoDate(y, m, d) { return y + '-' + pad2(m + 1) + '-' + pad2(d); }
 
-    // [FIX 2] Check if a booking date is in the past
     function isBookingPast(fecha) {
         if (!fecha) return false;
         const today = new Date();
@@ -516,8 +514,8 @@
             if (estado === 'aceptada') {
                 const fechaFmt = nuevaFechaProp ? formatFecha(nuevaFechaProp) + ' · ' + (nuevaHoraProp || '').slice(0, 5) : (fechaOriginal && horaOriginal ? formatFecha(fechaOriginal) + ' · ' + horaOriginal.slice(0, 5) : '—');
                 items.push({ tipo: 'final', icono: '✓', titulo: 'Negociación finalizada — Cita confirmada', detalle: 'Horario acordado: <strong>' + fechaFmt + '</strong>', rondaLabel: null });
-            } else if (estado === 'cancelada') {
-                items.push({ tipo: 'cancelled', icono: '✕', titulo: 'Negociación finalizada — Cita cancelada', detalle: 'No se llegó a un acuerdo o se canceló durante la negociación.', rondaLabel: null });
+            } else {
+                items.push({ tipo: 'cancelled', icono: '✕', titulo: 'Negociación finalizada — Cita denegada', detalle: 'No se llegó a un acuerdo o fue denegada durante la negociación.', rondaLabel: null });
             }
         }
         return items;
@@ -596,7 +594,6 @@
         const ronda          = parseInt(data.ronda_negociacion || 0);
         const motivoCambio   = data.motivo_cambio || '';
         const nuevaFechaProp = data.nueva_fecha_propuesta || '';
-        // [FIX 3] normalize hora: strip seconds if present, handle HH:MM:SS → HH:MM
         const nuevaHoraPropRaw = data.nueva_hora_propuesta || '';
         const nuevaHoraProp = nuevaHoraPropRaw ? nuevaHoraPropRaw.slice(0, 5) : '';
         const origHora       = data.hora ? data.hora.slice(0, 5) : '—';
@@ -615,12 +612,9 @@
 
             document.getElementById('rd-orig-slot').textContent = formatFecha(data.fecha) + ' · ' + origHora;
 
-            // [FIX 3] Show nueva_fecha_propuesta and nueva_hora_propuesta correctly
-            // These come from the client's counter-proposal stored in DB
             if (nuevaFechaProp && nuevaHoraProp) {
                 document.getElementById('rd-new-slot').textContent = formatFecha(nuevaFechaProp) + ' · ' + nuevaHoraProp;
             } else {
-                // Fallback: try to get from the card/row data directly
                 const rawNF = data.nueva_fecha_propuesta || data['nueva-fecha'] || '';
                 const rawNH = data.nueva_hora_propuesta || data['nueva-hora'] || '';
                 if (rawNF && rawNH) {
@@ -646,7 +640,6 @@
             document.getElementById('rd-barbero-propuesta-section').style.display = 'block';
 
             document.getElementById('rd-bp-orig').textContent = formatFecha(data.fecha) + ' · ' + origHora;
-            // [FIX 3] Use normalized hora
             if (nuevaFechaProp && nuevaHoraProp) {
                 document.getElementById('rd-bp-new').textContent = formatFecha(nuevaFechaProp) + ' · ' + nuevaHoraProp;
             } else {
@@ -665,11 +658,9 @@
         footer.innerHTML = '';
         footer.style.display = 'flex';
 
-        // [FIX 2] Determine if booking is past — no action buttons for past bookings
         const isPast = isBookingPast(data.fecha);
 
         if (isPast && !esNegociacionActiva) {
-            // Past booking: show read-only info, no action buttons
             footer.style.display = 'none';
         } else if (est === 'pendiente') {
             footer.innerHTML = `
@@ -686,28 +677,26 @@
             } else {
                 footer.innerHTML = `
                     <button class="rd-footer-btn rd-btn-reschedule-only" onclick="rdShowReschedule()">⇄ Proponer cambio</button>
-                    <button class="rd-footer-btn rd-btn-cancel-only"     onclick="rdShowCancel()">🚫 Cancelar cita</button>`;
+                    <button class="rd-footer-btn rd-btn-deny" onclick="rdShowCancel()">✕ Denegar cita</button>`;
             }
 
         } else if (est === 'reprogramar_barbero') {
-            // [FIX 4] Negotiation-specific footer: barber's proposal is pending client response
             footer.innerHTML = `
                 <div style="width:100%;display:flex;flex-direction:column;gap:.6rem;">
                     <div style="background:rgba(201,168,76,.08);border:1px solid rgba(201,168,76,.2);border-radius:8px;padding:.65rem 1rem;font-size:.75rem;color:#d4a84b;line-height:1.5;">
-                        ⏳ Esperando respuesta del cliente. Puedes cambiar tu propuesta o cancelar.
+                        ⏳ Esperando respuesta del cliente. Puedes cambiar tu propuesta o denegar.
                     </div>
                     <div style="display:flex;gap:.6rem;">
                         <button class="rd-footer-btn rd-btn-reschedule-only" onclick="rdShowReschedule()">⇄ Cambiar propuesta</button>
-                        <button class="rd-footer-btn rd-btn-cancel-only" onclick="rdShowCancel()">🚫 Cancelar</button>
+                        <button class="rd-footer-btn rd-btn-deny" onclick="rdShowCancel()">✕ Denegar</button>
                     </div>
                 </div>`;
 
         } else if (est === 'reprogramar_cliente') {
-            // [FIX 4] Negotiation-specific footer: client has counter-proposed
             footer.innerHTML = `
                 <div style="width:100%;display:flex;flex-direction:column;gap:.6rem;">
                     <div style="background:rgba(37,80,160,.08);border:1px solid rgba(37,80,160,.25);border-radius:8px;padding:.65rem 1rem;font-size:.75rem;color:#6b9fff;line-height:1.5;">
-                        ⇄ El cliente propone un cambio. Acepta su horario, propón otro o cancela.
+                        ⇄ El cliente propone un cambio. Acepta su horario, propón otro o deniega.
                     </div>
                     <div style="display:flex;gap:.5rem;flex-wrap:wrap;">
                         <a class="rd-footer-btn rd-btn-accept"
@@ -715,7 +704,7 @@
                            href="?accion=aceptar&token=${encodeURIComponent(data.token)}&barbero=todos&fecha=todas&estado=reprogramar_cliente"
                            onclick="return confirm('¿Aceptar el horario propuesto por el cliente?')">✓ Aceptar propuesta</a>
                         <button class="rd-footer-btn rd-btn-reschedule-only" style="flex:1;min-width:80px;" onclick="rdShowReschedule()">⇄ Proponer otro</button>
-                        <button class="rd-footer-btn rd-btn-cancel-only" style="flex:1;min-width:80px;" onclick="rdShowCancel()">🚫 Cancelar</button>
+                        <button class="rd-footer-btn rd-btn-deny" style="flex:1;min-width:80px;" onclick="rdShowCancel()">✕ Denegar</button>
                     </div>
                 </div>`;
 
@@ -742,7 +731,8 @@
         });
     };
 
-    // ── Mostrar sección Cancelar inline ──────────────────────
+    // ── Mostrar sección Denegar inline ────────────────────────
+    // (el barbero "cancela" → queda como denegada)
     window.rdShowCancel = function() {
         document.getElementById('rd-cancel-inline').style.display    = 'block';
         document.getElementById('rd-reschedule-inline').style.display = 'none';
@@ -760,27 +750,30 @@
     window.rdDoCancel = async function() {
         const motivo = (document.getElementById('rd-cancel-motivo').value || '').trim();
         if (!motivo) { rdShowInlineStatus('rd-cancel-status', false, 'El motivo es obligatorio.'); return; }
-        if (!confirm('¿Cancelar la cita de ' + (currentData?.cliente_nombre || '') + '?\nSe enviará email al cliente.')) return;
+        if (!confirm('¿Denegar la cita de ' + (currentData?.cliente_nombre || '') + '?\nSe enviará email al cliente.')) return;
         const btn = document.getElementById('rd-btn-do-cancel');
         btn.disabled = true; btn.textContent = 'Enviando…';
         try {
-            const res  = await fetch(CANCEL_API, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token: currentToken, accion: 'cancelar', motivo }) });
+            const res  = await fetch(CANCEL_API, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ token: currentToken, accion: 'cancelar', motivo })
+            });
             const json = await res.json();
             if (json.ok) {
-                rdShowInlineStatus('rd-cancel-status', true, '✓ Reserva cancelada. Email enviado al cliente.');
+                rdShowInlineStatus('rd-cancel-status', true, '✓ Reserva denegada. Email enviado al cliente.');
                 setTimeout(() => { closeRD(); location.reload(); }, 2200);
             } else {
-                rdShowInlineStatus('rd-cancel-status', false, json.error || 'Error al cancelar.');
-                btn.disabled = false; btn.textContent = '🚫 Confirmar cancelación';
+                rdShowInlineStatus('rd-cancel-status', false, json.error || 'Error al denegar.');
+                btn.disabled = false; btn.textContent = '✕ Confirmar denegación';
             }
         } catch (e) {
-            rdShowInlineStatus('rd-cancel-status', false, 'Error de conexión.');
-            btn.disabled = false; btn.textContent = '🚫 Confirmar cancelación';
+            rdShowInlineStatus('rd-cancel-status', false, 'Error de conexión. Comprueba tu red.');
+            btn.disabled = false; btn.textContent = '✕ Confirmar denegación';
         }
     };
 
     // ── Mostrar sección Reprogramar inline ────────────────────
-    // [FIX 1] Motivo is pre-filled and optional when re-proposing in negotiation
     window.rdShowReschedule = function() {
         document.getElementById('rd-reschedule-inline').style.display = 'block';
         document.getElementById('rd-cancel-inline').style.display     = 'none';
@@ -790,19 +783,17 @@
         rdSelectedDate = null;
         rdSelectedSlot = null;
 
-        // [FIX 1] Pre-fill motivo with previous motivo if in negotiation
+        // Pre-fill motivo with previous motivo if in negotiation
         const prevMotivo = (currentData?.motivo_cambio || '').split(' | ')[0].trim();
         const motivoEl = document.getElementById('rd-resch-motivo');
         const hintEl   = document.getElementById('rd-resch-motivo-hint');
         const reqEl    = document.getElementById('rd-resch-motivo-required');
 
         if (prevMotivo) {
-            // In negotiation: pre-fill and mark as optional
             motivoEl.value = prevMotivo;
             if (hintEl) hintEl.style.display = 'block';
             if (reqEl)  reqEl.textContent = '(opcional)';
         } else {
-            // First time: empty, required
             motivoEl.value = '';
             if (hintEl) hintEl.style.display = 'none';
             if (reqEl)  reqEl.textContent = '*';
@@ -924,7 +915,6 @@
     };
 
     window.rdDoReschedule = async function() {
-        // [FIX 1] Motivo is optional if there's already a previous motivo
         const motivoInput = (document.getElementById('rd-resch-motivo').value || '').trim();
         const motivoPrevio = (currentData?.motivo_cambio || '').split(' | ')[0].trim();
         const motivo = motivoInput || motivoPrevio;
@@ -937,7 +927,11 @@
         const btn = document.getElementById('rd-btn-do-reschedule');
         btn.disabled = true; btn.style.opacity = '.4'; btn.textContent = 'Enviando…';
         try {
-            const res  = await fetch(CANCEL_API, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token: currentToken, accion: 'reprogramar', motivo, nueva_fecha: rdSelectedDate, nueva_hora: rdSelectedSlot }) });
+            const res  = await fetch(CANCEL_API, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ token: currentToken, accion: 'reprogramar', motivo, nueva_fecha: rdSelectedDate, nueva_hora: rdSelectedSlot })
+            });
             const json = await res.json();
             if (json.ok) {
                 rdShowInlineStatus('rd-resch-status', true, '✓ Propuesta enviada. El cliente fue notificado por email.');
@@ -947,7 +941,7 @@
                 btn.disabled = false; btn.style.opacity = '1'; btn.textContent = '⇄ Enviar propuesta';
             }
         } catch (e) {
-            rdShowInlineStatus('rd-resch-status', false, 'Error de conexión.');
+            rdShowInlineStatus('rd-resch-status', false, 'Error de conexión. Comprueba tu red.');
             btn.disabled = false; btn.style.opacity = '1'; btn.textContent = '⇄ Enviar propuesta';
         }
     };
@@ -1039,7 +1033,6 @@
                 notas,
                 token: row.dataset.token || '',
                 creado_en: row.dataset.creado || '',
-                // [FIX 3] Explicitly read these data attributes
                 nueva_fecha_propuesta: row.dataset.nuevaFecha || '',
                 nueva_hora_propuesta:  row.dataset.nuevaHora  || '',
                 motivo_cambio:         row.dataset.motivo     || '',
@@ -1084,7 +1077,6 @@
                 notas,
                 token: card.dataset.token || '',
                 creado_en: card.dataset.creado || '',
-                // [FIX 3] Explicitly read these data attributes
                 nueva_fecha_propuesta: card.dataset.nuevaFecha || '',
                 nueva_hora_propuesta:  card.dataset.nuevaHora  || '',
                 motivo_cambio:         card.dataset.motivo     || '',
