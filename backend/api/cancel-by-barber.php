@@ -7,10 +7,11 @@
 //  accion = 'cancelar'    → cancela la reserva y notifica al cliente
 //  accion = 'reprogramar' → propone nuevo horario al cliente
 //
-//  RONDA LOGIC:
-//  - Barber's proposal does NOT increment ronda (stays at current value)
-//  - ronda only increments when the CLIENT counter-proposes (via reschedule-client-counter.php)
-//  - So ronda 1 = client's first counter-proposal, ronda 2 = client's second, etc.
+//  RONDA LOGIC (CORRECTED):
+//  - ronda increments when the BARBER proposes (each barber proposal = new round).
+//  - ronda 1 = barber's first proposal to the client
+//  - ronda 2 = barber's second proposal (after client counter-proposed)
+//  - Client counter-proposals do NOT increment ronda (they respond within same round).
 // ============================================================
 
 require_once __DIR__ . '/../config.php';
@@ -154,8 +155,11 @@ try {
 
     // ════════════════════════════════════════════════════════
     //  ACCIÓN: REPROGRAMAR
-    //  NOTE: Barber's proposal does NOT increment ronda_negociacion.
-    //  ronda only increments when the CLIENT counter-proposes.
+    //
+    //  RONDA FIX: Barber proposal NOW increments ronda.
+    //  ronda 1 = barber's first proposal
+    //  ronda 2 = barber's second proposal (after client counter-proposed in round 1)
+    //  Client counter-proposals stay in the same ronda (handled in reschedule-client-counter.php).
     // ════════════════════════════════════════════════════════
     if ($accion === 'reprogramar') {
 
@@ -192,9 +196,10 @@ try {
             }
         }
 
-        // Barber's proposal keeps current ronda (does NOT increment).
-        // ronda increments only when the CLIENT counter-proposes.
-        $ronda = (int)($reserva['ronda_negociacion'] ?? 0);
+        // FIX: Barber proposal increments ronda.
+        // ronda 0 → 1 = barber's first proposal
+        // ronda 1 → 2 = barber's second proposal, etc.
+        $ronda = (int)($reserva['ronda_negociacion'] ?? 0) + 1;
 
         $db->prepare(
             "UPDATE reservas
@@ -210,10 +215,8 @@ try {
         $urlAceptar  = $baseUrl . '/backend/api/reschedule-response.php?pt=' . $token . '&accion=aceptar';
         $urlRechazar = $baseUrl . '/backend/api/reschedule-response.php?pt=' . $token . '&accion=rechazar';
 
-        // Show ronda in email only if client has already counter-proposed at least once
-        $rondaEmailNote = $ronda > 0
-            ? "<p style='color:#7a7880;font-size:12px;text-align:center;margin-bottom:20px;'>Ronda de negociación {$ronda}</p>"
-            : '';
+        // Show ronda badge — ronda 1 is first proposal, always show it
+        $rondaEmailNote = "<p style='color:#7a7880;font-size:12px;text-align:center;margin-bottom:20px;'>Ronda de negociación {$ronda}</p>";
 
         $htmlCliente = "<!DOCTYPE html><html lang='es'><head><meta charset='UTF-8'></head>
 <body style='margin:0;padding:0;background:#09080f;font-family:Arial,sans-serif;'>
@@ -258,12 +261,12 @@ try {
             <a href='{$urlRechazar}'
                style='display:block;background:#374151;color:#fff;text-decoration:none;
                       padding:14px;border-radius:6px;font-size:14px;font-weight:700;
-                      letter-spacing:0.08em;text-transform:uppercase;text-align:center;'>✕ Rechazar propuesta</a>
+                      letter-spacing:0.08em;text-transform:uppercase;text-align:center;'>✕ No puedo en ese horario</a>
           </td>
         </tr>
       </table>
       <p style='color:#7a7880;font-size:12px;margin-top:20px;text-align:center;'>
-        Si rechazas, el barbero será notificado y podrás hacer una nueva reserva.
+        Si no puedes en ese horario, podrás proponer una alternativa o cancelar la cita.
       </p>
     </div>
     <div style='background:#18181f;padding:16px 32px;text-align:center;'>

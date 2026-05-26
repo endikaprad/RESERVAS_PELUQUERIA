@@ -8,10 +8,11 @@
 //  Estado → 'reprogramar_cliente'.
 //  The barber receives email with options: accept / cancel / counter-propose.
 //
-//  RONDA LOGIC:
-//  - ronda increments HERE (client counter-propose), not on barber's proposal.
-//  - ronda 1 = client's first counter-proposal
-//  - ronda 2 = client's second counter-proposal
+//  RONDA LOGIC (CORRECTED):
+//  - ronda is set by the BARBER when proposing (in cancel-by-barber.php).
+//  - Client counter-proposals do NOT increment ronda — they respond within the same round.
+//  - ronda 1 = barber's first proposal (and client's response within that round)
+//  - ronda 2 = barber's second proposal (after client declined round 1)
 // ============================================================
 
 require_once __DIR__ . '/../config.php';
@@ -100,10 +101,9 @@ try {
         }
     }
 
-    // Client counter-proposal INCREMENTS ronda.
-    // ronda 0 → 1 = client's first counter-proposal
-    // ronda 1 → 2 = client's second, etc.
-    $ronda = (int)($r['ronda_negociacion'] ?? 0) + 1;
+    // FIX: Client counter-proposal KEEPS the current ronda (does NOT increment).
+    // The ronda was set by the barber when proposing. Client is responding within that round.
+    $ronda = (int)($r['ronda_negociacion'] ?? 0);
 
     // Actualizar reserva con la contrapropuesta del cliente
     $db->prepare(
@@ -112,7 +112,7 @@ try {
              ronda_negociacion     = ?,
              nueva_fecha_propuesta = ?,
              nueva_hora_propuesta  = ?,
-             motivo_cambio         = CONCAT(IFNULL(motivo_cambio,''), ' | Contrapropuesta cliente ronda {$ronda}')
+             motivo_cambio         = CONCAT(IFNULL(motivo_cambio,''), ' | Contrapropuesta cliente (ronda {$ronda})')
          WHERE token = ?"
     )->execute([$ronda, $nuevaFecha, $nuevaHora . ':00', $token]);
 

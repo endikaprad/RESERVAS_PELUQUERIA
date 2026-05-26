@@ -2,9 +2,10 @@
 // ============================================================
 //  PRADO BARBER CO. — /backend/api/reschedule-response.php
 //
-//  RONDA FIX: ronda displayed as-is (not +1).
-//  ronda = number of times the CLIENT has counter-proposed so far.
-//  When client rejects again, the new counter-proposal will be ronda+1.
+//  RONDA FIX: ronda is set by barber on each proposal.
+//  ronda 1 = barber's first proposal, ronda 2 = barber's second proposal.
+//  Client responses stay within the same ronda.
+//  EMAIL FIX: Cancel booking button added to acceptance confirmation email.
 // ============================================================
 
 header('Content-Type: text/html; charset=utf-8');
@@ -47,7 +48,7 @@ try {
     $nuevaFecha   = $reserva['nueva_fecha_propuesta'] ?? '';
     $nuevaHora    = $reserva['nueva_hora_propuesta']  ?? '';
     $motivoCambio = $reserva['motivo_cambio'] ?? '';
-    // ronda = how many times client has already counter-proposed
+    // ronda = set by barber on each proposal (1 = first, 2 = second, etc.)
     $rondaActual  = (int)($reserva['ronda_negociacion'] ?? 0);
 
     if (!$nuevaFecha || !$nuevaHora) {
@@ -92,6 +93,24 @@ try {
              nueva_fecha_propuesta=NULL, nueva_hora_propuesta=NULL WHERE token=?"
         )->execute([$nuevaFecha, $nuevaHora, $token]);
 
+        // FIX: Add cancel booking button to the acceptance confirmation email
+        $urlCancelReserva = $baseUrl . '/backend/api/cancel-booking.php?token=' . $token;
+        $cancelBox = "
+      <div style='background:#18181f;border:1px solid #252530;border-radius:8px;padding:16px;margin-bottom:24px;text-align:center;'>
+        <p style='color:#7a7880;font-size:13px;margin:0 0 12px;'>
+          ¿Necesitas cancelar tu reserva?
+        </p>
+        <a href='{$urlCancelReserva}'
+           style='display:inline-block;background:#374151;color:#f0ece3;text-decoration:none;
+                  padding:10px 24px;border-radius:6px;font-size:13px;font-weight:600;
+                  letter-spacing:0.08em;text-transform:uppercase;border:1px solid #4b5563;'>
+          Cancelar reserva
+        </a>
+        <p style='color:#52525b;font-size:11px;margin:10px 0 0;'>
+          Solo disponible hasta las 23:59 del día anterior a tu cita.
+        </p>
+      </div>";
+
         $htmlCliente = buildEmailBase('#22c55e','¡Cambio de horario confirmado!','Prado Barber Co. — Bilbao',
             '<p style="color:#f0ece3;font-size:15px;margin-bottom:24px;">
               Hola <strong>'.htmlspecialchars($reserva['cliente_nombre']).'</strong>,<br><br>
@@ -103,9 +122,7 @@ try {
                 ['Fecha',    $fechaNueva,                                   ''],
                 ['Hora',     $horaNueva,                                    '#22c55e'],
             ]).
-            '<p style="color:#7a7880;font-size:13px;text-align:center;">
-              ¿Necesitas cancelar? Llámanos al <a href="tel:+34944000000" style="color:#d42b2b;">+34 944 000 000</a>
-            </p>'
+            $cancelBox
         );
         $htmlBarbero = buildEmailBase('#22c55e','Cliente aceptó el cambio de horario','Prado Barber Co. — Admin',
             '<p style="color:#f0ece3;font-size:15px;margin-bottom:24px;">
@@ -141,8 +158,8 @@ try {
 
 // ════════════════════════════════════════════════════════════
 //  Pantalla de rechazo
-//  rondaActual = how many times client has counter-proposed so far.
-//  If they reject again, they'll be proposing for rondaActual+1 time.
+//  rondaActual = the current ronda (set by barber). Client is responding in this round.
+//  If they reject, barber will start a new round (ronda+1) if they propose again.
 // ════════════════════════════════════════════════════════════
 function mostrarPantallaRechazar(
     array  $reserva,
@@ -160,11 +177,8 @@ function mostrarPantallaRechazar(
     $tokenEnc     = urlencode($token);
     $cancelApiUrl = $baseUrl . '/backend/api/cancel-by-barber.php';
 
-    // Show ronda badge only if client has already counter-proposed at least once
-    $rondaBadgeHtml = '';
-    if ($ronda > 0) {
-        $rondaBadgeHtml = "<div class=\"ronda-badge\">⇄ Negociación &mdash; {$ronda} ronda" . ($ronda === 1 ? '' : 's') . " de intercambio</div>";
-    }
+    // Always show ronda badge since ronda >= 1 (barber always sets it when proposing)
+    $rondaBadgeHtml = "<div class=\"ronda-badge\">⇄ Ronda de negociación {$ronda}</div>";
 
     $motivoHtml = '';
     if ($motivoCambio) {
