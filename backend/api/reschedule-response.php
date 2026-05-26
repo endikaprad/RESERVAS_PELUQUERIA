@@ -1,14 +1,10 @@
 <?php
 // ============================================================
 //  PRADO BARBER CO. — /backend/api/reschedule-response.php
-//
-//  GET ?pt=TOKEN&accion=aceptar|rechazar
-//
-//  El cliente hace clic en el email de propuesta de cambio.
-//  - aceptar    → confirma el nuevo horario
-//  - rechazar   → muestra pantalla con 2 opciones:
-//                  a) Proponer horario alternativo
-//                  b) Cancelar la cita definitivamente
+//  CORRECCIONES:
+//  1. Calendario: renderCal() llamado en DOMContentLoaded
+//  2. Botón cancelar: usa cancel-by-barber.php (devuelve JSON)
+//  3. Email de propuesta (cancel-by-barber.php): texto mejorado
 // ============================================================
 
 header('Content-Type: text/html; charset=utf-8');
@@ -71,7 +67,7 @@ try {
     $horaNueva     = substr($nuevaHora, 0, 5);
 
     // ════════════════════════════════════════════════════════
-    //  ACEPTAR — actualizar fecha/hora y confirmar
+    //  ACEPTAR
     // ════════════════════════════════════════════════════════
     if ($accion === 'aceptar') {
         $check = $db->prepare(
@@ -95,7 +91,7 @@ try {
              nueva_fecha_propuesta=NULL, nueva_hora_propuesta=NULL WHERE token=?"
         )->execute([$nuevaFecha, $nuevaHora, $token]);
 
-        $htmlCliente = buildEmailBase('#22c55e','¡Cambio de horario confirmado!','Prado Barber Co. &mdash; Bilbao',
+        $htmlCliente = buildEmailBase('#22c55e','¡Cambio de horario confirmado!','Prado Barber Co. — Bilbao',
             '<p style="color:#f0ece3;font-size:15px;margin-bottom:24px;">
               Hola <strong>'.htmlspecialchars($reserva['cliente_nombre']).'</strong>,<br><br>
               Has <strong>aceptado</strong> el cambio de horario. Tu nueva cita queda confirmada.
@@ -110,14 +106,14 @@ try {
               ¿Necesitas cancelar? Llámanos al <a href="tel:+34944000000" style="color:#d42b2b;">+34 944 000 000</a>
             </p>'
         );
-        $htmlBarbero = buildEmailBase('#22c55e','Cliente aceptó el cambio de horario','Prado Barber Co. &mdash; Admin',
+        $htmlBarbero = buildEmailBase('#22c55e','Cliente aceptó el cambio de horario','Prado Barber Co. — Admin',
             '<p style="color:#f0ece3;font-size:15px;margin-bottom:24px;">
               <strong>'.htmlspecialchars($reserva['cliente_nombre']).'</strong> ha aceptado el nuevo horario.
             </p>'.
             buildTabla([
-                ['Cliente',    htmlspecialchars($reserva['cliente_nombre']),   ''],
-                ['Nueva fecha', $fechaNueva,                                   ''],
-                ['Nueva hora', $horaNueva,                                     '#22c55e'],
+                ['Cliente',     htmlspecialchars($reserva['cliente_nombre']), ''],
+                ['Nueva fecha', $fechaNueva,                                  ''],
+                ['Nueva hora',  $horaNueva,                                   '#22c55e'],
             ]).
             '<p style="color:#7a7880;font-size:12px;text-align:center;">
               <a href="'.$baseUrl.'/backend/admin.php" style="color:#22c55e;">Ver en el panel</a>
@@ -132,11 +128,9 @@ try {
     }
 
     // ════════════════════════════════════════════════════════
-    //  RECHAZAR — mostrar pantalla de opciones al cliente
-    //  (proponer alternativa O cancelar definitivamente)
+    //  RECHAZAR
     // ════════════════════════════════════════════════════════
     if ($accion === 'rechazar') {
-        // Cargar slots disponibles via AJAX — aquí mostramos la pantalla HTML
         mostrarPantallaRechazar($reserva, $fechaOriginal, $horaOriginal, $fechaNueva, $horaNueva, $motivoCambio, $rondaActual, $baseUrl, $token);
     }
 
@@ -145,7 +139,7 @@ try {
 }
 
 // ════════════════════════════════════════════════════════════
-//  Pantalla de rechazo: proponer alternativa o cancelar
+//  Pantalla de rechazo
 // ════════════════════════════════════════════════════════════
 function mostrarPantallaRechazar(
     array  $reserva,
@@ -159,8 +153,25 @@ function mostrarPantallaRechazar(
     string $token
 ): never {
 
-    $barberoId = $reserva['barbero_id'];
-    $tokenEnc  = urlencode($token);
+    $barberoId    = $reserva['barbero_id'];
+    $tokenEnc     = urlencode($token);
+    $cancelApiUrl = $baseUrl . '/backend/api/cancel-by-barber.php';
+
+    $rondaBadgeHtml = '';
+    if ($ronda > 0) {
+        $rondaNum = $ronda + 1;
+        $rondaBadgeHtml = "<div class=\"ronda-badge\">⇄ Negociación — ronda {$rondaNum}</div>";
+    }
+
+    $motivoHtml = '';
+    if ($motivoCambio) {
+        $motivoEsc  = htmlspecialchars($motivoCambio);
+        $motivoHtml = "<div class=\"motivo-box\">Motivo del cambio: {$motivoEsc}</div>";
+    }
+
+    $svNombre   = htmlspecialchars($reserva['servicio_nombre']);
+    $bNombre    = htmlspecialchars($reserva['barbero_nombre']);
+    $clienteNom = htmlspecialchars($reserva['cliente_nombre']);
 
     echo <<<HTML
 <!DOCTYPE html>
@@ -179,7 +190,6 @@ function mostrarPantallaRechazar(
     .card-header h1{font-family:'Playfair Display',serif;font-size:1.35rem;font-weight:700;margin-bottom:.3rem;}
     .card-header p{color:#7a7880;font-size:.82rem;line-height:1.6;}
     .card-body{padding:1.75rem 2rem;}
-    /* Info reserva */
     .info-box{background:#18181f;border:1px solid #2f2f3c;border-radius:10px;padding:14px 16px;margin-bottom:1.5rem;}
     .info-box table{width:100%;border-collapse:collapse;}
     .info-box td{padding:7px 0;border-bottom:1px solid #1c1c26;font-size:.85rem;}
@@ -188,54 +198,51 @@ function mostrarPantallaRechazar(
     .info-box td:last-child{color:#f0ece3;font-weight:500;}
     .badge-old{text-decoration:line-through;color:#9ca3af!important;font-weight:400!important;}
     .badge-new{color:#c9a84c!important;font-weight:700!important;}
-    /* Motivo */
     .motivo-box{background:rgba(201,168,76,.06);border-left:3px solid #c9a84c;border-radius:0 6px 6px 0;padding:10px 14px;margin-bottom:1.5rem;font-size:.8rem;color:#d4a84b;font-style:italic;}
-    /* Tabs */
     .mode-tabs{display:flex;gap:.5rem;margin-bottom:1.5rem;}
     .mode-tab{flex:1;padding:.75rem .5rem;background:#18181f;border:1px solid #252530;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:.72rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#7a7880;cursor:pointer;transition:all .2s;}
     .mode-tab:hover{border-color:#7a7880;color:#f0ece3;}
     .mode-tab.active.counter{background:rgba(201,168,76,.1);border-color:rgba(201,168,76,.5);color:#c9a84c;}
     .mode-tab.active.cancel{background:rgba(107,114,128,.12);border-color:rgba(107,114,128,.5);color:#9ca3af;}
-    /* Panes */
     .pane{display:none;}
     .pane.active{display:block;}
-    /* Calendar */
+    /* Calendario */
     .cal-wrap{background:#18181f;border:1px solid #252530;border-radius:10px;padding:1rem;margin-bottom:1rem;}
     .cal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:.85rem;}
-    .cal-title{font-size:.9rem;font-weight:600;}
+    .cal-title-txt{font-size:.9rem;font-weight:600;}
     .cal-nav{display:flex;gap:.3rem;}
-    .cal-nav button{width:28px;height:28px;border:1px solid #252530;border-radius:5px;background:transparent;color:#7a7880;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;}
+    .cal-nav button{width:28px;height:28px;border:1px solid #252530;border-radius:5px;background:transparent;color:#7a7880;font-size:.85rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;font-family:'DM Sans',sans-serif;}
     .cal-nav button:hover{border-color:#c9a84c;color:#c9a84c;}
     .dow-row{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:.3rem;}
     .dow-lbl{text-align:center;font-size:.55rem;letter-spacing:.08em;text-transform:uppercase;color:#7a7880;padding:.2rem 0;}
     .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;}
     .cal-cell{aspect-ratio:1;display:flex;align-items:center;justify-content:center;border-radius:6px;font-size:.75rem;cursor:pointer;transition:all .15s;border:1px solid transparent;}
-    .cal-cell:hover:not(.disabled):not(.empty):not(.past){border-color:rgba(201,168,76,.4);color:#c9a84c;}
-    .cal-cell.today:not(.selected):not(.past){border-color:rgba(212,43,43,.35);color:#d42b2b;}
-    .cal-cell.disabled,.cal-cell.past{color:#2a2a38;cursor:not-allowed;}
-    .cal-cell.selected{background:rgba(201,168,76,.18);border-color:#c9a84c;color:#c9a84c;font-weight:700;}
-    .cal-cell.empty{cursor:default;}
+    .cal-cell:hover:not(.c-dis):not(.c-empty){border-color:rgba(201,168,76,.4);color:#c9a84c;}
+    .cal-cell.c-today:not(.c-sel){border-color:rgba(212,43,43,.35);color:#d42b2b;}
+    .cal-cell.c-dis{color:#2a2a38;cursor:not-allowed;}
+    .cal-cell.c-sel{background:rgba(201,168,76,.18);border-color:#c9a84c;color:#c9a84c;font-weight:700;}
+    .cal-cell.c-empty{cursor:default;}
     /* Slots */
     .slots-wrap{margin-bottom:1.25rem;}
     .slots-label{font-size:.65rem;letter-spacing:.15em;text-transform:uppercase;color:#7a7880;margin-bottom:.6rem;}
     .slots-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:.4rem;}
     .slot{padding:.5rem .25rem;border:1px solid #252530;border-radius:6px;text-align:center;font-size:.8rem;color:#7a7880;cursor:pointer;transition:all .18s;background:#18181f;}
-    .slot:hover:not(.taken):not(.past){border-color:#c9a84c;color:#c9a84c;}
-    .slot.selected{background:rgba(201,168,76,.12);border-color:#c9a84c;color:#c9a84c;font-weight:600;}
-    .slot.taken{opacity:.3;cursor:not-allowed;text-decoration:line-through;}
-    .slot.past{opacity:.2;cursor:not-allowed;text-decoration:line-through;}
-    .slots-loading{text-align:center;padding:.85rem;color:#7a7880;font-size:.8rem;grid-column:1/-1;}
-    /* Buttons */
+    .slot:hover:not(.s-taken):not(.s-past){border-color:#c9a84c;color:#c9a84c;}
+    .slot.s-sel{background:rgba(201,168,76,.12);border-color:#c9a84c;color:#c9a84c;font-weight:600;}
+    .slot.s-taken{opacity:.3;cursor:not-allowed;text-decoration:line-through;}
+    .slot.s-past{opacity:.2;cursor:not-allowed;text-decoration:line-through;}
+    .slots-msg{text-align:center;padding:.85rem;color:#7a7880;font-size:.8rem;grid-column:1/-1;}
+    /* Botones */
     .btn-counter{width:100%;padding:.9rem;border-radius:8px;background:linear-gradient(135deg,#c9a84c,#a17c2d);border:none;color:#000;font-family:'DM Sans',sans-serif;font-size:.78rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;transition:all .25s;margin-bottom:.65rem;}
     .btn-counter:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 8px 24px rgba(201,168,76,.3);}
     .btn-counter:disabled{opacity:.4;cursor:not-allowed;transform:none;}
     .btn-cancel-all{width:100%;padding:.9rem;border-radius:8px;background:rgba(107,114,128,.1);border:1px solid rgba(107,114,128,.4);color:#9ca3af;font-family:'DM Sans',sans-serif;font-size:.78rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;transition:all .25s;}
     .btn-cancel-all:hover:not(:disabled){background:#4b5563;color:#fff;border-color:#6b7280;}
     .btn-cancel-all:disabled{opacity:.4;cursor:not-allowed;}
-    .warning{background:rgba(245,158,11,.06);border:1px solid rgba(245,158,11,.2);border-radius:8px;padding:.75rem 1rem;margin-bottom:1rem;font-size:.78rem;color:#d4a84b;line-height:1.6;}
-    .status-msg{display:none;padding:.65rem 1rem;border-radius:8px;font-size:.78rem;margin-top:.75rem;}
-    .status-msg.ok{display:flex;align-items:center;gap:.5rem;background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.25);color:#22c55e;}
-    .status-msg.err{display:flex;align-items:center;gap:.5rem;background:rgba(212,43,43,.1);border:1px solid rgba(212,43,43,.25);color:#d42b2b;}
+    .warn-box{background:rgba(245,158,11,.06);border:1px solid rgba(245,158,11,.2);border-radius:8px;padding:.75rem 1rem;margin-bottom:1rem;font-size:.78rem;color:#d4a84b;line-height:1.6;}
+    .status-msg{padding:.65rem 1rem;border-radius:8px;font-size:.78rem;margin-top:.75rem;display:none;align-items:center;gap:.5rem;}
+    .status-msg.ok{display:flex;background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.25);color:#22c55e;}
+    .status-msg.err{display:flex;background:rgba(212,43,43,.1);border:1px solid rgba(212,43,43,.25);color:#d42b2b;}
     .ronda-badge{display:inline-block;padding:.2rem .65rem;background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.3);border-radius:100px;font-size:.7rem;color:#f59e0b;margin-bottom:1rem;}
   </style>
 </head>
@@ -247,48 +254,33 @@ function mostrarPantallaRechazar(
       <p>Puedes proponer un horario alternativo o cancelar la cita.</p>
     </div>
     <div class="card-body">
-
-HTML;
-    if ($ronda > 0) {
-        echo "<div class=\"ronda-badge\">⇄ Negociación — ronda ".($ronda+1)."</div>";
-    }
-
-    echo <<<HTML
-      <!-- Info de la reserva -->
+      {$rondaBadgeHtml}
       <div class="info-box">
         <table>
-          <tr><td>Servicio</td><td>{$reserva['servicio_nombre']}</td></tr>
-          <tr><td>Barbero</td><td>{$reserva['barbero_nombre']}</td></tr>
-          <tr><td>Tu cita original</td><td class="badge-old">{$fechaOriginal} {$horaOriginal}</td></tr>
-          <tr><td>Nueva propuesta</td><td class="badge-new">{$fechaNueva} &middot; {$horaNueva}</td></tr>
+          <tr><td>Servicio</td><td>{$svNombre}</td></tr>
+          <tr><td>Barbero</td><td>{$bNombre}</td></tr>
+          <tr><td>Cita original</td><td class="badge-old">{$fechaOriginal} · {$horaOriginal}</td></tr>
+          <tr><td>Nueva propuesta</td><td class="badge-new">{$fechaNueva} · {$horaNueva}</td></tr>
         </table>
       </div>
+      {$motivoHtml}
 
-HTML;
-    if ($motivoCambio) {
-        echo "<div class=\"motivo-box\">Motivo del cambio: ".htmlspecialchars($motivoCambio)."</div>";
-    }
-
-    echo <<<HTML
-      <!-- Tabs -->
       <div class="mode-tabs">
         <button class="mode-tab active counter" id="tab-counter" onclick="switchMode('counter')">⇄ Proponer alternativa</button>
-        <button class="mode-tab cancel"          id="tab-cancel"  onclick="switchMode('cancel')">✕ Cancelar cita</button>
+        <button class="mode-tab cancel"         id="tab-cancel"  onclick="switchMode('cancel')">✕ Cancelar cita</button>
       </div>
 
-      <!-- PANE: Proponer horario alternativo -->
+      <!-- PANE: Proponer alternativa -->
       <div class="pane active" id="pane-counter">
         <p style="font-size:.82rem;color:#7a7880;margin-bottom:1rem;line-height:1.6;">
-          Elige el día y la hora que mejor te vengan. El barbero recibirá tu propuesta y podrá aceptarla o negociar.
+          Elige el día y la hora que mejor te vengan. El barbero recibirá tu propuesta.
         </p>
-
-        <!-- Mini calendario -->
         <div class="cal-wrap">
           <div class="cal-header">
-            <span class="cal-title" id="cal-title"></span>
+            <span class="cal-title-txt" id="cal-title">—</span>
             <div class="cal-nav">
-              <button onclick="calNav(-1)">‹</button>
-              <button onclick="calNav(1)">›</button>
+              <button type="button" onclick="calNav(-1)">&#8249;</button>
+              <button type="button" onclick="calNav(1)">&#8250;</button>
             </div>
           </div>
           <div class="dow-row">
@@ -298,15 +290,12 @@ HTML;
           </div>
           <div class="cal-grid" id="cal-grid"></div>
         </div>
-
-        <!-- Slots de hora -->
         <div class="slots-wrap">
           <div class="slots-label">Horarios disponibles</div>
           <div class="slots-grid" id="slots-grid">
-            <div class="slots-loading">Selecciona un día del calendario</div>
+            <div class="slots-msg">Selecciona un día del calendario</div>
           </div>
         </div>
-
         <button class="btn-counter" id="btn-send-counter" disabled onclick="sendCounter()">
           ⇄ Enviar propuesta al barbero
         </button>
@@ -315,71 +304,95 @@ HTML;
 
       <!-- PANE: Cancelar definitivamente -->
       <div class="pane" id="pane-cancel">
-        <div class="warning">
-          ⚠ Al cancelar la cita se liberará el hueco y no tendrás una reserva activa. 
-          Podrás hacer una nueva reserva cuando quieras.
+        <div class="warn-box">
+          ⚠ Al cancelar se liberará el hueco. Podrás hacer una nueva reserva cuando quieras.
         </div>
         <button class="btn-cancel-all" id="btn-do-cancel" onclick="doCancel()">
           ✕ Sí, cancelar mi cita definitivamente
         </button>
         <div class="status-msg" id="cancel-status"></div>
       </div>
-
     </div>
   </div>
 
   <script>
-    const TOKEN      = '{$tokenEnc}';
-    const BARBERO_ID = '{$barberoId}';
-    const BASE_URL   = '{$baseUrl}';
+    /* ── Constantes ─────────────────────────────────────────── */
+    var TOKEN      = '{$tokenEnc}';
+    var BARBERO_ID = '{$barberoId}';
+    var BASE_URL   = '{$baseUrl}';
+    var CANCEL_API = '{$cancelApiUrl}';
 
-    const ALL_SLOTS = [
+    var ALL_SLOTS = [
       '09:00','09:30','10:00','10:30','11:00','11:30',
       '12:00','12:30','13:00','13:30',
-      '16:00','16:30','17:00','17:30','18:00','18:30','19:00','19:30',
+      '16:00','16:30','17:00','17:30','18:00','18:30','19:00','19:30'
     ];
-    const MONTHS = ['Enero','Febrero','Marzo','Abril','Mayo','Junio',
-                    'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+    var MONTHS_ES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio',
+                     'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 
-    let calDate      = new Date();
-    let selectedDate = null;
-    let selectedSlot = null;
-    let takenSlots   = [];
+    /* ── Estado ─────────────────────────────────────────────── */
+    var calDate      = new Date();
+    var selectedDate = null;
+    var selectedSlot = null;
+    var takenSlots   = [];
 
-    // ── Tabs ─────────────────────────────────────────────────
+    /* ── Init: esperar al DOM antes de renderizar ──────────── */
+    document.addEventListener('DOMContentLoaded', function() {
+      renderCal();
+    });
+
+    /* ── Tabs ────────────────────────────────────────────────  */
     function switchMode(mode) {
-      document.querySelectorAll('.mode-tab').forEach(t => t.classList.remove('active'));
-      document.querySelectorAll('.pane').forEach(p => p.classList.remove('active'));
-      document.getElementById('tab-' + mode).classList.add('active');
+      document.querySelectorAll('.mode-tab').forEach(function(t) { t.classList.remove('active'); });
+      document.querySelectorAll('.pane').forEach(function(p) { p.classList.remove('active'); });
+      document.getElementById('tab-'  + mode).classList.add('active');
       document.getElementById('pane-' + mode).classList.add('active');
     }
 
-    // ── Calendario ────────────────────────────────────────────
+    /* ── Calendario ─────────────────────────────────────────── */
+    function pad2(n) { return String(n).padStart(2,'0'); }
+
+    function isoDate(y, m, d) { return y + '-' + pad2(m + 1) + '-' + pad2(d); }
+
     function renderCal() {
-      const y = calDate.getFullYear(), m = calDate.getMonth();
-      document.getElementById('cal-title').textContent = MONTHS[m] + ' ' + y;
-      const today = new Date(); today.setHours(0,0,0,0);
-      const tomorrow = new Date(today); tomorrow.setDate(tomorrow.getDate()+1);
-      const firstDay = new Date(y, m, 1).getDay();
-      const offset   = (firstDay + 6) % 7;
-      const daysIn   = new Date(y, m+1, 0).getDate();
-      let html = '';
-      for (let i=0; i<offset; i++) html += "<div class='cal-cell empty'></div>";
-      for (let d=1; d<=daysIn; d++) {
-        const dt = new Date(y, m, d);
-        const isSun = dt.getDay() === 0;
-        const isPast = dt < tomorrow;
-        const isToday = dt.getTime() === today.getTime();
-        const iso = isoDate(y, m, d);
-        const isSel = selectedDate === iso;
-        let cls = 'cal-cell';
-        if (isPast || isSun) cls += ' disabled past';
-        else if (isToday)    cls += ' today';
-        if (isSel)           cls += ' selected';
-        const onclick = (isPast||isSun) ? '' : \`onclick="selectDate('\${iso}')"\`;
-        html += \`<div class="\${cls}" \${onclick}>\${d}</div>\`;
+      var y = calDate.getFullYear();
+      var m = calDate.getMonth();
+
+      var titleEl = document.getElementById('cal-title');
+      if (titleEl) titleEl.textContent = MONTHS_ES[m] + ' ' + y;
+
+      var today    = new Date(); today.setHours(0,0,0,0);
+      var tomorrow = new Date(today); tomorrow.setDate(tomorrow.getDate() + 1);
+
+      var firstDay = new Date(y, m, 1).getDay();
+      var offset   = (firstDay + 6) % 7;
+      var daysIn   = new Date(y, m + 1, 0).getDate();
+
+      var html = '';
+      for (var i = 0; i < offset; i++) html += '<div class="cal-cell c-empty"></div>';
+
+      for (var d = 1; d <= daysIn; d++) {
+        var dt     = new Date(y, m, d);
+        var isSun  = (dt.getDay() === 0);
+        var isPast = (dt < tomorrow);
+        var isToday= (dt.getTime() === today.getTime());
+        var iso    = isoDate(y, m, d);
+        var isSel  = (selectedDate === iso);
+
+        var cls = 'cal-cell';
+        if (isPast || isSun) cls += ' c-dis';
+        else if (isToday)    cls += ' c-today';
+        if (isSel)           cls += ' c-sel';
+
+        var onclick = (isPast || isSun)
+          ? ''
+          : 'onclick="selectDate(\'' + iso + '\')"';
+
+        html += '<div class="' + cls + '" ' + onclick + '>' + d + '</div>';
       }
-      document.getElementById('cal-grid').innerHTML = html;
+
+      var grid = document.getElementById('cal-grid');
+      if (grid) grid.innerHTML = html;
     }
 
     function calNav(dir) {
@@ -387,54 +400,60 @@ HTML;
       renderCal();
     }
 
-    function isoDate(y, m, d) {
-      return \`\${y}-\${String(m+1).padStart(2,'0')}-\${String(d).padStart(2,'0')}\`;
-    }
-
-    async function selectDate(iso) {
+    function selectDate(iso) {
       selectedDate = iso;
       selectedSlot = null;
       document.getElementById('btn-send-counter').disabled = true;
       renderCal();
-      await loadSlots(iso);
+      loadSlots(iso);
     }
 
-    async function loadSlots(fecha) {
-      const grid = document.getElementById('slots-grid');
-      grid.innerHTML = "<div class='slots-loading'>Cargando horarios…</div>";
-      try {
-        const res  = await fetch(\`\${BASE_URL}/backend/api/slots.php?fecha=\${fecha}&barbero=\${BARBERO_ID}\`);
-        const json = await res.json();
-        if (json.ok && json.data.bloqueado) {
-          grid.innerHTML = "<div class='slots-loading' style='color:#d42b2b;'>🔒 Día no disponible</div>";
-          return;
-        }
-        takenSlots = json.ok ? (json.data.ocupadas || []) : [];
-        renderSlots(fecha);
-      } catch(e) {
-        grid.innerHTML = "<div class='slots-loading' style='color:#d42b2b;'>Error al cargar horarios</div>";
-      }
+    /* ── Slots ──────────────────────────────────────────────── */
+    function loadSlots(fecha) {
+      var grid = document.getElementById('slots-grid');
+      grid.innerHTML = '<div class="slots-msg">Cargando horarios\u2026</div>';
+
+      fetch(BASE_URL + '/backend/api/slots.php?fecha=' + fecha + '&barbero=' + BARBERO_ID)
+        .then(function(r) { return r.json(); })
+        .then(function(json) {
+          if (json.ok && json.data.bloqueado) {
+            grid.innerHTML = '<div class="slots-msg" style="color:#d42b2b;">\uD83D\uDD12 D\u00eda no disponible: ' + (json.data.motivo || '') + '</div>';
+            return;
+          }
+          takenSlots = json.ok ? (json.data.ocupadas || []) : [];
+          renderSlots(fecha);
+        })
+        .catch(function() {
+          grid.innerHTML = '<div class="slots-msg" style="color:#d42b2b;">Error al cargar horarios</div>';
+        });
     }
 
     function renderSlots(fecha) {
-      const grid = document.getElementById('slots-grid');
-      const now  = new Date();
-      const isToday = fecha === isoDate(now.getFullYear(), now.getMonth(), now.getDate());
-      const curHHMM = now.getHours().toString().padStart(2,'0')+':'+now.getMinutes().toString().padStart(2,'0');
-      const dt = new Date(fecha + 'T00:00:00');
-      const esSab = dt.getDay() === 6;
-      const slots = ALL_SLOTS.filter(s => !esSab || s < '14:00');
+      var grid  = document.getElementById('slots-grid');
+      var now   = new Date();
+      var parts = fecha.split('-');
+      var dtF   = new Date(+parts[0], +parts[1] - 1, +parts[2]);
+      var isToday = (fecha === isoDate(now.getFullYear(), now.getMonth(), now.getDate()));
+      var curHHMM = pad2(now.getHours()) + ':' + pad2(now.getMinutes());
+      var esSab   = (dtF.getDay() === 6);
+      var slots   = ALL_SLOTS.filter(function(s) { return !esSab || s < '14:00'; });
 
-      grid.innerHTML = slots.map(s => {
-        const taken = takenSlots.includes(s);
-        const past  = isToday && s <= curHHMM;
-        let cls = 'slot';
-        if (taken)            cls += ' taken';
-        else if (past)        cls += ' past';
-        if (selectedSlot===s) cls += ' selected';
-        const disabled = taken || past;
-        const onclick  = disabled ? '' : \`onclick="selectSlot('\${s}')"\`;
-        return \`<div class="\${cls}" \${onclick}>\${s}</div>\`;
+      if (!slots.length) {
+        grid.innerHTML = '<div class="slots-msg">No hay horarios disponibles</div>';
+        return;
+      }
+
+      grid.innerHTML = slots.map(function(s) {
+        var taken = takenSlots.indexOf(s) !== -1;
+        var past  = isToday && s <= curHHMM;
+        var sel   = (selectedSlot === s);
+        var cls   = 'slot';
+        if (taken)       cls += ' s-taken';
+        else if (past)   cls += ' s-past';
+        if (sel)         cls += ' s-sel';
+        var disabled = taken || past;
+        var onclick  = disabled ? '' : 'onclick="selectSlot(\'' + s + '\')"';
+        return '<div class="' + cls + '" ' + onclick + '>' + s + '</div>';
       }).join('');
     }
 
@@ -444,76 +463,88 @@ HTML;
       document.getElementById('btn-send-counter').disabled = false;
     }
 
-    // ── Enviar contrapropuesta ────────────────────────────────
-    async function sendCounter() {
+    /* ── Enviar contrapropuesta ─────────────────────────────── */
+    function sendCounter() {
       if (!selectedDate || !selectedSlot) return;
-      const btn = document.getElementById('btn-send-counter');
-      btn.disabled = true;
-      btn.textContent = 'Enviando…';
+      var btn = document.getElementById('btn-send-counter');
+      btn.disabled    = true;
+      btn.textContent = 'Enviando\u2026';
 
-      try {
-        const res  = await fetch(\`\${BASE_URL}/backend/api/reschedule-client-counter.php\`, {
-          method: 'POST',
-          headers: {'Content-Type':'application/json'},
-          body: JSON.stringify({
-            token: decodeURIComponent(TOKEN),
-            nueva_fecha: selectedDate,
-            nueva_hora:  selectedSlot,
-          }),
-        });
-        const json = await res.json();
-        const el = document.getElementById('counter-status');
+      fetch(BASE_URL + '/backend/api/reschedule-client-counter.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          token:       decodeURIComponent(TOKEN),
+          nueva_fecha: selectedDate,
+          nueva_hora:  selectedSlot
+        })
+      })
+      .then(function(r) { return r.json(); })
+      .then(function(json) {
+        showStatus('counter-status', json.ok,
+          json.ok
+            ? '\u2713 Propuesta enviada. El barbero te responder\u00e1 por email.'
+            : '\u26A0 ' + (json.error || 'Error al enviar')
+        );
         if (json.ok) {
-          el.className = 'status-msg ok';
-          el.textContent = '✓ Propuesta enviada. El barbero te responderá por email.';
-          btn.textContent = '✓ Enviado';
+          btn.textContent = '\u2713 Enviado';
         } else {
-          el.className = 'status-msg err';
-          el.textContent = '⚠ ' + (json.error || 'Error al enviar');
-          btn.disabled = false;
-          btn.textContent = '⇄ Enviar propuesta al barbero';
+          btn.disabled    = false;
+          btn.textContent = '\u21C4 Enviar propuesta al barbero';
         }
-      } catch(e) {
-        const el = document.getElementById('counter-status');
-        el.className = 'status-msg err';
-        el.textContent = '⚠ Error de conexión. Inténtalo de nuevo.';
-        btn.disabled = false;
-        btn.textContent = '⇄ Enviar propuesta al barbero';
-      }
+      })
+      .catch(function() {
+        showStatus('counter-status', false, '\u26A0 Error de conexi\u00F3n. Int\u00E9ntalo de nuevo.');
+        btn.disabled    = false;
+        btn.textContent = '\u21C4 Enviar propuesta al barbero';
+      });
     }
 
-    // ── Cancelar definitivamente ──────────────────────────────
-    async function doCancel() {
-      if (!confirm('¿Seguro que quieres cancelar la cita? Esta acción no se puede deshacer.')) return;
-      const btn = document.getElementById('btn-do-cancel');
-      btn.disabled = true;
-      btn.textContent = 'Cancelando…';
+    /* ── Cancelar — FIX: POST a cancel-by-barber.php (JSON) ── */
+    function doCancel() {
+      if (!confirm('\u00BFSeguro que quieres cancelar la cita? Esta acci\u00F3n no se puede deshacer.')) return;
 
-      try {
-        const res  = await fetch(\`\${BASE_URL}/backend/api/cancel-booking.php?token=\${TOKEN}&confirmar=1\`, {
-          method: 'GET',
-        });
-        // cancel-booking.php devuelve HTML; si llega 200 asumimos ok
-        if (res.ok) {
-          const el = document.getElementById('cancel-status');
-          el.className = 'status-msg ok';
-          el.textContent = '✓ Cita cancelada. Recibirás un email de confirmación.';
-          btn.textContent = '✓ Cancelada';
-          setTimeout(() => { window.location.href = BASE_URL; }, 2500);
+      var btn = document.getElementById('btn-do-cancel');
+      btn.disabled    = true;
+      btn.textContent = 'Cancelando\u2026';
+
+      fetch(CANCEL_API, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          token:  decodeURIComponent(TOKEN),
+          accion: 'cancelar',
+          motivo: 'Cancelaci\u00F3n solicitada por el cliente al rechazar la propuesta de cambio de horario'
+        })
+      })
+      .then(function(r) { return r.json(); })
+      .then(function(json) {
+        if (json.ok) {
+          showStatus('cancel-status', true,
+            '\u2713 Cita cancelada correctamente. Recibir\u00E1s un email de confirmaci\u00F3n.');
+          btn.textContent = '\u2713 Cancelada';
+          setTimeout(function() { window.location.href = BASE_URL; }, 2500);
         } else {
-          throw new Error('Error del servidor');
+          showStatus('cancel-status', false, '\u26A0 ' + (json.error || 'Error al cancelar'));
+          btn.disabled    = false;
+          btn.textContent = '\u2715 S\u00ED, cancelar mi cita definitivamente';
         }
-      } catch(e) {
-        const el = document.getElementById('cancel-status');
-        el.className = 'status-msg err';
-        el.textContent = '⚠ Error al cancelar. Llámanos al +34 944 000 000.';
-        btn.disabled = false;
-        btn.textContent = '✕ Sí, cancelar mi cita definitivamente';
-      }
+      })
+      .catch(function() {
+        showStatus('cancel-status', false,
+          '\u26A0 Error de conexi\u00F3n. Ll\u00E1manos al +34 944 000 000.');
+        btn.disabled    = false;
+        btn.textContent = '\u2715 S\u00ED, cancelar mi cita definitivamente';
+      });
     }
 
-    // Init
-    renderCal();
+    /* ── Utilidad ───────────────────────────────────────────── */
+    function showStatus(id, ok, msg) {
+      var el = document.getElementById(id);
+      if (!el) return;
+      el.className    = 'status-msg ' + (ok ? 'ok' : 'err');
+      el.textContent  = msg;
+    }
   </script>
 </body>
 </html>
@@ -526,10 +557,12 @@ function buildTabla(array $filas): string {
     $html = "<table style='width:100%;border-collapse:collapse;margin-bottom:24px;'>";
     foreach ($filas as [$label, $valor, $color]) {
         $style = $color ? "color:{$color};font-size:16px;font-weight:700;" : 'color:#f0ece3;font-size:13px;';
-        $html .= "<tr><td style='padding:10px 0;border-bottom:1px solid #252530;color:#7a7880;font-size:13px;width:130px;'>{$label}</td>
-                      <td style='padding:10px 0;border-bottom:1px solid #252530;{$style}'>{$valor}</td></tr>";
+        $html .= "<tr>
+          <td style='padding:10px 0;border-bottom:1px solid #252530;color:#7a7880;font-size:13px;width:130px;'>{$label}</td>
+          <td style='padding:10px 0;border-bottom:1px solid #252530;{$style}'>{$valor}</td>
+        </tr>";
     }
-    return $html.'</table>';
+    return $html . '</table>';
 }
 
 function buildEmailBase(string $hc, string $titulo, string $sub, string $contenido): string {
@@ -565,22 +598,27 @@ function mostrarPagina(string $tipo, string $titulo, string $mensaje): never {
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,700&family=DM+Sans:wght@300;400;500&display=swap');
   *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-  body{background:#09080f;color:#f0ece3;font-family:'DM Sans',sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:2rem;}
+  body{background:#09080f;color:#f0ece3;font-family:'DM Sans',sans-serif;min-height:100vh;
+       display:flex;align-items:center;justify-content:center;padding:2rem;}
   .card{background:#111119;border:1px solid #252530;border-radius:16px;max-width:480px;width:100%;overflow:hidden;text-align:center;}
   .card-header{background:{$c['bg']};padding:2rem;color:{$c['text']};}
-  .icon{width:64px;height:64px;border-radius:50%;background:rgba(0,0,0,.15);display:flex;align-items:center;justify-content:center;font-size:1.75rem;margin:0 auto 1rem;font-weight:700;}
+  .icon{width:64px;height:64px;border-radius:50%;background:rgba(0,0,0,.15);display:flex;align-items:center;
+        justify-content:center;font-size:1.75rem;margin:0 auto 1rem;font-weight:700;}
   .card-header h1{font-family:'Playfair Display',serif;font-size:1.5rem;font-weight:700;}
   .card-body{padding:2rem;}
   .card-body p{color:#c0bcc9;font-size:.95rem;line-height:1.75;margin-bottom:1.5rem;}
   .card-body strong{color:#f0ece3;}
-  .btn{display:inline-block;background:#d42b2b;color:#fff;text-decoration:none;padding:.75rem 2rem;border-radius:4px;font-size:.75rem;font-weight:600;letter-spacing:.15em;text-transform:uppercase;margin:.35rem;}
+  .btn{display:inline-block;background:#d42b2b;color:#fff;text-decoration:none;
+       padding:.75rem 2rem;border-radius:4px;font-size:.75rem;font-weight:600;
+       letter-spacing:.15em;text-transform:uppercase;margin:.35rem;}
   .btn-outline{background:transparent;border:1px solid #252530;color:#7a7880;}
   .brand{font-family:'Playfair Display',serif;font-style:italic;font-size:.9rem;color:#7a7880;margin-top:1.5rem;}
 </style></head>
 <body>
   <div class='card'>
     <div class='card-header'><div class='icon'>{$c['icon']}</div><h1>{$titulo}</h1></div>
-    <div class='card-body'><p>{$mensaje}</p>
+    <div class='card-body'>
+      <p>{$mensaje}</p>
       <a href='{$baseUrl}/reservas.html' class='btn'>Nueva reserva</a>
       <a href='{$baseUrl}' class='btn btn-outline'>Inicio</a>
       <div class='brand'>Prado Barber Co.</div>
@@ -595,15 +633,24 @@ function sendBrevo(string $toEmail, string $toName, string $subject, string $htm
     if (!$apiKey) return false;
     $payload = json_encode([
         'sender'      => ['name' => 'Prado Barber Co.', 'email' => 'endikapradodev@gmail.com'],
-        'to'          => [['email' => $toEmail, 'name' => $toName]],
-        'subject'     => $subject, 'htmlContent' => $html,
+        'to'          => [['email' => $toEmail, 'name'  => $toName]],
+        'subject'     => $subject,
+        'htmlContent' => $html,
     ]);
     $ch = curl_init('https://api.brevo.com/v3/smtp/email');
     curl_setopt_array($ch, [
-        CURLOPT_RETURNTRANSFER => true, CURLOPT_POST => true,
-        CURLOPT_POSTFIELDS => $payload, CURLOPT_TIMEOUT => 15,
-        CURLOPT_HTTPHEADER => ['api-key: '.$apiKey,'Content-Type: application/json','Accept: application/json'],
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_POST           => true,
+        CURLOPT_POSTFIELDS     => $payload,
+        CURLOPT_TIMEOUT        => 15,
+        CURLOPT_HTTPHEADER     => [
+            'api-key: '.$apiKey,
+            'Content-Type: application/json',
+            'Accept: application/json',
+        ],
     ]);
-    $resp = curl_exec($ch); $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE); curl_close($ch);
+    $resp     = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
     return $httpCode === 201;
 }
