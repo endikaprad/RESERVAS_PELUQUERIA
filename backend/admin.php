@@ -260,6 +260,7 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
     <meta name="theme-color" content="#111119">
 
     <script src="admin-datos.js" defer></script>
+    <script src="admin-reserva-detail.js" defer></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,700&family=DM+Sans:wght@300;400;500&display=swap');
 
@@ -3485,7 +3486,16 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
                     $hora    = substr($r['hora'], 0, 5);
                     $est     = $r['estado'];
                 ?>
-                    <div class="rc <?= $est ?>">
+                    <div class="rc <?= $est ?>"
+                        data-token="<?= htmlspecialchars($r['token']) ?>"
+                        data-barbero-id="<?= htmlspecialchars($r['barbero_id'] ?? '') ?>"
+                        data-fecha="<?= $r['fecha'] ?>"
+                        data-creado="<?= $r['creado_en'] ?>"
+                        data-nueva-fecha="<?= htmlspecialchars($r['nueva_fecha_propuesta'] ?? '') ?>"
+                        data-nueva-hora="<?= htmlspecialchars(substr($r['nueva_hora_propuesta'] ?? '', 0, 5)) ?>"
+                        data-motivo="<?= htmlspecialchars($r['motivo_cambio'] ?? '') ?>"
+                        data-ronda="<?= (int)($r['ronda_negociacion'] ?? 0) ?>"
+                        data-estado="<?= $r['estado'] ?>">
                         <div class="rc-top">
                             <div class="rc-top-left">
                                 <div class="rc-id">#<?= $r['id'] ?></div>
@@ -3598,7 +3608,16 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
                                 $fechaStr = $diasES[$diaNum] . ' ' . $dt->format('j') . ' ' . $mesesES[$mesNum];
                                 $rowStyle = $r['estado'] === 'denegada' ? 'opacity:.55;' : '';
                             ?>
-                                <tr style="<?= $rowStyle ?>">
+                                <tr style="<?= $rowStyle ?>"
+                                    data-token="<?= htmlspecialchars($r['token']) ?>"
+                                    data-barbero-id="<?= htmlspecialchars($r['barbero_id'] ?? '') ?>"
+                                    data-fecha="<?= $r['fecha'] ?>"
+                                    data-creado="<?= $r['creado_en'] ?>"
+                                    data-nueva-fecha="<?= htmlspecialchars($r['nueva_fecha_propuesta'] ?? '') ?>"
+                                    data-nueva-hora="<?= htmlspecialchars(substr($r['nueva_hora_propuesta'] ?? '', 0, 5)) ?>"
+                                    data-motivo="<?= htmlspecialchars($r['motivo_cambio'] ?? '') ?>"
+                                    data-ronda="<?= (int)($r['ronda_negociacion'] ?? 0) ?>"
+                                    data-estado="<?= $r['estado'] ?>">
                                     <td style="color:#7a7880;font-size:.75rem;">#<?= $r['id'] ?></td>
                                     <td style="white-space:nowrap;"><?= $fechaStr ?></td>
                                     <td class="td-hora"><?= substr($r['hora'], 0, 5) ?></td>
