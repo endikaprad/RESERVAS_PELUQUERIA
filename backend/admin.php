@@ -259,8 +259,8 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
     <link rel="icon" type="image/png" href="../img/admin.png">
     <meta name="theme-color" content="#111119">
 
-    <script src="admin-datos.js" defer></script>
-    <script src="admin-reserva-detail.js" defer></script>
+    <script src="admin-datos.js?v=1" defer></script>
+    <script src="admin-reserva-detail.js?v=1" defer></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,700&family=DM+Sans:wght@300;400;500&display=swap');
 
