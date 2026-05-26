@@ -36,7 +36,7 @@ try {
             SUM(CASE WHEN estado = 'pendiente' THEN 1 ELSE 0 END) AS pendientes,
             SUM(CASE WHEN estado = 'denegada'  THEN 1 ELSE 0 END) AS denegadas,
             SUM(CASE WHEN estado = 'aceptada'  THEN s.precio ELSE 0 END) AS ingresos_totales,
-            COUNT(DISTINCT r.cliente_email) AS clientes_unicos
+            COUNT(DISTINCT r.cliente_telefono) AS clientes_unicos
         FROM reservas r
         JOIN servicios s ON s.id = r.servicio_id
     ")->fetch();

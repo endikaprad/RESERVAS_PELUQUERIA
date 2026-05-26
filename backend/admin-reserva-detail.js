@@ -5,6 +5,7 @@
 //  2. nueva_fecha_propuesta y nueva_hora_propuesta se muestran correctamente
 //  3. Footer "Proponer otro" → calendario inline en el drawer
 //  4. Footer "Cancelar" → modal directo sin ir a gestionar
+//  5. [FIX] Motivo pre-rellenado y opcional al re-proponer horario
 // ============================================================
 
 (function initReservaDetail() {
@@ -166,9 +167,10 @@
                     ⇄ El cliente recibirá un email con el nuevo horario propuesto.
                 </div>
                 <div style="display:flex;flex-direction:column;gap:.35rem;margin-bottom:1rem;">
-                    <label style="font-size:.65rem;letter-spacing:.15em;text-transform:uppercase;color:#7a7880;">Motivo del cambio *</label>
+                    <label id="rd-resch-motivo-label" style="font-size:.65rem;letter-spacing:.15em;text-transform:uppercase;color:#7a7880;">Motivo del cambio <span id="rd-resch-motivo-required">*</span></label>
                     <textarea id="rd-resch-motivo" rows="2" placeholder="Ej: Cambio de agenda, formación…"
                         style="background:#18181f;border:1px solid #252530;border-radius:8px;padding:.75rem 1rem;color:#f0ece3;font-family:'DM Sans',sans-serif;font-size:.88rem;resize:vertical;"></textarea>
+                    <span id="rd-resch-motivo-hint" style="display:none;font-size:.68rem;color:#7a7880;font-style:italic;">El motivo anterior se usará si no escribes uno nuevo.</span>
                 </div>
                 <!-- Calendario inline -->
                 <div style="background:#18181f;border:1px solid #252530;border-radius:10px;padding:1rem;margin-bottom:1rem;">
@@ -414,7 +416,7 @@
 
     // ── Estado del drawer ─────────────────────────────────────
     let currentToken = null;
-    let currentData  = null;  // datos completos de la reserva actual
+    let currentData  = null;
 
     // ── Calendario inline state ───────────────────────────────
     let rdCalDate      = new Date();
@@ -563,7 +565,6 @@
         const ronda          = parseInt(data.ronda_negociacion || 0);
         const motivoCambio   = data.motivo_cambio || '';
         const nuevaFechaProp = data.nueva_fecha_propuesta || '';
-        // FIX: normalizar la hora de propuesta (puede venir como "HH:MM:SS")
         const nuevaHoraProp  = data.nueva_hora_propuesta ? data.nueva_hora_propuesta.slice(0, 5) : '';
         const origHora       = data.hora ? data.hora.slice(0, 5) : '—';
 
@@ -581,7 +582,7 @@
 
             document.getElementById('rd-orig-slot').textContent = formatFecha(data.fecha) + ' · ' + origHora;
 
-            // FIX: mostrar correctamente la nueva fecha/hora propuesta por el cliente
+            // [FIX 3] Mostrar nueva_fecha_propuesta y nueva_hora_propuesta correctamente
             if (nuevaFechaProp && nuevaHoraProp) {
                 document.getElementById('rd-new-slot').textContent = formatFecha(nuevaFechaProp) + ' · ' + nuevaHoraProp;
             } else {
@@ -642,7 +643,6 @@
                 <button class="rd-footer-btn rd-btn-cancel-only"     onclick="rdShowCancel()">🚫 Cancelar</button>`;
 
         } else if (est === 'reprogramar_cliente') {
-            // Aceptar el horario del cliente
             footer.innerHTML = `
                 <a class="rd-footer-btn rd-btn-accept"
                    href="?accion=aceptar&token=${encodeURIComponent(data.token)}&barbero=todos&fecha=todas&estado=reprogramar_cliente"
@@ -679,7 +679,6 @@
         document.getElementById('rd-reschedule-inline').style.display = 'none';
         document.getElementById('rd-footer').style.display = 'none';
         document.getElementById('rd-cancel-motivo').value = '';
-        // Scroll hasta abajo
         const body = document.getElementById('rd-drawer').querySelector('.rd-body');
         setTimeout(() => { body.scrollTop = body.scrollHeight; }, 50);
     };
@@ -719,7 +718,22 @@
         // Reset estado
         rdSelectedDate = null;
         rdSelectedSlot = null;
-        document.getElementById('rd-resch-motivo').value = '';
+
+        // [FIX 1] Pre-rellenar motivo con el motivo original si existe
+        const prevMotivo = (currentData?.motivo_cambio || '').split(' | ')[0].trim();
+        document.getElementById('rd-resch-motivo').value = prevMotivo;
+
+        // Mostrar hint si hay motivo previo
+        const hintEl = document.getElementById('rd-resch-motivo-hint');
+        const reqEl  = document.getElementById('rd-resch-motivo-required');
+        if (prevMotivo) {
+            if (hintEl) hintEl.style.display = 'block';
+            if (reqEl)  reqEl.textContent = '(opcional)';
+        } else {
+            if (hintEl) hintEl.style.display = 'none';
+            if (reqEl)  reqEl.textContent = '*';
+        }
+
         document.getElementById('rd-btn-do-reschedule').disabled = true;
         document.getElementById('rd-btn-do-reschedule').style.opacity = '.4';
         document.getElementById('rd-slots-grid').innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:.85rem;color:#7a7880;font-size:.8rem;">Selecciona un día del calendario</div>';
@@ -774,7 +788,6 @@
     window.rdSelectDate = async function(iso) {
         rdSelectedDate = iso;
         rdSelectedSlot = null;
-        document.getElementById('rd-resch-hora-val') && (document.getElementById('rd-resch-hora-val').value = '');
         document.getElementById('rd-btn-do-reschedule').disabled = true;
         document.getElementById('rd-btn-do-reschedule').style.opacity = '.4';
         rdRenderCal();
@@ -837,8 +850,11 @@
     };
 
     window.rdDoReschedule = async function() {
-        const motivo = (document.getElementById('rd-resch-motivo').value || '').trim();
-        if (!motivo)       { rdShowInlineStatus('rd-resch-status', false, 'El motivo es obligatorio.'); return; }
+        // [FIX 1] Motivo opcional si ya hay un motivo previo de la negociación
+        const motivoInput = (document.getElementById('rd-resch-motivo').value || '').trim();
+        const motivoPrevio = (currentData?.motivo_cambio || '').split(' | ')[0].trim();
+        const motivo = motivoInput || motivoPrevio;
+        if (!motivo) { rdShowInlineStatus('rd-resch-status', false, 'El motivo es obligatorio.'); return; }
         if (!rdSelectedDate) { rdShowInlineStatus('rd-resch-status', false, 'Selecciona una fecha.'); return; }
         if (!rdSelectedSlot) { rdShowInlineStatus('rd-resch-status', false, 'Selecciona una hora.'); return; }
         if (!confirm('¿Enviar propuesta de cambio a ' + (currentData?.cliente_nombre || '') + '?\n' + rdSelectedDate + ' a las ' + rdSelectedSlot)) return;
