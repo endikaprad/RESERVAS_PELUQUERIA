@@ -1,0 +1,82 @@
+name: Deploy to InfinityFree
+
+on:
+  push:
+    branches:
+      - main 
+  workflow_dispatch:
+
+jobs:
+  deploy: 
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
+
+      - name: Generar config.php desde secrets
+        env:
+          DB_HOST: ${{ secrets.DB_HOST }}
+          DB_NAME: ${{ secrets.DB_NAME }}
+          DB_USER: ${{ secrets.DB_USER }}
+          DB_PASS: ${{ secrets.DB_PASS }}
+          BREVO_API_KEY: ${{ secrets.BREVO_API_KEY }}
+        run: |
+          cat > backend/config.php << PHPEOF
+          <?php
+          define('DB_HOST',        '${DB_HOST}');
+          define('DB_NAME',        '${DB_NAME}');
+          define('DB_USER',        '${DB_USER}');
+          define('DB_PASS',        '${DB_PASS}');
+          define('DB_CHARSET',     'utf8mb4');
+          define('BREVO_API_KEY',  '${BREVO_API_KEY}');
+
+          date_default_timezone_set('Europe/Madrid');
+
+          function getDB(): PDO {
+              static \$pdo = null;
+              if (\$pdo === null) {
+                  \$dsn = sprintf(
+                      'mysql:host=%s;dbname=%s;charset=%s',
+                      DB_HOST, DB_NAME, DB_CHARSET
+                  );
+                  \$options = [
+                      PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
+                      PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+                      PDO::ATTR_EMULATE_PREPARES   => false,
+                  ];
+                  \$pdo = new PDO(\$dsn, DB_USER, DB_PASS, \$options);
+                  \$pdo->exec("SET time_zone = '+02:00'");
+              }
+              return \$pdo;
+          }
+          PHPEOF
+      
+      - name: Cache busting — inyectar timestamp en scripts
+        run: |
+          TIMESTAMP=$(date +%Y%m%d%H%M%S)
+          for file in index.html servicios.html equipo.html galeria.html contacto.html reservas.html; do
+            sed -i "s/main\.js?v=[0-9]*/main.js?v=$TIMESTAMP/g" $file
+          done
+          sed -i "s/booking\.js?v=[0-9]*/booking.js?v=$TIMESTAMP/g" reservas.html
+          sed -i "s/galery\.js?v=[0-9]*/galery.js?v=$TIMESTAMP/g" galeria.html
+          sed -i "s/contact\.js?v=[0-9]*/contact.js?v=$TIMESTAMP/g" contacto.html
+          sed -i "s/admin-reserva-detail\.js?v=[0-9]*/admin-reserva-detail.js?v=$TIMESTAMP/g" backend/admin.php
+          sed -i "s/admin-datos\.js?v=[0-9]*/admin-datos.js?v=$TIMESTAMP/g" backend/admin.php
+          echo "Cache busting aplicado con timestamp: $TIMESTAMP"
+
+      - name: Deploy via FTP
+        uses: SamKirkland/FTP-Deploy-Action@4.3.2
+        with:
+          server: ftpupload.net
+          username: ${{ secrets.FTP_USER }}
+          password: ${{ secrets.FTP_PASS }}
+          local-dir: ./
+          server-dir: /htdocs/
+          dangerous-clean-slate: false
+          exclude: |
+            **/.git*
+            **/.git*/**
+            **/node_modules/**
+            .github/**
+            database.sql
+            README.md
