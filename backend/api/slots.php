@@ -1,6 +1,10 @@
 <?php
 // ============================================================
 //  GET /api/slots.php?fecha=YYYY-MM-DD&barbero=endika
+//
+//  FIX #4: Los slots propuestos por el barbero en una negociación
+//  (estado 'reprogramar_barbero') también se marcan como ocupados,
+//  para que nadie pueda reservar ese horario mientras está pendiente.
 // ============================================================
 
 header('Access-Control-Allow-Origin: *');
@@ -56,10 +60,9 @@ try {
         ]);
     }
 
-    // FIX BUG 1: 'cancelada' se elimina de los estados bloqueantes.
-    // Una reserva cancelada libera el hueco — solo 'pendiente' y 'aceptada'
-    // deben bloquear el slot. 'denegada' también se mantiene bloqueada
-    // para evitar que el barbero acepte huecos que ya gestionó.
+    // ── Slots ocupados por reservas normales ──────────────────
+    // Estados que bloquean: pendiente, aceptada, denegada
+    // (cancelada libera el slot)
     $stmt = $db->prepare(
         "SELECT TIME_FORMAT(hora, '%H:%i') AS hora
          FROM reservas
@@ -70,8 +73,30 @@ try {
     $stmt->execute([$barbero, $fecha]);
     $ocupadas = $stmt->fetchAll(PDO::FETCH_COLUMN);
 
+    // ── FIX #4: Slots propuestos en negociación activa ─────────
+    // Si el barbero propuso un horario nuevo (reprogramar_barbero),
+    // ese slot de la propuesta también debe bloquearse para nuevas reservas.
+    // Usamos nueva_fecha_propuesta y nueva_hora_propuesta.
+    $stmtProp = $db->prepare(
+        "SELECT TIME_FORMAT(nueva_hora_propuesta, '%H:%i') AS hora
+         FROM reservas
+         WHERE barbero_id              = ?
+           AND nueva_fecha_propuesta   = ?
+           AND nueva_hora_propuesta    IS NOT NULL
+           AND estado                  IN ('reprogramar_barbero', 'reprogramar_cliente')"
+    );
+    $stmtProp->execute([$barbero, $fecha]);
+    $ocupadasPropuesta = $stmtProp->fetchAll(PDO::FETCH_COLUMN);
+
+    // Combinar y deduplicar
+    $todasOcupadas = array_values(
+        array_unique(
+            array_merge($ocupadas, $ocupadasPropuesta)
+        )
+    );
+
     slots_ok([
-        'ocupadas'  => array_values($ocupadas),
+        'ocupadas'  => $todasOcupadas,
         'bloqueado' => false,
         'motivo'    => null,
         'fecha'     => $fecha,

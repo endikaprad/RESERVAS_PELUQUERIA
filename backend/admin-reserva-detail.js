@@ -1,7 +1,6 @@
 // ============================================================
 //  PRADO BARBER CO. — admin-reserva-detail.js
 //  Drawer de detalle de reserva al hacer click en fila/card
-//  Incluye: info completa + propuesta cliente si aplica
 // ============================================================
 
 (function initReservaDetail() {
@@ -68,7 +67,13 @@
                 <div class="rd-notas-box" id="rd-notas">—</div>
             </div>
 
-            <!-- Propuesta cliente (reprogramar_cliente) -->
+            <!-- Historial de negociación finalizada -->
+            <div class="rd-section" id="rd-historial-section" style="display:none;">
+                <div class="rd-section-label">Historial de negociación</div>
+                <div id="rd-historial-content"></div>
+            </div>
+
+            <!-- Propuesta cliente en curso (reprogramar_cliente) -->
             <div class="rd-section" id="rd-propuesta-section" style="display:none;">
                 <div class="rd-section-label">Propuesta del cliente</div>
                 <div class="rd-propuesta-card">
@@ -98,7 +103,7 @@
                 <div class="rd-propuesta-actions" id="rd-propuesta-actions"></div>
             </div>
 
-            <!-- Propuesta barbero pendiente de respuesta cliente -->
+            <!-- Propuesta barbero pendiente de respuesta cliente (reprogramar_barbero) -->
             <div class="rd-section" id="rd-barbero-propuesta-section" style="display:none;">
                 <div class="rd-section-label">Propuesta enviada al cliente</div>
                 <div class="rd-propuesta-card rd-barbero-prop">
@@ -113,6 +118,10 @@
                             <div class="rd-propuesta-row">
                                 <span class="rd-propuesta-label">Propuesta enviada</span>
                                 <span class="rd-propuesta-val-new" id="rd-bp-new">—</span>
+                            </div>
+                            <div class="rd-propuesta-row" id="rd-bp-ronda-row" style="display:none;">
+                                <span class="rd-propuesta-label">Ronda</span>
+                                <span class="rd-ronda-badge" id="rd-bp-ronda">—</span>
                             </div>
                         </div>
                     </div>
@@ -263,6 +272,40 @@
         border-radius: 6px; border-left: 2px solid #2a2a38; line-height: 1.7;
     }
 
+    /* Historial de negociación */
+    .rd-historial-timeline {
+        display: flex; flex-direction: column; gap: .5rem;
+    }
+    .rd-historial-item {
+        display: flex; gap: .75rem; align-items: flex-start;
+        background: #18181f; border: 1px solid #252530;
+        border-radius: 8px; padding: .75rem 1rem;
+        position: relative;
+    }
+    .rd-historial-item.barbero-item { border-color: rgba(201,168,76,.25); }
+    .rd-historial-item.cliente-item { border-color: rgba(37,80,160,.25); }
+    .rd-historial-item.final-item   { border-color: rgba(34,197,94,.25); }
+    .rd-historial-item.cancelled-item { border-color: rgba(107,114,128,.25); }
+    .rd-hist-icon {
+        width: 28px; height: 28px; border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        font-size: .75rem; flex-shrink: 0; margin-top: .1rem;
+    }
+    .rd-hist-icon.barbero { background: rgba(201,168,76,.15); border: 1px solid rgba(201,168,76,.3); color: #c9a84c; }
+    .rd-hist-icon.cliente { background: rgba(37,80,160,.15);  border: 1px solid rgba(37,80,160,.3);  color: #6b9fff; }
+    .rd-hist-icon.final   { background: rgba(34,197,94,.15);  border: 1px solid rgba(34,197,94,.3);  color: #22c55e; }
+    .rd-hist-icon.cancelled { background: rgba(107,114,128,.15); border: 1px solid rgba(107,114,128,.3); color: #9ca3af; }
+    .rd-hist-info { flex: 1; min-width: 0; }
+    .rd-hist-title { font-size: .8rem; font-weight: 600; margin-bottom: .25rem; }
+    .rd-hist-detail { font-size: .75rem; color: #7a7880; }
+    .rd-hist-detail strong { color: #f0ece3; }
+    .rd-hist-ronda {
+        display: inline-block; padding: .1rem .45rem;
+        background: rgba(245,158,11,.1); border: 1px solid rgba(245,158,11,.25);
+        border-radius: 100px; font-size: .62rem; color: #f59e0b;
+        margin-left: .4rem; vertical-align: middle;
+    }
+
     /* Propuesta card */
     .rd-propuesta-card {
         display: flex; gap: 1rem;
@@ -346,6 +389,16 @@
     .rd-btn-accept:hover { background: #22c55e; color: #000; }
     .rd-btn-deny   { background: rgba(212,43,43,.1);  border-color: rgba(212,43,43,.3);  color: #d42b2b; }
     .rd-btn-deny:hover   { background: #d42b2b; color: #fff; }
+    /* Botón "Proponer nuevo horario" (solo calendario, sin motivo) */
+    .rd-btn-reschedule-only {
+        background: rgba(201,168,76,.1); border-color: rgba(201,168,76,.35); color: #c9a84c;
+    }
+    .rd-btn-reschedule-only:hover { background: #c9a84c; color: #000; }
+    /* Botón "Cancelar cita" (solo cancela) */
+    .rd-btn-cancel-only {
+        background: rgba(107,114,128,.1); border-color: rgba(107,114,128,.3); color: #9ca3af;
+    }
+    .rd-btn-cancel-only:hover { background: #374151; color: #fff; border-color: #4b5563; }
     .rd-btn-manage { background: rgba(107,114,128,.1);border-color: rgba(107,114,128,.3);color: #9ca3af; }
     .rd-btn-manage:hover { background: #374151; color: #fff; border-color: #4b5563; }
 
@@ -400,6 +453,103 @@
         reprogramar_cliente:    '⇄ Prop. cliente',
     };
 
+    // ── Parsear historial de negociación del campo motivo_cambio ─
+    // El campo motivo_cambio acumula entradas separadas por " | "
+    // Formato: "Motivo inicial | Contrapropuesta cliente (ronda 1) | ..."
+    function parseHistorial(motivoCambio, estado, ronda,
+                            fechaOriginal, horaOriginal,
+                            nuevaFechaProp, nuevaHoraProp) {
+        const items = [];
+        if (!motivoCambio && ronda === 0) return items;
+
+        const partes = motivoCambio ? motivoCambio.split(' | ').map(s => s.trim()).filter(Boolean) : [];
+
+        // Primera entrada = propuesta inicial del barbero (siempre)
+        if (partes.length > 0 || ronda > 0) {
+            const motivoInicial = partes[0] || 'Cambio de agenda';
+            items.push({
+                tipo: 'barbero',
+                icono: '⇄',
+                titulo: 'Barbero propuso cambio' + (ronda >= 1 ? ' · Ronda 1' : ''),
+                detalle: motivoInicial,
+                rondaLabel: ronda >= 1 ? 'Ronda 1' : null,
+            });
+        }
+
+        // Entradas adicionales (contrapropuestas cliente, rondas adicionales barbero)
+        for (let i = 1; i < partes.length; i++) {
+            const p = partes[i];
+            if (p.toLowerCase().includes('contrapropuesta cliente')) {
+                // Extraer ronda si la hay
+                const match = p.match(/ronda\s*(\d+)/i);
+                const r = match ? parseInt(match[1]) : null;
+                items.push({
+                    tipo: 'cliente',
+                    icono: '↩',
+                    titulo: 'Cliente propuso alternativa' + (r ? ' · Ronda ' + r : ''),
+                    detalle: 'El cliente no pudo en el horario propuesto y ofreció una alternativa.',
+                    rondaLabel: r ? 'Ronda ' + r : null,
+                });
+            } else {
+                // Otra propuesta del barbero (ronda 2+)
+                const rondaNum = Math.floor(i / 2) + 1;
+                items.push({
+                    tipo: 'barbero',
+                    icono: '⇄',
+                    titulo: 'Barbero propuso nuevo horario · Ronda ' + rondaNum,
+                    detalle: p,
+                    rondaLabel: 'Ronda ' + rondaNum,
+                });
+            }
+        }
+
+        // Entrada final según estado actual
+        const esNegociacionFinalizada = ['aceptada', 'cancelada', 'denegada'].includes(estado);
+        if (esNegociacionFinalizada && ronda > 0) {
+            if (estado === 'aceptada') {
+                const fechaFmt = nuevaFechaProp
+                    ? formatFecha(nuevaFechaProp) + ' · ' + (nuevaHoraProp || '').slice(0, 5)
+                    : (fechaOriginal && horaOriginal ? formatFecha(fechaOriginal) + ' · ' + horaOriginal.slice(0, 5) : '—');
+                items.push({
+                    tipo: 'final',
+                    icono: '✓',
+                    titulo: 'Negociación finalizada — Cita confirmada',
+                    detalle: 'Horario acordado: <strong>' + fechaFmt + '</strong>',
+                    rondaLabel: null,
+                });
+            } else if (estado === 'cancelada') {
+                items.push({
+                    tipo: 'cancelled',
+                    icono: '✕',
+                    titulo: 'Negociación finalizada — Cita cancelada',
+                    detalle: 'No se llegó a un acuerdo o se canceló durante la negociación.',
+                    rondaLabel: null,
+                });
+            }
+        }
+
+        return items;
+    }
+
+    function renderHistorial(items) {
+        if (!items.length) return '';
+        return '<div class="rd-historial-timeline">' +
+            items.map(item => {
+                const iconClass = item.tipo;
+                return `<div class="rd-historial-item ${item.tipo}-item">
+                    <div class="rd-hist-icon ${iconClass}">${item.icono}</div>
+                    <div class="rd-hist-info">
+                        <div class="rd-hist-title">
+                            ${item.titulo}
+                            ${item.rondaLabel ? '<span class="rd-hist-ronda">' + item.rondaLabel + '</span>' : ''}
+                        </div>
+                        <div class="rd-hist-detail">${item.detalle}</div>
+                    </div>
+                </div>`;
+            }).join('') +
+        '</div>';
+    }
+
     // ── Función principal: abrir drawer con datos ─────────────
     window.openRD = function(data) {
         currentToken = data.token || '';
@@ -426,7 +576,7 @@
         telEl.textContent = data.cliente_telefono || '—';
         telEl.href        = 'tel:' + (data.cliente_telefono || '');
 
-        // Cita
+        // Cita — FIX #1: separar servicio y duración correctamente
         document.getElementById('rd-servicio').textContent  = data.servicio || '—';
         document.getElementById('rd-duracion').textContent  = data.duracion || '';
         document.getElementById('rd-precio').textContent    = data.precio ? data.precio + ' €' : '—';
@@ -453,37 +603,52 @@
         // Token
         document.getElementById('rd-token').textContent = (data.token || '').slice(0, 32) + '…';
 
-        // ── Propuesta cliente ─────────────────────────────────
-        const propSection      = document.getElementById('rd-propuesta-section');
-        const bpSection        = document.getElementById('rd-barbero-propuesta-section');
-        propSection.style.display  = 'none';
-        bpSection.style.display    = 'none';
+        // Ocultar todas las secciones dinámicas primero
+        document.getElementById('rd-propuesta-section').style.display     = 'none';
+        document.getElementById('rd-barbero-propuesta-section').style.display = 'none';
+        document.getElementById('rd-historial-section').style.display      = 'none';
 
-        if (est === 'reprogramar_cliente') {
-            propSection.style.display = 'block';
+        const ronda         = parseInt(data.ronda_negociacion || 0);
+        const motivoCambio  = data.motivo_cambio || '';
+        const nuevaFechaProp = data.nueva_fecha_propuesta || '';
+        const nuevaHoraProp  = data.nueva_hora_propuesta ? data.nueva_hora_propuesta.slice(0, 5) : '';
+        const origHora       = data.hora ? data.hora.slice(0, 5) : '—';
+        const origFecha      = formatFecha(data.fecha);
 
-            // Cita original
-            const origHora  = data.hora ? data.hora.slice(0, 5) : '—';
-            const origFecha = formatFecha(data.fecha);
+        // ── FIX #2: Mostrar historial si hubo negociación y está finalizada ──
+        const esNegociacionActiva = ['reprogramar_barbero', 'reprogramar_cliente'].includes(est);
+        const huboNegociacion = ronda > 0 || motivoCambio;
+
+        if (huboNegociacion && !esNegociacionActiva) {
+            // Negociación finalizada: mostrar historial
+            const histItems = parseHistorial(
+                motivoCambio, est, ronda,
+                data.fecha, data.hora,
+                nuevaFechaProp, nuevaHoraProp
+            );
+            if (histItems.length > 0) {
+                document.getElementById('rd-historial-content').innerHTML = renderHistorial(histItems);
+                document.getElementById('rd-historial-section').style.display = 'block';
+            }
+        } else if (est === 'reprogramar_cliente') {
+            // Propuesta del cliente en curso
+            document.getElementById('rd-propuesta-section').style.display = 'block';
+
             document.getElementById('rd-orig-slot').textContent = origFecha + ' · ' + origHora;
 
-            // Nueva propuesta del cliente
-            const newFecha = data.nueva_fecha_propuesta || '';
-            const newHora  = data.nueva_hora_propuesta  ? data.nueva_hora_propuesta.slice(0, 5) : '';
             document.getElementById('rd-new-slot').textContent =
-                newFecha && newHora ? formatFecha(newFecha) + ' · ' + newHora : '—';
+                nuevaFechaProp && nuevaHoraProp
+                    ? formatFecha(nuevaFechaProp) + ' · ' + nuevaHoraProp
+                    : '—';
 
-            // Motivo
             const motivoRow = document.getElementById('rd-motivo-row');
-            if (data.motivo_cambio) {
-                document.getElementById('rd-motivo').textContent = data.motivo_cambio;
+            if (motivoCambio) {
+                document.getElementById('rd-motivo').textContent = motivoCambio;
                 motivoRow.style.display = 'flex';
             } else {
                 motivoRow.style.display = 'none';
             }
 
-            // Ronda
-            const ronda = parseInt(data.ronda_negociacion || 0);
             const rondaRow = document.getElementById('rd-ronda-row');
             if (ronda > 0) {
                 document.getElementById('rd-ronda').textContent = 'Ronda ' + ronda;
@@ -501,24 +666,33 @@
                     ✓ Aceptar horario del cliente
                 </a>
                 <button class="rd-pa-btn rd-pa-manage"
-                        onclick="closeRD(); if(typeof openCR==='function') openCR('${data.token}','${data.barbero_id||''}','${escJS(data.cliente_nombre)}','${escJS(data.servicio)}','${data.fecha}','${origHora}',${ronda})">
-                    ⇄ Gestionar
+                        onclick="closeRD(); openCRRescheduleOnly('${data.token}','${data.barbero_id||''}','${escJS(data.cliente_nombre)}','${escJS(data.servicio)}','${data.fecha}','${origHora}',${ronda})">
+                    ⇄ Proponer otro horario
                 </button>`;
 
         } else if (est === 'reprogramar_barbero') {
-            bpSection.style.display = 'block';
-            const origHora  = data.hora ? data.hora.slice(0, 5) : '—';
-            const origFecha = formatFecha(data.fecha);
+            // Propuesta del barbero enviada, esperando respuesta cliente
+            document.getElementById('rd-barbero-propuesta-section').style.display = 'block';
+
             document.getElementById('rd-bp-orig').textContent = origFecha + ' · ' + origHora;
-            const newFecha = data.nueva_fecha_propuesta || '';
-            const newHora  = data.nueva_hora_propuesta  ? data.nueva_hora_propuesta.slice(0, 5) : '';
             document.getElementById('rd-bp-new').textContent =
-                newFecha && newHora ? formatFecha(newFecha) + ' · ' + newHora : 'Esperando…';
+                nuevaFechaProp && nuevaHoraProp
+                    ? formatFecha(nuevaFechaProp) + ' · ' + nuevaHoraProp
+                    : 'Esperando…';
+
+            const bpRondaRow = document.getElementById('rd-bp-ronda-row');
+            if (ronda > 0) {
+                document.getElementById('rd-bp-ronda').textContent = 'Ronda ' + ronda;
+                bpRondaRow.style.display = 'flex';
+            } else {
+                bpRondaRow.style.display = 'none';
+            }
         }
 
-        // ── Footer acciones ───────────────────────────────────
+        // ── Footer acciones — FIX #3 ──────────────────────────
         const footer = document.getElementById('rd-footer');
         footer.innerHTML = '';
+        footer.style.display = 'flex';
 
         if (est === 'pendiente') {
             footer.innerHTML = `
@@ -532,20 +706,50 @@
                    onclick="return confirm('¿Denegar la reserva de ${escJS(data.cliente_nombre)}?')">
                     ✕ Denegar
                 </a>`;
-        } else if (est === 'aceptada' || est === 'reprogramar_barbero' || est === 'reprogramar_cliente') {
-            const ronda = parseInt(data.ronda_negociacion || 0);
-            const origHora = data.hora ? data.hora.slice(0, 5) : '—';
-            footer.innerHTML = `
-                <button class="rd-footer-btn rd-btn-manage"
-                        onclick="closeRD(); if(typeof openCR==='function') openCR('${data.token}','${data.barbero_id||''}','${escJS(data.cliente_nombre)}','${escJS(data.servicio)}','${data.fecha}','${origHora}',${ronda})">
-                    🚫 Cancelar / Reprogramar
-                </button>`;
-        }
 
-        if (!footer.innerHTML.trim()) {
-            footer.style.display = 'none';
+        } else if (est === 'aceptada') {
+            // Estado aceptada sin negociación previa: dos botones separados con funciones distintas
+            footer.innerHTML = `
+                <button class="rd-footer-btn rd-btn-reschedule-only"
+                        onclick="closeRD(); openCRRescheduleOnly('${data.token}','${data.barbero_id||''}','${escJS(data.cliente_nombre)}','${escJS(data.servicio)}','${data.fecha}','${origHora}',${ronda})">
+                    ⇄ Proponer cambio de horario
+                </button>
+                <button class="rd-footer-btn rd-btn-cancel-only"
+                        onclick="closeRD(); openCRCancelOnly('${data.token}','${escJS(data.cliente_nombre)}','${data.fecha}','${origHora}')">
+                    🚫 Cancelar cita
+                </button>`;
+
+        } else if (est === 'reprogramar_barbero') {
+            // Ya hay propuesta enviada: solo permite cancelar o reproponer
+            footer.innerHTML = `
+                <button class="rd-footer-btn rd-btn-reschedule-only"
+                        onclick="closeRD(); openCRRescheduleOnly('${data.token}','${data.barbero_id||''}','${escJS(data.cliente_nombre)}','${escJS(data.servicio)}','${data.fecha}','${origHora}',${ronda})">
+                    ⇄ Cambiar propuesta
+                </button>
+                <button class="rd-footer-btn rd-btn-cancel-only"
+                        onclick="closeRD(); openCRCancelOnly('${data.token}','${escJS(data.cliente_nombre)}','${data.fecha}','${origHora}')">
+                    🚫 Cancelar cita
+                </button>`;
+
+        } else if (est === 'reprogramar_cliente') {
+            // Cliente propuso: botón aceptar + proponer otro
+            footer.innerHTML = `
+                <a class="rd-footer-btn rd-btn-accept"
+                   href="?accion=aceptar&token=${encodeURIComponent(data.token)}&barbero=todos&fecha=todas&estado=reprogramar_cliente"
+                   onclick="return confirm('¿Aceptar el horario del cliente?')">
+                    ✓ Aceptar propuesta
+                </a>
+                <button class="rd-footer-btn rd-btn-reschedule-only"
+                        onclick="closeRD(); openCRRescheduleOnly('${data.token}','${data.barbero_id||''}','${escJS(data.cliente_nombre)}','${escJS(data.servicio)}','${data.fecha}','${origHora}',${ronda})">
+                    ⇄ Proponer otro
+                </button>
+                <button class="rd-footer-btn rd-btn-cancel-only"
+                        onclick="closeRD(); openCRCancelOnly('${data.token}','${escJS(data.cliente_nombre)}','${data.fecha}','${origHora}')">
+                    🚫 Cancelar
+                </button>`;
+
         } else {
-            footer.style.display = 'flex';
+            footer.style.display = 'none';
         }
 
         // Abrir
@@ -569,8 +773,80 @@
         });
     };
 
+    // ── FIX #3: Abrir panel CR solo en modo "Proponer horario" ──
+    // Sin pedir motivo porque ya fue introducido en la primera vez
+    window.openCRRescheduleOnly = function(token, barberoId, nombre, servicio, fecha, hora, ronda) {
+        if (typeof openCR === 'function') {
+            openCR(token, barberoId, nombre, servicio, fecha, hora, ronda);
+            // Tras abrir, cambiar a tab reprogramar automáticamente y ocultar el campo motivo
+            requestAnimationFrame(() => {
+                if (typeof crSwitchMode === 'function') crSwitchMode('reschedule');
+                // Ocultar el campo motivo si ya hay ronda previa
+                if (parseInt(ronda) > 0) {
+                    const motivoField = document.getElementById('cr-resch-motivo');
+                    if (motivoField) {
+                        const motivoGroup = motivoField.closest('.cr-field');
+                        if (motivoGroup) {
+                            motivoGroup.style.display = 'none';
+                            // Poner un valor por defecto para que no falle validación
+                            motivoField.value = 'Continúa la negociación de horario';
+                        }
+                    }
+                }
+            });
+        }
+    };
+
+    // ── FIX #3: Abrir panel CR solo en modo "Cancelar" ──────────
+    window.openCRCancelOnly = function(token, nombre, fecha, hora) {
+        // Buscar barbero_id de los datos en el DOM
+        let barberoId = '';
+        const rows = document.querySelectorAll('[data-token]');
+        rows.forEach(el => {
+            if (el.dataset.token === token) barberoId = el.dataset.barberoId || '';
+        });
+        if (typeof openCR === 'function') {
+            openCR(token, barberoId, nombre, '', fecha, hora, 0);
+            requestAnimationFrame(() => {
+                if (typeof crSwitchMode === 'function') crSwitchMode('cancel');
+                // Ocultar tab de reprogramar para que solo quede cancelar
+                const rescheduleTab = document.getElementById('cr-tab-reschedule');
+                if (rescheduleTab) rescheduleTab.style.display = 'none';
+            });
+        }
+    };
+
     function escJS(str) {
-        return (str || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+        return (str || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+    }
+
+    // ── FIX #1: Extraer servicio y duración correctamente ────────
+    // El TD de servicio tiene: TextNode("Corte Clásico") + <br> + <span>30 minutos</span>
+    // textContent los fusionaría como "Corte Clásico30 minutos"
+    function extractServicioFromTd(td) {
+        if (!td) return { servicio: '—', duracion: '' };
+        // Intentar obtener del span
+        const spanEl = td.querySelector('span');
+        const duracion = spanEl ? spanEl.textContent.trim() : '';
+        // El nombre del servicio es el texto antes del span/br
+        let servicio = '';
+        for (const node of td.childNodes) {
+            if (node.nodeType === Node.TEXT_NODE) {
+                const t = node.textContent.trim();
+                if (t) { servicio = t; break; }
+            } else if (node.nodeName === 'BR') {
+                break;
+            } else if (node.nodeName !== 'SPAN') {
+                // Podría ser otro elemento antes del span
+                const t = node.textContent.trim();
+                if (t) { servicio = t; break; }
+            }
+        }
+        // Fallback: si no encontramos nombre, quitar la duración del textContent
+        if (!servicio && td.textContent) {
+            servicio = td.textContent.replace(duracion, '').trim();
+        }
+        return { servicio: servicio || '—', duracion };
     }
 
     // ── Hacer filas de tabla clickeables ──────────────────────
@@ -582,7 +858,6 @@
             row.classList.add('rd-clickable');
             row.style.cursor = 'pointer';
             row.addEventListener('click', function(e) {
-                // No activar si el click fue en un botón o enlace
                 if (e.target.closest('a,button,.btn-accept,.btn-deny,.tb-accept,.tb-deny,.btn-manage')) return;
                 const data = extractFromRow(row);
                 if (data) openRD(data);
@@ -605,30 +880,32 @@
         try {
             const cells  = row.querySelectorAll('td');
             if (!cells.length) return null;
+
             const idText    = cells[0]?.textContent?.trim().replace('#','') || '';
-            const fechaText = cells[1]?.textContent?.trim() || '';
             const horaText  = cells[2]?.textContent?.trim() || '';
             const clienteTd = cells[3];
             const clienteNombre = clienteTd?.querySelector('strong')?.textContent?.trim() || '';
             const clienteSpans  = clienteTd?.querySelectorAll('span') || [];
             const clienteEmail  = clienteSpans[0]?.textContent?.trim() || '';
             const clienteTel    = clienteSpans[1]?.textContent?.trim() || '';
-            const servicio  = cells[4]?.querySelector('[class]') ? cells[4].childNodes[0]?.textContent?.trim() : cells[4]?.textContent?.trim();
-            const duracion  = cells[4]?.querySelector('span')?.textContent?.trim() || '';
+
+            // FIX #1: extraer servicio y duración sin mezclarlos
+            const { servicio, duracion } = extractServicioFromTd(cells[4]);
+
             const precio    = cells[5]?.textContent?.trim().replace(' €','').replace('€','').trim() || '';
-            const barbero   = cells[6]?.textContent?.trim() || '';
+            const barbero   = cells[6]?.querySelector('.b-badge')?.textContent?.trim()
+                           || cells[6]?.textContent?.trim() || '';
             const estado    = row.dataset.estado || guessEstadoFromBadge(cells[7]);
             const notas     = cells[9]?.textContent?.trim() === '—' ? '' : cells[9]?.textContent?.trim() || '';
 
-            // Recuperar desde atributo data si existe (lo inyectamos abajo)
-            const token   = row.dataset.token   || '';
-            const barberoId = row.dataset.barberoId || '';
-            const fechaISO  = row.dataset.fecha  || '';
-            const creadoEn  = row.dataset.creado || '';
-            const nuevaFechaProp = row.dataset.nuevaFecha || '';
-            const nuevaHoraProp  = row.dataset.nuevaHora  || '';
-            const motivoCambio   = row.dataset.motivo     || '';
-            const ronda          = row.dataset.ronda      || '0';
+            const token          = row.dataset.token    || '';
+            const barberoId      = row.dataset.barberoId|| '';
+            const fechaISO       = row.dataset.fecha    || '';
+            const creadoEn       = row.dataset.creado   || '';
+            const nuevaFechaProp = row.dataset.nuevaFecha|| '';
+            const nuevaHoraProp  = row.dataset.nuevaHora || '';
+            const motivoCambio   = row.dataset.motivo   || '';
+            const ronda          = row.dataset.ronda    || '0';
 
             return {
                 id: idText, fecha: fechaISO, hora: horaText + ':00',
@@ -641,35 +918,44 @@
                 motivo_cambio: motivoCambio,
                 ronda_negociacion: ronda,
             };
-        } catch(e) { return null; }
+        } catch(e) { console.error('extractFromRow', e); return null; }
     }
 
     function extractFromCard(card) {
         try {
-            const idText     = card.querySelector('.rc-id')?.textContent?.trim().replace('#','') || '';
-            const horaText   = card.querySelector('.rc-hora')?.textContent?.trim() || '';
-            const nombre     = card.querySelector('.rc-cliente-name')?.textContent?.trim() || '';
-            const metas      = card.querySelectorAll('.rc-meta-item');
-            const email      = (metas[0]?.textContent || '').replace('✉','').trim();
-            const tel        = (metas[1]?.textContent || '').replace('📞','').trim();
-            const servicio   = card.querySelector('.rc-detail-value:not(.gold):not([class*="rc-barbero"])')?.textContent?.trim() || '';
-            const duracion   = card.querySelector('.rc-detail-sub')?.textContent?.trim() || '';
-            const precio     = card.querySelector('.rc-detail-value.gold')?.textContent?.trim().replace(' €','').replace('€','') || '';
-            const barberoEl  = card.querySelector('.rc-barbero-pill');
-            const barbero    = barberoEl?.textContent?.trim() || '';
-            const estadoBadge= card.querySelector('.ebadge');
-            const estado     = estadoBadge ? guessEstadoFromClass(estadoBadge) : '';
-            const notas      = card.querySelector('.rc-notas')?.textContent?.replace(/^"|"$/g,'').trim() || '';
+            const idText   = card.querySelector('.rc-id')?.textContent?.trim().replace('#','') || '';
+            const horaText = card.querySelector('.rc-hora')?.textContent?.trim() || '';
+            const nombre   = card.querySelector('.rc-cliente-name')?.textContent?.trim() || '';
+            const metas    = card.querySelectorAll('.rc-meta-item');
+            const email    = (metas[0]?.textContent || '').replace('✉','').trim();
+            const tel      = (metas[1]?.textContent || '').replace('📞','').trim();
 
-            // Data attrs
-            const token         = card.dataset.token    || '';
-            const barberoId     = card.dataset.barberoId|| '';
-            const fechaISO      = card.dataset.fecha    || '';
-            const creadoEn      = card.dataset.creado   || '';
-            const nuevaFechaProp= card.dataset.nuevaFecha|| '';
-            const nuevaHoraProp = card.dataset.nuevaHora || '';
-            const motivoCambio  = card.dataset.motivo   || '';
-            const ronda         = card.dataset.ronda    || '0';
+            // FIX #1: Servicio desde el bloque rc-detail correcto
+            // La tarjeta tiene rc-detail-value (servicio), rc-detail-sub (duración)
+            const detalles = card.querySelectorAll('.rc-detail');
+            let servicio = '—', duracion = '';
+            if (detalles.length > 0) {
+                const svcDet = detalles[0];
+                servicio = svcDet?.querySelector('.rc-detail-value')?.textContent?.trim() || '—';
+                duracion = svcDet?.querySelector('.rc-detail-sub')?.textContent?.trim()  || '';
+            }
+
+            const precio   = card.querySelector('.rc-detail-value.gold')?.textContent?.trim()
+                              .replace(' €','').replace('€','') || '';
+            const barberoEl= card.querySelector('.rc-barbero-pill');
+            const barbero  = barberoEl?.textContent?.trim() || '';
+            const estadoBadge = card.querySelector('.ebadge');
+            const estado   = card.dataset.estado || (estadoBadge ? guessEstadoFromClass(estadoBadge) : '');
+            const notas    = card.querySelector('.rc-notas')?.textContent?.replace(/^"|"$/g,'').trim() || '';
+
+            const token          = card.dataset.token    || '';
+            const barberoId      = card.dataset.barberoId|| '';
+            const fechaISO       = card.dataset.fecha    || '';
+            const creadoEn       = card.dataset.creado   || '';
+            const nuevaFechaProp = card.dataset.nuevaFecha|| '';
+            const nuevaHoraProp  = card.dataset.nuevaHora || '';
+            const motivoCambio   = card.dataset.motivo   || '';
+            const ronda          = card.dataset.ronda    || '0';
 
             return {
                 id: idText, fecha: fechaISO, hora: horaText + ':00',
@@ -682,7 +968,7 @@
                 motivo_cambio: motivoCambio,
                 ronda_negociacion: ronda,
             };
-        } catch(e) { return null; }
+        } catch(e) { console.error('extractFromCard', e); return null; }
     }
 
     function guessEstadoFromBadge(td) {
@@ -713,10 +999,24 @@
         if (e.key === 'Escape') closeRD();
     });
 
-    // ── Init: adjuntar listeners después de que el DOM esté listo ──
+    // También restaurar la pestaña de reprogramar al cerrar el panel CR
+    // (por si se ocultó en openCRCancelOnly)
+    const origCloseCR = window.closeCR;
+    window.closeCR = function() {
+        const rescheduleTab = document.getElementById('cr-tab-reschedule');
+        if (rescheduleTab) rescheduleTab.style.display = '';
+        const motivoField = document.getElementById('cr-resch-motivo');
+        if (motivoField) {
+            const motivoGroup = motivoField.closest('.cr-field');
+            if (motivoGroup) motivoGroup.style.display = '';
+            motivoField.value = '';
+        }
+        if (typeof origCloseCR === 'function') origCloseCR();
+    };
+
+    // ── Init ──────────────────────────────────────────────────
     function init() {
         attachRowListeners();
-        // Re-adjuntar si el DOM cambia (filtros, reloads)
         const observer = new MutationObserver(() => attachRowListeners());
         const container = document.querySelector('.admin-body');
         if (container) observer.observe(container, { childList: true, subtree: true });
