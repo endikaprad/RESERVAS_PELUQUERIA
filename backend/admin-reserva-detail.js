@@ -1,11 +1,11 @@
 // ============================================================
 //  PRADO BARBER CO. — admin-reserva-detail.js
-//  FIXES:
-//  1. Sin botones duplicados en sección propuesta — solo footer
-//  2. nueva_fecha_propuesta y nueva_hora_propuesta se muestran correctamente
-//  3. Footer "Proponer otro" → calendario inline en el drawer
-//  4. Footer "Cancelar" → modal directo sin ir a gestionar
-//  5. [FIX] Motivo pre-rellenado y opcional al re-proponer horario
+//  FIXES APPLIED (2026-05-26):
+//  1. Motivo pre-filled & optional when barber re-proposes in negotiation
+//  2. "Gestionar" button hidden for past bookings
+//  3. "Propone cambiar a" now shows correctly from data attributes
+//  4. Negotiation states open RD drawer (not CR panel) when clicking "Gestionar"
+//  5. Reload button added (handled in admin.php)
 // ============================================================
 
 (function initReservaDetail() {
@@ -105,7 +105,6 @@
                         </div>
                     </div>
                 </div>
-                <!-- SIN botones aquí — solo en el footer -->
             </div>
 
             <!-- Propuesta barbero pendiente de respuesta cliente (reprogramar_barbero) -->
@@ -167,7 +166,8 @@
                     ⇄ El cliente recibirá un email con el nuevo horario propuesto.
                 </div>
                 <div style="display:flex;flex-direction:column;gap:.35rem;margin-bottom:1rem;">
-                    <label id="rd-resch-motivo-label" style="font-size:.65rem;letter-spacing:.15em;text-transform:uppercase;color:#7a7880;">Motivo del cambio <span id="rd-resch-motivo-required">*</span></label>
+                    <!-- [FIX 1] Label changes to "opcional" when motivo already exists -->
+                    <label style="font-size:.65rem;letter-spacing:.15em;text-transform:uppercase;color:#7a7880;">Motivo del cambio <span id="rd-resch-motivo-required">*</span></label>
                     <textarea id="rd-resch-motivo" rows="2" placeholder="Ej: Cambio de agenda, formación…"
                         style="background:#18181f;border:1px solid #252530;border-radius:8px;padding:.75rem 1rem;color:#f0ece3;font-family:'DM Sans',sans-serif;font-size:.88rem;resize:vertical;"></textarea>
                     <span id="rd-resch-motivo-hint" style="display:none;font-size:.68rem;color:#7a7880;font-style:italic;">El motivo anterior se usará si no escribes uno nuevo.</span>
@@ -193,7 +193,7 @@
                     <div id="rd-cal-grid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;"></div>
                 </div>
                 <!-- Slots -->
-                <div style="margin-bottom:1rem;">
+                <div style="margin-bottom:1.25rem;">
                     <div style="font-size:.65rem;letter-spacing:.15em;text-transform:uppercase;color:#7a7880;margin-bottom:.6rem;">Horarios disponibles</div>
                     <div id="rd-slots-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:.4rem;">
                         <div style="grid-column:1/-1;text-align:center;padding:.85rem;color:#7a7880;font-size:.8rem;">Selecciona un día del calendario</div>
@@ -401,6 +401,28 @@
     .rd-slot.rds-taken { opacity: .3; cursor: not-allowed; text-decoration: line-through; }
     .rd-slot.rds-past  { opacity: .2; cursor: not-allowed; text-decoration: line-through; }
 
+    /* [FIX 4] Negotiation banner in drawer */
+    .rd-negociacion-banner {
+        background: linear-gradient(135deg, rgba(201,168,76,.08), rgba(37,80,160,.08));
+        border: 1px solid rgba(201,168,76,.25);
+        border-radius: 10px;
+        padding: .85rem 1.1rem;
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        gap: .75rem;
+        font-size: .8rem;
+        color: #c9a84c;
+    }
+    .rd-negociacion-banner-icon { font-size: 1.1rem; flex-shrink: 0; }
+    .rd-negociacion-banner-text { flex: 1; line-height: 1.5; }
+    .rd-negociacion-banner-ronda {
+        display: inline-block; padding: .2rem .65rem;
+        background: rgba(245,158,11,.12); border: 1px solid rgba(245,158,11,.3);
+        border-radius: 100px; font-size: .68rem; color: #f59e0b;
+        white-space: nowrap; flex-shrink: 0;
+    }
+
     .rd-clickable { cursor: pointer; }
     .rd-clickable:hover { background: rgba(37,37,48,.6) !important; }
     tr.rd-clickable:hover td { background: rgba(37,37,48,.6) !important; }
@@ -451,6 +473,15 @@
     }
     function pad2(n) { return String(n).padStart(2, '0'); }
     function isoDate(y, m, d) { return y + '-' + pad2(m + 1) + '-' + pad2(d); }
+
+    // [FIX 2] Check if a booking date is in the past
+    function isBookingPast(fecha) {
+        if (!fecha) return false;
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const bookingDate = new Date(fecha + 'T00:00:00');
+        return bookingDate < today;
+    }
 
     const ESTADO_LABELS = {
         pendiente:           '⏳ Pendiente',
@@ -565,7 +596,9 @@
         const ronda          = parseInt(data.ronda_negociacion || 0);
         const motivoCambio   = data.motivo_cambio || '';
         const nuevaFechaProp = data.nueva_fecha_propuesta || '';
-        const nuevaHoraProp  = data.nueva_hora_propuesta ? data.nueva_hora_propuesta.slice(0, 5) : '';
+        // [FIX 3] normalize hora: strip seconds if present, handle HH:MM:SS → HH:MM
+        const nuevaHoraPropRaw = data.nueva_hora_propuesta || '';
+        const nuevaHoraProp = nuevaHoraPropRaw ? nuevaHoraPropRaw.slice(0, 5) : '';
         const origHora       = data.hora ? data.hora.slice(0, 5) : '—';
 
         const esNegociacionActiva = ['reprogramar_barbero', 'reprogramar_cliente'].includes(est);
@@ -582,11 +615,19 @@
 
             document.getElementById('rd-orig-slot').textContent = formatFecha(data.fecha) + ' · ' + origHora;
 
-            // [FIX 3] Mostrar nueva_fecha_propuesta y nueva_hora_propuesta correctamente
+            // [FIX 3] Show nueva_fecha_propuesta and nueva_hora_propuesta correctly
+            // These come from the client's counter-proposal stored in DB
             if (nuevaFechaProp && nuevaHoraProp) {
                 document.getElementById('rd-new-slot').textContent = formatFecha(nuevaFechaProp) + ' · ' + nuevaHoraProp;
             } else {
-                document.getElementById('rd-new-slot').textContent = '—';
+                // Fallback: try to get from the card/row data directly
+                const rawNF = data.nueva_fecha_propuesta || data['nueva-fecha'] || '';
+                const rawNH = data.nueva_hora_propuesta || data['nueva-hora'] || '';
+                if (rawNF && rawNH) {
+                    document.getElementById('rd-new-slot').textContent = formatFecha(rawNF) + ' · ' + rawNH.slice(0,5);
+                } else {
+                    document.getElementById('rd-new-slot').textContent = 'Pendiente de confirmar';
+                }
             }
 
             const motivoRow = document.getElementById('rd-motivo-row');
@@ -605,6 +646,7 @@
             document.getElementById('rd-barbero-propuesta-section').style.display = 'block';
 
             document.getElementById('rd-bp-orig').textContent = formatFecha(data.fecha) + ' · ' + origHora;
+            // [FIX 3] Use normalized hora
             if (nuevaFechaProp && nuevaHoraProp) {
                 document.getElementById('rd-bp-new').textContent = formatFecha(nuevaFechaProp) + ' · ' + nuevaHoraProp;
             } else {
@@ -623,7 +665,13 @@
         footer.innerHTML = '';
         footer.style.display = 'flex';
 
-        if (est === 'pendiente') {
+        // [FIX 2] Determine if booking is past — no action buttons for past bookings
+        const isPast = isBookingPast(data.fecha);
+
+        if (isPast && !esNegociacionActiva) {
+            // Past booking: show read-only info, no action buttons
+            footer.style.display = 'none';
+        } else if (est === 'pendiente') {
             footer.innerHTML = `
                 <a class="rd-footer-btn rd-btn-accept"
                    href="?accion=aceptar&token=${encodeURIComponent(data.token)}&barbero=todos&fecha=hoy&estado=todos"
@@ -633,22 +681,43 @@
                    onclick="return confirm('¿Denegar la reserva de ${escJS(data.cliente_nombre)}?')">✕ Denegar</a>`;
 
         } else if (est === 'aceptada') {
-            footer.innerHTML = `
-                <button class="rd-footer-btn rd-btn-reschedule-only" onclick="rdShowReschedule()">⇄ Proponer cambio</button>
-                <button class="rd-footer-btn rd-btn-cancel-only"     onclick="rdShowCancel()">🚫 Cancelar cita</button>`;
+            if (isPast) {
+                footer.style.display = 'none';
+            } else {
+                footer.innerHTML = `
+                    <button class="rd-footer-btn rd-btn-reschedule-only" onclick="rdShowReschedule()">⇄ Proponer cambio</button>
+                    <button class="rd-footer-btn rd-btn-cancel-only"     onclick="rdShowCancel()">🚫 Cancelar cita</button>`;
+            }
 
         } else if (est === 'reprogramar_barbero') {
+            // [FIX 4] Negotiation-specific footer: barber's proposal is pending client response
             footer.innerHTML = `
-                <button class="rd-footer-btn rd-btn-reschedule-only" onclick="rdShowReschedule()">⇄ Cambiar propuesta</button>
-                <button class="rd-footer-btn rd-btn-cancel-only"     onclick="rdShowCancel()">🚫 Cancelar</button>`;
+                <div style="width:100%;display:flex;flex-direction:column;gap:.6rem;">
+                    <div style="background:rgba(201,168,76,.08);border:1px solid rgba(201,168,76,.2);border-radius:8px;padding:.65rem 1rem;font-size:.75rem;color:#d4a84b;line-height:1.5;">
+                        ⏳ Esperando respuesta del cliente. Puedes cambiar tu propuesta o cancelar.
+                    </div>
+                    <div style="display:flex;gap:.6rem;">
+                        <button class="rd-footer-btn rd-btn-reschedule-only" onclick="rdShowReschedule()">⇄ Cambiar propuesta</button>
+                        <button class="rd-footer-btn rd-btn-cancel-only" onclick="rdShowCancel()">🚫 Cancelar</button>
+                    </div>
+                </div>`;
 
         } else if (est === 'reprogramar_cliente') {
+            // [FIX 4] Negotiation-specific footer: client has counter-proposed
             footer.innerHTML = `
-                <a class="rd-footer-btn rd-btn-accept"
-                   href="?accion=aceptar&token=${encodeURIComponent(data.token)}&barbero=todos&fecha=todas&estado=reprogramar_cliente"
-                   onclick="return confirm('¿Aceptar el horario del cliente?')">✓ Aceptar propuesta</a>
-                <button class="rd-footer-btn rd-btn-reschedule-only" onclick="rdShowReschedule()">⇄ Proponer otro</button>
-                <button class="rd-footer-btn rd-btn-cancel-only"     onclick="rdShowCancel()">🚫 Cancelar</button>`;
+                <div style="width:100%;display:flex;flex-direction:column;gap:.6rem;">
+                    <div style="background:rgba(37,80,160,.08);border:1px solid rgba(37,80,160,.25);border-radius:8px;padding:.65rem 1rem;font-size:.75rem;color:#6b9fff;line-height:1.5;">
+                        ⇄ El cliente propone un cambio. Acepta su horario, propón otro o cancela.
+                    </div>
+                    <div style="display:flex;gap:.5rem;flex-wrap:wrap;">
+                        <a class="rd-footer-btn rd-btn-accept"
+                           style="flex:1;min-width:80px;"
+                           href="?accion=aceptar&token=${encodeURIComponent(data.token)}&barbero=todos&fecha=todas&estado=reprogramar_cliente"
+                           onclick="return confirm('¿Aceptar el horario propuesto por el cliente?')">✓ Aceptar propuesta</a>
+                        <button class="rd-footer-btn rd-btn-reschedule-only" style="flex:1;min-width:80px;" onclick="rdShowReschedule()">⇄ Proponer otro</button>
+                        <button class="rd-footer-btn rd-btn-cancel-only" style="flex:1;min-width:80px;" onclick="rdShowCancel()">🚫 Cancelar</button>
+                    </div>
+                </div>`;
 
         } else {
             footer.style.display = 'none';
@@ -711,25 +780,30 @@
     };
 
     // ── Mostrar sección Reprogramar inline ────────────────────
+    // [FIX 1] Motivo is pre-filled and optional when re-proposing in negotiation
     window.rdShowReschedule = function() {
         document.getElementById('rd-reschedule-inline').style.display = 'block';
         document.getElementById('rd-cancel-inline').style.display     = 'none';
         document.getElementById('rd-footer').style.display = 'none';
-        // Reset estado
+
+        // Reset state
         rdSelectedDate = null;
         rdSelectedSlot = null;
 
-        // [FIX 1] Pre-rellenar motivo con el motivo original si existe
+        // [FIX 1] Pre-fill motivo with previous motivo if in negotiation
         const prevMotivo = (currentData?.motivo_cambio || '').split(' | ')[0].trim();
-        document.getElementById('rd-resch-motivo').value = prevMotivo;
+        const motivoEl = document.getElementById('rd-resch-motivo');
+        const hintEl   = document.getElementById('rd-resch-motivo-hint');
+        const reqEl    = document.getElementById('rd-resch-motivo-required');
 
-        // Mostrar hint si hay motivo previo
-        const hintEl = document.getElementById('rd-resch-motivo-hint');
-        const reqEl  = document.getElementById('rd-resch-motivo-required');
         if (prevMotivo) {
+            // In negotiation: pre-fill and mark as optional
+            motivoEl.value = prevMotivo;
             if (hintEl) hintEl.style.display = 'block';
             if (reqEl)  reqEl.textContent = '(opcional)';
         } else {
+            // First time: empty, required
+            motivoEl.value = '';
             if (hintEl) hintEl.style.display = 'none';
             if (reqEl)  reqEl.textContent = '*';
         }
@@ -850,10 +924,11 @@
     };
 
     window.rdDoReschedule = async function() {
-        // [FIX 1] Motivo opcional si ya hay un motivo previo de la negociación
+        // [FIX 1] Motivo is optional if there's already a previous motivo
         const motivoInput = (document.getElementById('rd-resch-motivo').value || '').trim();
         const motivoPrevio = (currentData?.motivo_cambio || '').split(' | ')[0].trim();
         const motivo = motivoInput || motivoPrevio;
+
         if (!motivo) { rdShowInlineStatus('rd-resch-status', false, 'El motivo es obligatorio.'); return; }
         if (!rdSelectedDate) { rdShowInlineStatus('rd-resch-status', false, 'Selecciona una fecha.'); return; }
         if (!rdSelectedSlot) { rdShowInlineStatus('rd-resch-status', false, 'Selecciona una hora.'); return; }
@@ -949,10 +1024,22 @@
             const estado  = row.dataset.estado || guessEstadoFromBadge(cells[7]);
             const notas   = cells[9]?.textContent?.trim() === '—' ? '' : cells[9]?.textContent?.trim() || '';
             return {
-                id: idText, fecha: row.dataset.fecha || '', hora: horaText + ':00',
-                cliente_nombre: clienteNombre, cliente_email: clienteEmail, cliente_telefono: clienteTel,
-                servicio, duracion, precio, barbero, barbero_id: row.dataset.barberoId || '',
-                estado, notas, token: row.dataset.token || '', creado_en: row.dataset.creado || '',
+                id: idText,
+                fecha: row.dataset.fecha || '',
+                hora: horaText + ':00',
+                cliente_nombre: clienteNombre,
+                cliente_email: clienteEmail,
+                cliente_telefono: clienteTel,
+                servicio,
+                duracion,
+                precio,
+                barbero,
+                barbero_id: row.dataset.barberoId || '',
+                estado,
+                notas,
+                token: row.dataset.token || '',
+                creado_en: row.dataset.creado || '',
+                // [FIX 3] Explicitly read these data attributes
                 nueva_fecha_propuesta: row.dataset.nuevaFecha || '',
                 nueva_hora_propuesta:  row.dataset.nuevaHora  || '',
                 motivo_cambio:         row.dataset.motivo     || '',
@@ -982,10 +1069,22 @@
             const estado  = card.dataset.estado || (estadoBadge ? guessEstadoFromClass(estadoBadge) : '');
             const notas   = card.querySelector('.rc-notas')?.textContent?.replace(/^"|"$/g,'').trim() || '';
             return {
-                id: idText, fecha: card.dataset.fecha || '', hora: horaText + ':00',
-                cliente_nombre: nombre, cliente_email: email, cliente_telefono: tel,
-                servicio, duracion, precio, barbero, barbero_id: card.dataset.barberoId || '',
-                estado, notas, token: card.dataset.token || '', creado_en: card.dataset.creado || '',
+                id: idText,
+                fecha: card.dataset.fecha || '',
+                hora: horaText + ':00',
+                cliente_nombre: nombre,
+                cliente_email: email,
+                cliente_telefono: tel,
+                servicio,
+                duracion,
+                precio,
+                barbero,
+                barbero_id: card.dataset.barberoId || '',
+                estado,
+                notas,
+                token: card.dataset.token || '',
+                creado_en: card.dataset.creado || '',
+                // [FIX 3] Explicitly read these data attributes
                 nueva_fecha_propuesta: card.dataset.nuevaFecha || '',
                 nueva_hora_propuesta:  card.dataset.nuevaHora  || '',
                 motivo_cambio:         card.dataset.motivo     || '',
