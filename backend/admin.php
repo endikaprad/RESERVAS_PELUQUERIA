@@ -3547,38 +3547,6 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
                                 <div class="rc-notas">"<?= htmlspecialchars($r['notas']) ?>"</div>
                             <?php endif; ?>
                         </div>
-                        <?php if ($est === 'pendiente' || $est === 'aceptada' || in_array($est, ['reprogramar_barbero', 'reprogramar_cliente'])): ?>
-                            <div class="rc-actions">
-                                <?php if ($est === 'pendiente'): ?>
-                                    <a href="?accion=aceptar&token=<?= urlencode($r['token']) ?>&<?= http_build_query(['barbero' => $filtroBarbero, 'fecha' => $filtroFecha, 'estado' => $filtroEstado, 'fecha_custom' => $fechaCustom]) ?>"
-                                        class="btn-accept"
-                                        onclick="return confirm('¿Aceptar la reserva de <?= htmlspecialchars(addslashes($r['cliente_nombre'])) ?>?')">
-                                        ✓ Aceptar
-                                    </a>
-                                    <a href="?accion=denegar&token=<?= urlencode($r['token']) ?>&<?= http_build_query(['barbero' => $filtroBarbero, 'fecha' => $filtroFecha, 'estado' => $filtroEstado, 'fecha_custom' => $fechaCustom]) ?>"
-                                        class="btn-deny"
-                                        onclick="return confirm('¿Denegar la reserva de <?= htmlspecialchars(addslashes($r['cliente_nombre'])) ?>?')">
-                                        ✕ Denegar
-                                    </a>
-                                <?php endif; ?>
-                                <?php if ($est === 'aceptada' || in_array($est, ['reprogramar_barbero', 'reprogramar_cliente'])): ?>
-                                    <?php if ($r['fecha'] >= $hoy): ?>
-                                        <button class="btn-manage-mobile"
-                                            onclick="openCR(
-                                                '<?= addslashes($r['token']) ?>',
-                                                '<?= addslashes($r['barbero_id'] ?? '') ?>',
-                                                '<?= htmlspecialchars(addslashes($r['cliente_nombre'])) ?>',
-                                                '<?= htmlspecialchars(addslashes($r['servicio'])) ?>',
-                                                '<?= $r['fecha'] ?>',
-                                                '<?= substr($r['hora'], 0, 5) ?>',
-                                                <?= (int)($r['ronda_negociacion'] ?? 0) ?>
-                                            )">
-                                            🚫 Gestionar
-                                        </button>
-                                    <?php endif; ?>
-                                <?php endif; ?>
-                            </div>
-                        <?php endif; ?>
                     </div>
                 <?php endforeach; ?>
             </div>
@@ -3601,7 +3569,6 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
                                 <th>Precio</th>
                                 <th>Barbero</th>
                                 <th>Estado</th>
-                                <th>Acción</th>
                                 <th>Notas</th>
                             </tr>
                         </thead>
@@ -3647,34 +3614,6 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
                                             <span class="estado-badge badge-reprogramar_barbero">⇄ Prop. barbero</span>
                                         <?php elseif ($r['estado'] === 'reprogramar_cliente'): ?>
                                             <span class="estado-badge badge-reprogramar_cliente">⇄ Prop. cliente</span>
-                                        <?php endif; ?>
-                                    </td>
-                                    <td>
-                                        <?php if ($r['estado'] === 'pendiente'): ?>
-                                            <div class="action-btns">
-                                                <a href="?accion=aceptar&token=<?= urlencode($r['token']) ?>&<?= http_build_query(['barbero' => $filtroBarbero, 'fecha' => $filtroFecha, 'estado' => $filtroEstado, 'fecha_custom' => $fechaCustom]) ?>"
-                                                    class="tb-accept"
-                                                    onclick="return confirm('¿Aceptar la reserva de <?= htmlspecialchars(addslashes($r['cliente_nombre'])) ?>?')">✓ Aceptar</a>
-                                                <a href="?accion=denegar&token=<?= urlencode($r['token']) ?>&<?= http_build_query(['barbero' => $filtroBarbero, 'fecha' => $filtroFecha, 'estado' => $filtroEstado, 'fecha_custom' => $fechaCustom]) ?>"
-                                                    class="tb-deny"
-                                                    onclick="return confirm('¿Denegar la reserva de <?= htmlspecialchars(addslashes($r['cliente_nombre'])) ?>?')">✕ Denegar</a>
-                                            </div>
-                                        <?php elseif ($r['estado'] === 'aceptada' || in_array($r['estado'], ['reprogramar_barbero', 'reprogramar_cliente'])): ?>
-                                            <?php $esPasada = $r['fecha'] < $hoy; ?>
-                                            <?php if (!$esPasada): ?>
-                                                <button class="btn-manage"
-                                                    onclick="openCR(
-                                                        '<?= addslashes($r['token']) ?>',
-                                                        '<?= addslashes($r['barbero_id'] ?? '') ?>',
-                                                        '<?= htmlspecialchars(addslashes($r['cliente_nombre'])) ?>',
-                                                        '<?= htmlspecialchars(addslashes($r['servicio'])) ?>',
-                                                        '<?= $r['fecha'] ?>',
-                                                        '<?= substr($r['hora'], 0, 5) ?>',
-                                                        <?= (int)($r['ronda_negociacion'] ?? 0) ?>
-                                                    )">🚫 Gestionar</button>
-                                            <?php endif; ?>
-                                        <?php else: ?>
-                                            <span style="color:#7a7880;font-size:.75rem;">—</span>
                                         <?php endif; ?>
                                     </td>
                                     <td class="td-notas"><?= $r['notas'] ? htmlspecialchars($r['notas']) : '—' ?></td>
