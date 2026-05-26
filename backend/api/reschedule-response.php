@@ -2,10 +2,16 @@
 // ============================================================
 //  PRADO BARBER CO. — /backend/api/reschedule-response.php
 //
-//  RONDA FIX: ronda is set by barber on each proposal.
-//  ronda 1 = barber's first proposal, ronda 2 = barber's second proposal.
-//  Client responses stay within the same ronda.
-//  EMAIL FIX: Cancel booking button added to acceptance confirmation email.
+//  El CLIENTE responde a una propuesta de cambio de horario.
+//  ?pt=TOKEN&accion=aceptar|rechazar
+//
+//  Estados válidos para responder:
+//  - 'reprogramar_barbero': el barbero propuso, el cliente responde
+//  - 'reprogramar_cliente': el cliente ya contrapropuso (pero puede que
+//    llegue aquí de nuevo si el barbero propuso otra vez y el cliente
+//    acepta desde un email anterior)
+//
+//  FIX: La validación ahora acepta AMBOS estados de negociación activa.
 // ============================================================
 
 header('Content-Type: text/html; charset=utf-8');
@@ -38,18 +44,31 @@ try {
         mostrarPagina('error', 'No encontrada', 'Esta reserva no existe o el enlace ha caducado.');
     }
 
-    if ($reserva['estado'] !== 'reprogramar_barbero') {
-        $msg = in_array($reserva['estado'], ['cancelada', 'denegada'])
-            ? 'Esta reserva ya fue <strong>'.$reserva['estado'].'</strong>.'
-            : 'Esta propuesta ya fue procesada anteriormente.';
+    // FIX: Aceptar tanto reprogramar_barbero como reprogramar_cliente.
+    // Ambos son estados de negociación activa donde el cliente puede responder.
+    $estadosValidos = ['reprogramar_barbero', 'reprogramar_cliente'];
+
+    if (!in_array($reserva['estado'], $estadosValidos, true)) {
+        // Mostrar mensaje apropiado según el estado actual
+        $estadoActual = $reserva['estado'];
+        if ($estadoActual === 'aceptada') {
+            $msg = 'Esta reserva ya fue <strong>confirmada</strong>. ¡Te esperamos!';
+        } elseif ($estadoActual === 'cancelada') {
+            $msg = 'Esta reserva ya fue <strong>cancelada</strong>.';
+        } elseif ($estadoActual === 'denegada') {
+            $msg = 'Esta reserva ya fue <strong>denegada</strong>.';
+        } elseif ($estadoActual === 'pendiente') {
+            $msg = 'Esta reserva está <strong>pendiente</strong> de confirmación por el barbero.';
+        } else {
+            $msg = 'Esta propuesta ya fue procesada anteriormente.';
+        }
         mostrarPagina('info', 'Ya procesada', $msg);
     }
 
-    $nuevaFecha   = $reserva['nueva_fecha_propuesta'] ?? '';
-    $nuevaHora    = $reserva['nueva_hora_propuesta']  ?? '';
-    $motivoCambio = $reserva['motivo_cambio'] ?? '';
-    // ronda = set by barber on each proposal (1 = first, 2 = second, etc.)
-    $rondaActual  = (int)($reserva['ronda_negociacion'] ?? 0);
+    $nuevaFecha    = $reserva['nueva_fecha_propuesta'] ?? '';
+    $nuevaHora     = $reserva['nueva_hora_propuesta']  ?? '';
+    $motivoCambio  = $reserva['motivo_cambio'] ?? '';
+    $rondaActual   = (int)($reserva['ronda_negociacion'] ?? 0);
 
     if (!$nuevaFecha || !$nuevaHora) {
         mostrarPagina('error', 'Datos incompletos', 'No se encontraron los datos de la nueva propuesta.');
@@ -69,31 +88,37 @@ try {
     $horaNueva     = substr($nuevaHora, 0, 5);
 
     // ════════════════════════════════════════════════════════
-    //  ACEPTAR
+    //  ACEPTAR — el cliente acepta el horario propuesto
     // ════════════════════════════════════════════════════════
     if ($accion === 'aceptar') {
+        // Verificar que el slot propuesto sigue libre
         $check = $db->prepare(
             "SELECT COUNT(*) FROM reservas
              WHERE barbero_id = ? AND fecha = ? AND hora = ?
-               AND estado IN ('pendiente','aceptada') AND token != ?"
+               AND estado IN ('pendiente','aceptada')
+               AND token != ?"
         );
         $check->execute([$reserva['barbero_id'], $nuevaFecha, $nuevaHora, $token]);
         if ((int)$check->fetchColumn() > 0) {
-            $db->prepare("UPDATE reservas SET estado = 'pendiente' WHERE token = ?")
-               ->execute([$token]);
-            mostrarPagina('warn', 'Horario ya ocupado',
-                'Lo sentimos, el horario propuesto (<strong>'.$horaNueva.' del '.$fechaNueva.'</strong>) ya fue reservado por otro cliente.<br><br>'.
-                'El barbero será notificado para ofrecerte una nueva alternativa.<br><br>'.
-                '<a href="'.$baseUrl.'/reservas.html" style="color:#d42b2b;">También puedes hacer una nueva reserva aquí.</a>'
+            mostrarPagina(
+                'warn',
+                'Horario ya ocupado',
+                'Lo sentimos, el horario propuesto (<strong>'.$horaNueva.' del '.$fechaNueva.'</strong>) ya fue ocupado por otro cliente.<br><br>
+                 Vuelve a <a href="'.$baseUrl.'/reservas.html" style="color:#d42b2b;">reservar una nueva cita</a> o llámanos al <a href="tel:+34944000000" style="color:#d42b2b;">+34 944 000 000</a>.'
             );
         }
 
+        // Actualizar: la fecha/hora pasa a ser la propuesta, estado=aceptada
         $db->prepare(
-            "UPDATE reservas SET fecha=?, hora=?, estado='aceptada',
-             nueva_fecha_propuesta=NULL, nueva_hora_propuesta=NULL WHERE token=?"
+            "UPDATE reservas
+             SET fecha = ?, hora = ?, estado = 'aceptada',
+                 nueva_fecha_propuesta = NULL,
+                 nueva_hora_propuesta  = NULL,
+                 ronda_negociacion     = 0
+             WHERE token = ?"
         )->execute([$nuevaFecha, $nuevaHora, $token]);
 
-        // FIX: Add cancel booking button to the acceptance confirmation email
+        // URL de cancelación para el email de confirmación
         $urlCancelReserva = $baseUrl . '/backend/api/cancel-booking.php?token=' . $token;
         $cancelBox = "
       <div style='background:#18181f;border:1px solid #252530;border-radius:8px;padding:16px;margin-bottom:24px;text-align:center;'>
@@ -111,10 +136,11 @@ try {
         </p>
       </div>";
 
+        // Email al cliente confirmando
         $htmlCliente = buildEmailBase('#22c55e','¡Cambio de horario confirmado!','Prado Barber Co. — Bilbao',
             '<p style="color:#f0ece3;font-size:15px;margin-bottom:24px;">
               Hola <strong>'.htmlspecialchars($reserva['cliente_nombre']).'</strong>,<br><br>
-              Has <strong>aceptado</strong> el cambio de horario. Tu nueva cita queda confirmada.
+              Has <strong>aceptado</strong> el cambio de horario. Tu nueva cita queda confirmada. ¡Te esperamos!
             </p>'.
             buildTabla([
                 ['Servicio', htmlspecialchars($reserva['servicio_nombre']), ''],
@@ -124,6 +150,8 @@ try {
             ]).
             $cancelBox
         );
+
+        // Email al barbero
         $htmlBarbero = buildEmailBase('#22c55e','Cliente aceptó el cambio de horario','Prado Barber Co. — Admin',
             '<p style="color:#f0ece3;font-size:15px;margin-bottom:24px;">
               <strong>'.htmlspecialchars($reserva['cliente_nombre']).'</strong> ha aceptado el nuevo horario.
@@ -137,8 +165,11 @@ try {
               <a href="'.$baseUrl.'/backend/admin.php" style="color:#22c55e;">Ver en el panel</a>
             </p>'
         );
-        sendBrevo($reserva['cliente_email'], $reserva['cliente_nombre'], 'Cambio de horario confirmado - Prado Barber Co.', $htmlCliente);
-        sendBrevo('endikapradodev@gmail.com', 'Prado Barber Co.', 'Cliente aceptó cambio - '.$reserva['cliente_nombre'], $htmlBarbero);
+
+        sendBrevo($reserva['cliente_email'], $reserva['cliente_nombre'],
+            'Cambio de horario confirmado - Prado Barber Co.', $htmlCliente);
+        sendBrevo('endikapradodev@gmail.com', 'Prado Barber Co.',
+            'Cliente aceptó cambio - '.$reserva['cliente_nombre'], $htmlBarbero);
 
         mostrarPagina('ok','¡Cambio confirmado!',
             'Tu nueva cita queda fijada para el <strong>'.$fechaNueva.'</strong> a las <strong>'.$horaNueva.'</strong>.<br><br>Hemos enviado la confirmación a tu email.'
@@ -146,7 +177,7 @@ try {
     }
 
     // ════════════════════════════════════════════════════════
-    //  RECHAZAR
+    //  RECHAZAR — el cliente rechaza el horario propuesto
     // ════════════════════════════════════════════════════════
     if ($accion === 'rechazar') {
         mostrarPantallaRechazar($reserva, $fechaOriginal, $horaOriginal, $fechaNueva, $horaNueva, $motivoCambio, $rondaActual, $baseUrl, $token);
@@ -157,9 +188,7 @@ try {
 }
 
 // ════════════════════════════════════════════════════════════
-//  Pantalla de rechazo
-//  rondaActual = the current ronda (set by barber). Client is responding in this round.
-//  If they reject, barber will start a new round (ronda+1) if they propose again.
+//  Pantalla de rechazo (el cliente no puede en ese horario)
 // ════════════════════════════════════════════════════════════
 function mostrarPantallaRechazar(
     array  $reserva,
@@ -177,15 +206,13 @@ function mostrarPantallaRechazar(
     $tokenEnc     = urlencode($token);
     $cancelApiUrl = $baseUrl . '/backend/api/cancel-by-barber.php';
 
-    // Always show ronda badge since ronda >= 1 (barber always sets it when proposing)
     $rondaBadgeHtml = "<div class=\"ronda-badge\">⇄ Ronda de negociación {$ronda}</div>";
 
     $motivoHtml = '';
     if ($motivoCambio) {
-        // Extract the original motivo (before any " | Contrapropuesta" appended text)
         $motivoClean = explode(' | ', $motivoCambio)[0];
-        $motivoEsc  = htmlspecialchars(trim($motivoClean));
-        $motivoHtml = "<div class=\"motivo-box\">Motivo del barbero: {$motivoEsc}</div>";
+        $motivoEsc   = htmlspecialchars(trim($motivoClean));
+        $motivoHtml  = "<div class=\"motivo-box\">Motivo del barbero: {$motivoEsc}</div>";
     }
 
     $svNombre   = htmlspecialchars($reserva['servicio_nombre']);
@@ -225,7 +252,6 @@ function mostrarPantallaRechazar(
     .mode-tab.active.cancel{background:rgba(107,114,128,.12);border-color:rgba(107,114,128,.5);color:#9ca3af;}
     .pane{display:none;}
     .pane.active{display:block;}
-    /* Calendario */
     .cal-wrap{background:#18181f;border:1px solid #252530;border-radius:10px;padding:1rem;margin-bottom:1rem;}
     .cal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:.85rem;}
     .cal-title-txt{font-size:.9rem;font-weight:600;}
@@ -241,7 +267,6 @@ function mostrarPantallaRechazar(
     .cal-cell.c-dis{color:#2a2a38;cursor:not-allowed;}
     .cal-cell.c-sel{background:rgba(201,168,76,.18);border-color:#c9a84c;color:#c9a84c;font-weight:700;}
     .cal-cell.c-empty{cursor:default;}
-    /* Slots */
     .slots-wrap{margin-bottom:1.25rem;}
     .slots-label{font-size:.65rem;letter-spacing:.15em;text-transform:uppercase;color:#7a7880;margin-bottom:.6rem;}
     .slots-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:.4rem;}
@@ -251,7 +276,6 @@ function mostrarPantallaRechazar(
     .slot.s-taken{opacity:.3;cursor:not-allowed;text-decoration:line-through;}
     .slot.s-past{opacity:.2;cursor:not-allowed;text-decoration:line-through;}
     .slots-msg{text-align:center;padding:.85rem;color:#7a7880;font-size:.8rem;grid-column:1/-1;}
-    /* Botones */
     .btn-counter{width:100%;padding:.9rem;border-radius:8px;background:linear-gradient(135deg,#c9a84c,#a17c2d);border:none;color:#000;font-family:'DM Sans',sans-serif;font-size:.78rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;transition:all .25s;margin-bottom:.65rem;}
     .btn-counter:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 8px 24px rgba(201,168,76,.3);}
     .btn-counter:disabled{opacity:.4;cursor:not-allowed;transform:none;}
@@ -335,7 +359,6 @@ function mostrarPantallaRechazar(
   </div>
 
   <script>
-    /* ── Constantes ─────────────────────────────────────────── */
     var TOKEN      = '{$tokenEnc}';
     var BARBERO_ID = '{$barberoId}';
     var BASE_URL   = '{$baseUrl}';
@@ -349,18 +372,13 @@ function mostrarPantallaRechazar(
     var MONTHS_ES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio',
                      'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 
-    /* ── Estado ─────────────────────────────────────────────── */
     var calDate      = new Date();
     var selectedDate = null;
     var selectedSlot = null;
     var takenSlots   = [];
 
-    /* ── Init ──────────────────────────────────────────────── */
-    document.addEventListener('DOMContentLoaded', function() {
-      renderCal();
-    });
+    document.addEventListener('DOMContentLoaded', function() { renderCal(); });
 
-    /* ── Tabs ────────────────────────────────────────────────  */
     function switchMode(mode) {
       document.querySelectorAll('.mode-tab').forEach(function(t) { t.classList.remove('active'); });
       document.querySelectorAll('.pane').forEach(function(p) { p.classList.remove('active'); });
@@ -368,13 +386,11 @@ function mostrarPantallaRechazar(
       document.getElementById('pane-' + mode).classList.add('active');
     }
 
-    /* ── Calendario ─────────────────────────────────────────── */
     function pad2(n) { return String(n).padStart(2,'0'); }
     function isoDate(y, m, d) { return y + '-' + pad2(m + 1) + '-' + pad2(d); }
 
     function renderCal() {
-      var y = calDate.getFullYear();
-      var m = calDate.getMonth();
+      var y = calDate.getFullYear(), m = calDate.getMonth();
       var titleEl = document.getElementById('cal-title');
       if (titleEl) titleEl.textContent = MONTHS_ES[m] + ' ' + y;
       var today    = new Date(); today.setHours(0,0,0,0);
@@ -385,15 +401,15 @@ function mostrarPantallaRechazar(
       var html = '';
       for (var i = 0; i < offset; i++) html += '<div class="cal-cell c-empty"></div>';
       for (var d = 1; d <= daysIn; d++) {
-        var dt     = new Date(y, m, d);
-        var isSun  = (dt.getDay() === 0);
-        var isPast = (dt < tomorrow);
-        var isToday= (dt.getTime() === today.getTime());
-        var iso    = isoDate(y, m, d);
-        var isSel  = (selectedDate === iso);
-        var cls = 'cal-cell';
+        var dt    = new Date(y, m, d);
+        var isSun = (dt.getDay() === 0);
+        var isPast= (dt < tomorrow);
+        var isTod = (dt.getTime() === today.getTime());
+        var iso   = isoDate(y, m, d);
+        var isSel = (selectedDate === iso);
+        var cls   = 'cal-cell';
         if (isPast || isSun) cls += ' c-dis';
-        else if (isToday)    cls += ' c-today';
+        else if (isTod)      cls += ' c-today';
         if (isSel)           cls += ' c-sel';
         var onclick = (isPast || isSun) ? '' : 'onclick="selectDate(\'' + iso + '\')"';
         html += '<div class="' + cls + '" ' + onclick + '>' + d + '</div>';
@@ -415,7 +431,6 @@ function mostrarPantallaRechazar(
       loadSlots(iso);
     }
 
-    /* ── Slots ──────────────────────────────────────────────── */
     function loadSlots(fecha) {
       var grid = document.getElementById('slots-grid');
       grid.innerHTML = '<div class="slots-msg">Cargando horarios\u2026</div>';
@@ -435,14 +450,14 @@ function mostrarPantallaRechazar(
     }
 
     function renderSlots(fecha) {
-      var grid  = document.getElementById('slots-grid');
-      var now   = new Date();
-      var parts = fecha.split('-');
-      var dtF   = new Date(+parts[0], +parts[1] - 1, +parts[2]);
-      var isToday = (fecha === isoDate(now.getFullYear(), now.getMonth(), now.getDate()));
-      var curHHMM = pad2(now.getHours()) + ':' + pad2(now.getMinutes());
-      var esSab   = (dtF.getDay() === 6);
-      var slots   = ALL_SLOTS.filter(function(s) { return !esSab || s < '14:00'; });
+      var grid   = document.getElementById('slots-grid');
+      var now    = new Date();
+      var parts  = fecha.split('-');
+      var dtF    = new Date(+parts[0], +parts[1] - 1, +parts[2]);
+      var isToday= (fecha === isoDate(now.getFullYear(), now.getMonth(), now.getDate()));
+      var curHHMM= pad2(now.getHours()) + ':' + pad2(now.getMinutes());
+      var esSab  = (dtF.getDay() === 6);
+      var slots  = ALL_SLOTS.filter(function(s) { return !esSab || s < '14:00'; });
       if (!slots.length) {
         grid.innerHTML = '<div class="slots-msg">No hay horarios disponibles</div>';
         return;
@@ -452,9 +467,8 @@ function mostrarPantallaRechazar(
         var past  = isToday && s <= curHHMM;
         var sel   = (selectedSlot === s);
         var cls   = 'slot';
-        if (taken)       cls += ' s-taken';
-        else if (past)   cls += ' s-past';
-        if (sel)         cls += ' s-sel';
+        if (taken) cls += ' s-taken'; else if (past) cls += ' s-past';
+        if (sel)   cls += ' s-sel';
         var disabled = taken || past;
         var onclick  = disabled ? '' : 'onclick="selectSlot(\'' + s + '\')"';
         return '<div class="' + cls + '" ' + onclick + '>' + s + '</div>';
@@ -467,53 +481,43 @@ function mostrarPantallaRechazar(
       document.getElementById('btn-send-counter').disabled = false;
     }
 
-    /* ── Enviar contrapropuesta ─────────────────────────────── */
     function sendCounter() {
       if (!selectedDate || !selectedSlot) return;
       var btn = document.getElementById('btn-send-counter');
-      btn.disabled    = true;
-      btn.textContent = 'Enviando\u2026';
+      btn.disabled = true; btn.textContent = 'Enviando\u2026';
       fetch(BASE_URL + '/backend/api/reschedule-client-counter.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          token:       decodeURIComponent(TOKEN),
-          nueva_fecha: selectedDate,
-          nueva_hora:  selectedSlot
-        })
+        body: JSON.stringify({ token: decodeURIComponent(TOKEN), nueva_fecha: selectedDate, nueva_hora: selectedSlot })
       })
       .then(function(r) { return r.json(); })
       .then(function(json) {
         showStatus('counter-status', json.ok,
-          json.ok
-            ? '\u2713 Propuesta enviada. El barbero te responder\u00e1 por email.'
-            : '\u26A0 ' + (json.error || 'Error al enviar')
-        );
+          json.ok ? '\u2713 Propuesta enviada. El barbero te responder\u00e1 por email.'
+                  : '\u26A0 ' + (json.error || 'Error al enviar'));
         if (json.ok) {
           btn.textContent = '\u2713 Enviado';
         } else {
-          btn.disabled    = false;
+          btn.disabled = false;
           btn.textContent = '\u21C4 Enviar propuesta al barbero';
         }
       })
       .catch(function() {
         showStatus('counter-status', false, '\u26A0 Error de conexi\u00F3n. Int\u00E9ntalo de nuevo.');
-        btn.disabled    = false;
+        btn.disabled = false;
         btn.textContent = '\u21C4 Enviar propuesta al barbero';
       });
     }
 
-    /* ── Cancelar ── */
     function doCancel() {
       if (!confirm('\u00BFSeguro que quieres cancelar la cita? Esta acci\u00F3n no se puede deshacer.')) return;
       var btn = document.getElementById('btn-do-cancel');
-      btn.disabled    = true;
-      btn.textContent = 'Cancelando\u2026';
+      btn.disabled = true; btn.textContent = 'Cancelando\u2026';
       fetch(CANCEL_API, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          token:  decodeURIComponent(TOKEN),
+          token: decodeURIComponent(TOKEN),
           accion: 'cancelar',
           motivo: 'Cancelaci\u00F3n solicitada por el cliente al rechazar la propuesta de cambio de horario'
         })
@@ -521,30 +525,27 @@ function mostrarPantallaRechazar(
       .then(function(r) { return r.json(); })
       .then(function(json) {
         if (json.ok) {
-          showStatus('cancel-status', true,
-            '\u2713 Cita cancelada correctamente. Recibir\u00E1s un email de confirmaci\u00F3n.');
+          showStatus('cancel-status', true, '\u2713 Cita cancelada. Recibir\u00E1s un email de confirmaci\u00F3n.');
           btn.textContent = '\u2713 Cancelada';
           setTimeout(function() { window.location.href = BASE_URL; }, 2500);
         } else {
           showStatus('cancel-status', false, '\u26A0 ' + (json.error || 'Error al cancelar'));
-          btn.disabled    = false;
+          btn.disabled = false;
           btn.textContent = '\u2715 S\u00ED, cancelar mi cita definitivamente';
         }
       })
       .catch(function() {
-        showStatus('cancel-status', false,
-          '\u26A0 Error de conexi\u00F3n. Ll\u00E1manos al +34 944 000 000.');
-        btn.disabled    = false;
+        showStatus('cancel-status', false, '\u26A0 Error de conexi\u00F3n. Ll\u00E1manos al +34 944 000 000.');
+        btn.disabled = false;
         btn.textContent = '\u2715 S\u00ED, cancelar mi cita definitivamente';
       });
     }
 
-    /* ── Utilidad ───────────────────────────────────────────── */
     function showStatus(id, ok, msg) {
       var el = document.getElementById(id);
       if (!el) return;
-      el.className    = 'status-msg ' + (ok ? 'ok' : 'err');
-      el.textContent  = msg;
+      el.className = 'status-msg ' + (ok ? 'ok' : 'err');
+      el.textContent = msg;
     }
   </script>
 </body>
@@ -613,6 +614,7 @@ function mostrarPagina(string $tipo, string $titulo, string $mensaje): never {
        padding:.75rem 2rem;border-radius:4px;font-size:.75rem;font-weight:600;
        letter-spacing:.15em;text-transform:uppercase;margin:.35rem;}
   .btn-outline{background:transparent;border:1px solid #252530;color:#7a7880;}
+  .btn-outline:hover{border-color:#f0ece3;color:#f0ece3;}
   .brand{font-family:'Playfair Display',serif;font-style:italic;font-size:.9rem;color:#7a7880;margin-top:1.5rem;}
 </style></head>
 <body>
