@@ -3,14 +3,14 @@ name: Deploy to InfinityFree
 on:
   push:
     branches:
-      - main 
+      - main
   workflow_dispatch:
 
 jobs:
-  deploy: 
+  deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout código
+      - name: Checkout codigo
         uses: actions/checkout@v4
 
       - name: Generar config.php desde secrets
@@ -29,9 +29,7 @@ jobs:
           define('DB_PASS',        '${DB_PASS}');
           define('DB_CHARSET',     'utf8mb4');
           define('BREVO_API_KEY',  '${BREVO_API_KEY}');
-
           date_default_timezone_set('Europe/Madrid');
-
           function getDB(): PDO {
               static \$pdo = null;
               if (\$pdo === null) {
@@ -50,8 +48,8 @@ jobs:
               return \$pdo;
           }
           PHPEOF
-      
-      - name: Cache busting — inyectar timestamp en scripts
+
+      - name: Cache busting
         run: |
           TIMESTAMP=$(date +%Y%m%d%H%M%S)
           for file in index.html servicios.html equipo.html galeria.html contacto.html reservas.html; do
