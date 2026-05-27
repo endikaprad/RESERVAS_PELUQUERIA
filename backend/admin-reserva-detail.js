@@ -526,29 +526,39 @@
             ? motivoCambio.split(' | ').map(s => s.trim()).filter(Boolean)
             : [];
 
+        // Normalizar hora a HH:MM
         const normHora = (h) => h ? String(h).slice(0, 5) : '—';
-        const formatSlot = (fecha, hora) => {
-            if (!fecha || !hora) return null;
-            return formatFecha(fecha) + ' · ' + normHora(hora);
-        };
+        const origSlot = (fechaOriginal && horaOriginal)
+            ? formatFecha(fechaOriginal) + ' · ' + normHora(horaOriginal)
+            : '—';
 
-        const origSlot = formatSlot(fechaOriginal, horaOriginal) || '—';
-        const ultimaFechaStr = formatSlot(nuevaFechaProp, nuevaHoraProp);
+        // La nueva_fecha/hora guardada es la de la ÚLTIMA propuesta del log
+        const ultimaFechaStr = (nuevaFechaProp && nuevaHoraProp)
+            ? formatFecha(nuevaFechaProp) + ' · ' + normHora(nuevaHoraProp)
+            : null;
 
-        // Intenta sacar fecha/hora del propio texto del motivo:
-        // "Contrapropuesta cliente (ronda 1): 2026-05-28 10:00"
-        const extractInlineSlot = (txt) => {
-            if (!txt) return null;
-            const m = txt.match(/(\d{4}-\d{2}-\d{2})\s+(\d{2}:\d{2})/);
-            if (!m) return null;
-            return formatFecha(m[1]) + ' · ' + m[2];
-        };
-
-        // ── Primera entrada: barbero propuso cambio ───────────────
+        // ── Entrada 0 → Barbero propuso cambio (Ronda 1) ─────
         if (partes.length > 0 || ronda > 0) {
             const motorPrimario = partes[0] || 'Cambio de agenda';
 
-            let slotDestino = extractInlineSlot(motorPrimario) || ultimaFechaStr || null;
+            // El slot propuesto por el barbero en ronda 1:
+            // Si solo hay 1 entrada en el log (solo barbero propuso, nadie más respondió)
+            // O si hay más entradas pero queremos mostrar que el barbero propuso algo:
+            // - Si ronda===1 y es la única propuesta → nueva_fecha es la del barbero
+            // - Si ronda>1 → nueva_fecha es de ronda más reciente, no podemos recuperar ronda 1
+            //   salvo que esté en el motivo (no está). Mostramos "Horario propuesto" genérico.
+            let slotDestino = null;
+            if (partes.length === 1 && ultimaFechaStr) {
+                // Solo propuesta del barbero, ninguna respuesta del cliente aún
+                slotDestino = ultimaFechaStr;
+            } else if (partes.length > 1 && ronda === 1) {
+                // Hubo ida y vuelta pero en ronda 1: nueva_fecha pudo ser del cliente
+                // No podemos recuperar el slot original del barbero sin más datos
+                slotDestino = null;
+            } else if (ronda >= 2 && partes.length <= 2) {
+                // Con múltiples rondas y pocas entradas: probable que nueva_fecha sea del barbero
+                slotDestino = ultimaFechaStr;
+            }
 
             items.push({
                 tipo: 'barbero',
@@ -561,9 +571,11 @@
             });
         }
 
-        // ── Resto de entradas: cliente / barbero alternando ───────
+        // ── Entradas siguientes ───────────────────────────────
+        // Track the barber's last proposed slot so the client entry can show what they rejected
         let lastBarberoSlot = null;
         if (partes.length === 1 && ultimaFechaStr) {
+            // Only one entry (barber proposed, client hasn't responded yet stored): barber slot = ultimaFechaStr
             lastBarberoSlot = ultimaFechaStr;
         }
 
@@ -573,13 +585,16 @@
 
             if (p.toLowerCase().includes('contrapropuesta cliente')) {
                 const match = p.match(/ronda\s*(\d+)/i);
-                const r = match ? parseInt(match[1], 10) : null;
+                const r = match ? parseInt(match[1]) : null;
 
-                let slotDestino = extractInlineSlot(p);
-
-                // Si no viene embebida en el texto, usa la última propuesta guardada
-                // (normalmente coincide con la del cliente cuando es la última del hilo).
-                if (!slotDestino && esUltima && ultimaFechaStr) {
+                // Extraer el slot del cliente del propio texto del motivo
+                // Formato: "Contrapropuesta cliente (ronda 1): 2026-05-28 10:00"
+                const slotMatch = p.match(/:\s*(\d{4}-\d{2}-\d{2})\s+(\d{2}:\d{2})/);
+                let slotDestino = null;
+                if (slotMatch) {
+                    slotDestino = formatFecha(slotMatch[1]) + ' · ' + slotMatch[2];
+                } else if (esUltima && ultimaFechaStr) {
+                    // Fallback: si es la entrada más reciente y aún hay datos en BD
                     slotDestino = ultimaFechaStr;
                 }
 
@@ -595,13 +610,12 @@
 
                 lastBarberoSlot = null;
             } else {
+                // Nueva propuesta del barbero en ronda > 1
                 const rondaNum = Math.ceil((i + 1) / 2);
-
-                let slotDestino = extractInlineSlot(p);
-                if (!slotDestino && esUltima && ultimaFechaStr) {
+                let slotDestino = null;
+                if (esUltima && ultimaFechaStr) {
                     slotDestino = ultimaFechaStr;
                 }
-
                 items.push({
                     tipo: 'barbero',
                     icono: '⇄',
@@ -612,16 +626,20 @@
                     slotDestino: slotDestino,
                 });
 
+                // Track this barber slot so the next client entry can use it as slotOrigen
                 lastBarberoSlot = slotDestino;
             }
         }
 
-        // ── Estado final ──────────────────────────────────────────
+        // ── Estado final ──────────────────────────────────────
         const esNegociacionFinalizada = ['aceptada', 'cancelada', 'denegada'].includes(estado);
         if (esNegociacionFinalizada && ronda > 0) {
             if (estado === 'aceptada') {
-                const fechaFmt = formatSlot(fechaOriginal, horaOriginal) || '—';
-
+                // Al aceptar, la fecha/hora del drawer ya ES la acordada
+                // (nuevaFechaProp fue limpiada y movida a fecha/hora)
+                const fechaFmt = (fechaOriginal && horaOriginal)
+                    ? formatFecha(fechaOriginal) + ' · ' + normHora(horaOriginal)
+                    : '—';
                 items.push({
                     tipo: 'final',
                     icono: '✓',
