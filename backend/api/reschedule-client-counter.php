@@ -108,12 +108,12 @@ try {
     // Actualizar reserva con la contrapropuesta del cliente
     $db->prepare(
         "UPDATE reservas
-         SET estado = 'reprogramar_cliente',
-             ronda_negociacion     = ?,
-             nueva_fecha_propuesta = ?,
-             nueva_hora_propuesta  = ?,
-             motivo_cambio         = CONCAT(IFNULL(motivo_cambio,''), ' | Contrapropuesta cliente (ronda {$ronda})')
-         WHERE token = ?"
+     SET estado = 'reprogramar_cliente',
+         ronda_negociacion     = ?,
+         nueva_fecha_propuesta = ?,
+         nueva_hora_propuesta  = ?,
+         motivo_cambio         = CONCAT(IFNULL(motivo_cambio,''), ' | Contrapropuesta cliente (ronda {$ronda}): {$nuevaFecha} {$nuevaHora}')
+     WHERE token = ?"
     )->execute([$ronda, $nuevaFecha, $nuevaHora . ':00', $token]);
 
     // ── Helpers fecha ────────────────────────────────────────

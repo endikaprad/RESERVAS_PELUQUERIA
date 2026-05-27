@@ -450,25 +450,25 @@
 
     // ── Estado del drawer ─────────────────────────────────────
     let currentToken = null;
-    let currentData  = null;
+    let currentData = null;
 
     // ── Calendario inline state ───────────────────────────────
-    let rdCalDate      = new Date();
+    let rdCalDate = new Date();
     let rdSelectedDate = null;
     let rdSelectedSlot = null;
-    let rdTakenSlots   = [];
+    let rdTakenSlots = [];
 
-    const SLOTS_API   = './api/slots.php';
-    const CANCEL_API  = './api/cancel-by-barber.php';
+    const SLOTS_API = './api/slots.php';
+    const CANCEL_API = './api/cancel-by-barber.php';
     const ACCEPT_COUNTER_API = './api/barber-accept-counter.php';
 
-    const MONTHS_ES   = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-    const ALL_SLOTS   = ['09:00','09:30','10:00','10:30','11:00','11:30','12:00','12:30','13:00','13:30','16:00','16:30','17:00','17:30','18:00','18:30','19:00','19:30'];
+    const MONTHS_ES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+    const ALL_SLOTS = ['09:00', '09:30', '10:00', '10:30', '11:00', '11:30', '12:00', '12:30', '13:00', '13:30', '16:00', '16:30', '17:00', '17:30', '18:00', '18:30', '19:00', '19:30'];
 
     // ── Helpers ───────────────────────────────────────────────
-    const DIAS_ES  = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
-    const MESES_ES = ['','ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
-    const MESES_LARGO = ['','enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+    const DIAS_ES = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+    const MESES_ES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+    const MESES_LARGO = ['', 'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
 
     function formatFecha(ymd) {
         if (!ymd) return '—';
@@ -497,10 +497,10 @@
     }
 
     const ESTADO_LABELS = {
-        pendiente:           '⏳ Pendiente',
-        aceptada:            '✓ Aceptada',
-        denegada:            '✕ Denegada',
-        cancelada:           '✕ Cancelada',
+        pendiente: '⏳ Pendiente',
+        aceptada: '✓ Aceptada',
+        denegada: '✕ Denegada',
+        cancelada: '✕ Cancelada',
         reprogramar_barbero: '⇄ Prop. barbero',
         reprogramar_cliente: '⇄ Prop. cliente',
     };
@@ -587,10 +587,14 @@
                 const match = p.match(/ronda\s*(\d+)/i);
                 const r = match ? parseInt(match[1]) : null;
 
-                // El slot del cliente: si es la última entrada, usamos nueva_fecha
-                // ya que es la más reciente en BD
+                // Extraer el slot del cliente del propio texto del motivo
+                // Formato: "Contrapropuesta cliente (ronda 1): 2026-05-28 10:00"
+                const slotMatch = p.match(/:\s*(\d{4}-\d{2}-\d{2})\s+(\d{2}:\d{2})/);
                 let slotDestino = null;
-                if (esUltima && ultimaFechaStr) {
+                if (slotMatch) {
+                    slotDestino = formatFecha(slotMatch[1]) + ' · ' + slotMatch[2];
+                } else if (esUltima && ultimaFechaStr) {
+                    // Fallback: si es la entrada más reciente y aún hay datos en BD
                     slotDestino = ultimaFechaStr;
                 }
 
@@ -600,11 +604,10 @@
                     titulo: 'Cliente propuso alternativa' + (r ? ' · Ronda ' + r : ''),
                     detalle: 'El cliente no pudo en el horario propuesto y ofreció una alternativa.',
                     rondaLabel: r ? 'Ronda ' + r : null,
-                    slotOrigen: lastBarberoSlot,   // barber's slot that the client rejected
+                    slotOrigen: lastBarberoSlot,
                     slotDestino: slotDestino,
                 });
 
-                // After the client responds, clear lastBarberoSlot (it's been consumed)
                 lastBarberoSlot = null;
             } else {
                 // Nueva propuesta del barbero en ronda > 1
@@ -682,7 +685,7 @@
                     // Color según quién propone
                     let chipClass = 'rd-slot-chip-barbero';
                     if (item.tipo === 'cliente') chipClass = 'rd-slot-chip-cliente';
-                    if (item.tipo === 'final')   chipClass = 'rd-slot-chip-final';
+                    if (item.tipo === 'final') chipClass = 'rd-slot-chip-final';
                     slotsHtml += `<span class="rd-slot-chip ${chipClass}">${item.slotDestino}</span>`;
                 }
 
@@ -701,7 +704,7 @@
     }
 
     // ── FIX: Aceptar propuesta del cliente via barber-accept-counter ──
-    window.rdAcceptClientCounter = async function() {
+    window.rdAcceptClientCounter = async function () {
         if (!currentToken) return;
         const nombreCliente = currentData?.cliente_nombre || 'el cliente';
         if (!confirm('¿Aceptar el horario propuesto por ' + nombreCliente + '?\n\nLa cita se confirmará con el nuevo horario y se notificará al cliente.')) return;
@@ -710,7 +713,7 @@
         if (btn) { btn.style.pointerEvents = 'none'; btn.textContent = '⏳ Procesando…'; }
 
         try {
-            const res  = await fetch(ACCEPT_COUNTER_API + '?token=' + encodeURIComponent(currentToken) + '&accion=aceptar');
+            const res = await fetch(ACCEPT_COUNTER_API + '?token=' + encodeURIComponent(currentToken) + '&accion=aceptar');
             const text = await res.text();
             if (res.ok && (text.includes('confirmada') || text.includes('confirmado') || res.redirected)) {
                 closeRD();
@@ -726,45 +729,45 @@
     };
 
     // ── Abrir drawer ──────────────────────────────────────────
-    window.openRD = function(data) {
+    window.openRD = function (data) {
         currentToken = data.token || '';
-        currentData  = data;
+        currentData = data;
 
         // Ocultar secciones inline al abrir
-        document.getElementById('rd-cancel-inline').style.display    = 'none';
+        document.getElementById('rd-cancel-inline').style.display = 'none';
         document.getElementById('rd-reschedule-inline').style.display = 'none';
 
         // Header
-        document.getElementById('rd-id').textContent    = '#' + data.id;
-        document.getElementById('rd-hora').textContent  = data.hora ? data.hora.slice(0, 5) : '—';
+        document.getElementById('rd-id').textContent = '#' + data.id;
+        document.getElementById('rd-hora').textContent = data.hora ? data.hora.slice(0, 5) : '—';
         document.getElementById('rd-fecha').textContent = formatFechaCorta(data.fecha);
 
         const badge = document.getElementById('rd-estado-badge');
-        const est   = data.estado || '';
+        const est = data.estado || '';
         badge.textContent = ESTADO_LABELS[est] || est;
-        badge.className   = 'rd-estado-badge rdb-' + est;
+        badge.className = 'rd-estado-badge rdb-' + est;
 
         // Cliente
         const nombre = data.cliente_nombre || '—';
-        document.getElementById('rd-avatar').textContent    = initials(nombre);
-        document.getElementById('rd-nombre').textContent    = nombre;
+        document.getElementById('rd-avatar').textContent = initials(nombre);
+        document.getElementById('rd-nombre').textContent = nombre;
         const emailEl = document.getElementById('rd-email');
         emailEl.textContent = data.cliente_email || '—';
-        emailEl.href        = 'mailto:' + (data.cliente_email || '');
+        emailEl.href = 'mailto:' + (data.cliente_email || '');
         const telEl = document.getElementById('rd-tel');
         telEl.textContent = data.cliente_telefono || '—';
-        telEl.href        = 'tel:' + (data.cliente_telefono || '');
+        telEl.href = 'tel:' + (data.cliente_telefono || '');
 
         // Cita
-        document.getElementById('rd-servicio').textContent  = data.servicio || '—';
-        document.getElementById('rd-duracion').textContent  = data.duracion || '';
-        document.getElementById('rd-precio').textContent    = data.precio ? data.precio + ' €' : '—';
-        document.getElementById('rd-barbero').textContent   = data.barbero || '—';
+        document.getElementById('rd-servicio').textContent = data.servicio || '—';
+        document.getElementById('rd-duracion').textContent = data.duracion || '';
+        document.getElementById('rd-precio').textContent = data.precio ? data.precio + ' €' : '—';
+        document.getElementById('rd-barbero').textContent = data.barbero || '—';
 
         const creadoEl = document.getElementById('rd-created');
         if (data.creado_en) {
             const dt = new Date(data.creado_en);
-            creadoEl.textContent = dt.toLocaleDateString('es-ES', { day:'2-digit', month:'short', year:'numeric' });
+            creadoEl.textContent = dt.toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' });
         } else { creadoEl.textContent = '—'; }
 
         // Notas
@@ -778,16 +781,16 @@
         document.getElementById('rd-token').textContent = (data.token || '').slice(0, 32) + '…';
 
         // Ocultar secciones dinámicas
-        document.getElementById('rd-propuesta-section').style.display          = 'none';
-        document.getElementById('rd-barbero-propuesta-section').style.display  = 'none';
-        document.getElementById('rd-historial-section').style.display          = 'none';
+        document.getElementById('rd-propuesta-section').style.display = 'none';
+        document.getElementById('rd-barbero-propuesta-section').style.display = 'none';
+        document.getElementById('rd-historial-section').style.display = 'none';
 
-        const ronda          = parseInt(data.ronda_negociacion || 0);
-        const motivoCambio   = data.motivo_cambio || '';
+        const ronda = parseInt(data.ronda_negociacion || 0);
+        const motivoCambio = data.motivo_cambio || '';
         const nuevaFechaProp = data.nueva_fecha_propuesta || '';
         const nuevaHoraPropRaw = data.nueva_hora_propuesta || '';
         const nuevaHoraProp = nuevaHoraPropRaw ? nuevaHoraPropRaw.slice(0, 5) : '';
-        const origHora       = data.hora ? data.hora.slice(0, 5) : '—';
+        const origHora = data.hora ? data.hora.slice(0, 5) : '—';
 
         const esNegociacionActiva = ['reprogramar_barbero', 'reprogramar_cliente'].includes(est);
         const huboNegociacion = ronda > 0 || motivoCambio;
@@ -815,7 +818,7 @@
                 const rawNF = data.nueva_fecha_propuesta || data['nueva-fecha'] || '';
                 const rawNH = data.nueva_hora_propuesta || data['nueva-hora'] || '';
                 if (rawNF && rawNH) {
-                    document.getElementById('rd-new-slot').textContent = formatFecha(rawNF) + ' · ' + rawNH.slice(0,5);
+                    document.getElementById('rd-new-slot').textContent = formatFecha(rawNF) + ' · ' + rawNH.slice(0, 5);
                 } else {
                     document.getElementById('rd-new-slot').textContent = 'Pendiente de confirmar';
                 }
@@ -941,13 +944,13 @@
         document.body.style.overflow = 'hidden';
     };
 
-    window.closeRD = function() {
+    window.closeRD = function () {
         document.getElementById('rd-overlay').classList.remove('open');
         document.getElementById('rd-drawer').classList.remove('open');
         document.body.style.overflow = '';
     };
 
-    window.copyRDToken = function() {
+    window.copyRDToken = function () {
         navigator.clipboard.writeText(currentToken || '').then(() => {
             const btn = document.querySelector('.rd-copy-btn');
             btn.textContent = '✓';
@@ -956,8 +959,8 @@
     };
 
     // ── Mostrar sección Denegar inline ────────────────────────
-    window.rdShowCancel = function() {
-        document.getElementById('rd-cancel-inline').style.display    = 'block';
+    window.rdShowCancel = function () {
+        document.getElementById('rd-cancel-inline').style.display = 'block';
         document.getElementById('rd-reschedule-inline').style.display = 'none';
         document.getElementById('rd-footer').style.display = 'none';
         document.getElementById('rd-cancel-motivo').value = '';
@@ -965,19 +968,19 @@
         setTimeout(() => { body.scrollTop = body.scrollHeight; }, 50);
     };
 
-    window.rdCancelBack = function() {
+    window.rdCancelBack = function () {
         document.getElementById('rd-cancel-inline').style.display = 'none';
         document.getElementById('rd-footer').style.display = 'flex';
     };
 
-    window.rdDoCancel = async function() {
+    window.rdDoCancel = async function () {
         const motivo = (document.getElementById('rd-cancel-motivo').value || '').trim();
         if (!motivo) { rdShowInlineStatus('rd-cancel-status', false, 'El motivo es obligatorio.'); return; }
         if (!confirm('¿Denegar la cita de ' + (currentData?.cliente_nombre || '') + '?\nSe enviará email al cliente.')) return;
         const btn = document.getElementById('rd-btn-do-cancel');
         btn.disabled = true; btn.textContent = 'Enviando…';
         try {
-            const res  = await fetch(CANCEL_API, {
+            const res = await fetch(CANCEL_API, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ token: currentToken, accion: 'cancelar', motivo })
@@ -997,9 +1000,9 @@
     };
 
     // ── Mostrar sección Reprogramar inline ────────────────────
-    window.rdShowReschedule = function() {
+    window.rdShowReschedule = function () {
         document.getElementById('rd-reschedule-inline').style.display = 'block';
-        document.getElementById('rd-cancel-inline').style.display     = 'none';
+        document.getElementById('rd-cancel-inline').style.display = 'none';
         document.getElementById('rd-footer').style.display = 'none';
 
         rdSelectedDate = null;
@@ -1007,17 +1010,17 @@
 
         const prevMotivo = (currentData?.motivo_cambio || '').split(' | ')[0].trim();
         const motivoEl = document.getElementById('rd-resch-motivo');
-        const hintEl   = document.getElementById('rd-resch-motivo-hint');
-        const reqEl    = document.getElementById('rd-resch-motivo-required');
+        const hintEl = document.getElementById('rd-resch-motivo-hint');
+        const reqEl = document.getElementById('rd-resch-motivo-required');
 
         if (prevMotivo) {
             motivoEl.value = prevMotivo;
             if (hintEl) hintEl.style.display = 'block';
-            if (reqEl)  reqEl.textContent = '(opcional)';
+            if (reqEl) reqEl.textContent = '(opcional)';
         } else {
             motivoEl.value = '';
             if (hintEl) hintEl.style.display = 'none';
-            if (reqEl)  reqEl.textContent = '*';
+            if (reqEl) reqEl.textContent = '*';
         }
 
         document.getElementById('rd-btn-do-reschedule').disabled = true;
@@ -1029,7 +1032,7 @@
         setTimeout(() => { body.scrollTop = body.scrollHeight; }, 50);
     };
 
-    window.rdReschBack = function() {
+    window.rdReschBack = function () {
         document.getElementById('rd-reschedule-inline').style.display = 'none';
         document.getElementById('rd-footer').style.display = 'flex';
     };
@@ -1044,34 +1047,34 @@
         const today = new Date(); today.setHours(0, 0, 0, 0);
         const tomorrow = new Date(today); tomorrow.setDate(tomorrow.getDate() + 1);
         const firstDay = new Date(year, month, 1).getDay();
-        const offset   = (firstDay + 6) % 7;
-        const daysIn   = new Date(year, month + 1, 0).getDate();
+        const offset = (firstDay + 6) % 7;
+        const daysIn = new Date(year, month + 1, 0).getDate();
         let html = '';
         for (let i = 0; i < offset; i++) html += '<div class="rd-cal-cell rdc-empty"></div>';
         for (let d = 1; d <= daysIn; d++) {
-            const dt     = new Date(year, month, d);
-            const iso    = isoDate(year, month, d);
+            const dt = new Date(year, month, d);
+            const iso = isoDate(year, month, d);
             const isPast = dt < tomorrow;
-            const isSun  = dt.getDay() === 0;
-            const isSel  = rdSelectedDate === iso;
-            const isTod  = dt.getTime() === today.getTime();
+            const isSun = dt.getDay() === 0;
+            const isSel = rdSelectedDate === iso;
+            const isTod = dt.getTime() === today.getTime();
             let cls = 'rd-cal-cell';
             if (isPast || isSun) cls += ' rdc-dis';
             else if (isTod) cls += ' rdc-today';
             if (isSel) cls += ' rdc-sel';
             const disabled = isPast || isSun;
-            const onclick  = disabled ? '' : `onclick="rdSelectDate('${iso}')"`;
+            const onclick = disabled ? '' : `onclick="rdSelectDate('${iso}')"`;
             html += `<div class="${cls}" ${onclick}>${d}</div>`;
         }
         grid.innerHTML = html;
     }
 
-    window.rdCalNav = function(dir) {
+    window.rdCalNav = function (dir) {
         rdCalDate.setMonth(rdCalDate.getMonth() + dir);
         rdRenderCal();
     };
 
-    window.rdSelectDate = async function(iso) {
+    window.rdSelectDate = async function (iso) {
         rdSelectedDate = iso;
         rdSelectedSlot = null;
         document.getElementById('rd-btn-do-reschedule').disabled = true;
@@ -1089,7 +1092,7 @@
 
         try {
             const barberoId = currentData?.barbero_id || currentData?.barbero_id_val || '';
-            const res  = await fetch(`${SLOTS_API}?fecha=${iso}&barbero=${barberoId}`);
+            const res = await fetch(`${SLOTS_API}?fecha=${iso}&barbero=${barberoId}`);
             const json = await res.json();
 
             if (json.ok && json.data.bloqueado) {
@@ -1106,28 +1109,28 @@
 
     function rdRenderSlots(iso) {
         const slotsGrid = document.getElementById('rd-slots-grid');
-        const now   = new Date();
-        const dt    = new Date(iso + 'T00:00:00');
-        const isToday  = iso === isoDate(now.getFullYear(), now.getMonth(), now.getDate());
-        const curHHMM  = pad2(now.getHours()) + ':' + pad2(now.getMinutes());
+        const now = new Date();
+        const dt = new Date(iso + 'T00:00:00');
+        const isToday = iso === isoDate(now.getFullYear(), now.getMonth(), now.getDate());
+        const curHHMM = pad2(now.getHours()) + ':' + pad2(now.getMinutes());
         const esSabado = dt.getDay() === 6;
-        const slots    = ALL_SLOTS.filter(s => !esSabado || s < '14:00');
+        const slots = ALL_SLOTS.filter(s => !esSabado || s < '14:00');
 
         slotsGrid.innerHTML = slots.map(s => {
             const taken = rdTakenSlots.includes(s);
-            const past  = isToday && s <= curHHMM;
-            const sel   = rdSelectedSlot === s;
+            const past = isToday && s <= curHHMM;
+            const sel = rdSelectedSlot === s;
             let cls = 'rd-slot';
             if (taken) cls += ' rds-taken';
             else if (past) cls += ' rds-past';
             if (sel) cls += ' rds-sel';
             const disabled = taken || past;
-            const onclick  = disabled ? '' : `onclick="rdSelectSlot('${s}')"`;
+            const onclick = disabled ? '' : `onclick="rdSelectSlot('${s}')"`;
             return `<div class="${cls}" ${onclick}>${s}</div>`;
         }).join('');
     }
 
-    window.rdSelectSlot = function(slot) {
+    window.rdSelectSlot = function (slot) {
         rdSelectedSlot = slot;
         rdRenderSlots(rdSelectedDate);
         const btn = document.getElementById('rd-btn-do-reschedule');
@@ -1135,7 +1138,7 @@
         btn.style.opacity = '1';
     };
 
-    window.rdDoReschedule = async function() {
+    window.rdDoReschedule = async function () {
         const motivoInput = (document.getElementById('rd-resch-motivo').value || '').trim();
         const motivoPrevio = (currentData?.motivo_cambio || '').split(' | ')[0].trim();
         const motivo = motivoInput || motivoPrevio;
@@ -1148,7 +1151,7 @@
         const btn = document.getElementById('rd-btn-do-reschedule');
         btn.disabled = true; btn.style.opacity = '.4'; btn.textContent = 'Enviando…';
         try {
-            const res  = await fetch(CANCEL_API, {
+            const res = await fetch(CANCEL_API, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ token: currentToken, accion: 'reprogramar', motivo, nueva_fecha: rdSelectedDate, nueva_hora: rdSelectedSlot })
@@ -1175,9 +1178,9 @@
         el.style.gap = '.5rem';
         el.style.background = ok ? 'rgba(34,197,94,.1)' : 'rgba(212,43,43,.1)';
         el.style.border = ok ? '1px solid rgba(34,197,94,.25)' : '1px solid rgba(212,43,43,.25)';
-        el.style.color  = ok ? '#22c55e' : '#d42b2b';
+        el.style.color = ok ? '#22c55e' : '#d42b2b';
         el.style.borderRadius = '8px';
-        el.textContent  = msg;
+        el.textContent = msg;
     }
 
     // ── Escape ────────────────────────────────────────────────
@@ -1205,7 +1208,7 @@
             row.dataset.rdBound = '1';
             row.classList.add('rd-clickable');
             row.style.cursor = 'pointer';
-            row.addEventListener('click', function(e) {
+            row.addEventListener('click', function (e) {
                 if (e.target.closest('a,button,.btn-accept,.btn-deny,.tb-accept,.tb-deny,.btn-manage')) return;
                 const data = extractFromRow(row);
                 if (data) openRD(data);
@@ -1214,7 +1217,7 @@
         document.querySelectorAll('.rc').forEach(card => {
             if (card.dataset.rdBound) return;
             card.dataset.rdBound = '1';
-            card.addEventListener('click', function(e) {
+            card.addEventListener('click', function (e) {
                 if (e.target.closest('a,button,.btn-accept,.btn-deny,.btn-manage-mobile,.rc-actions')) return;
                 const data = extractFromCard(card);
                 if (data) openRD(data);
@@ -1226,18 +1229,18 @@
         try {
             const cells = row.querySelectorAll('td');
             if (!cells.length) return null;
-            const idText   = cells[0]?.textContent?.trim().replace('#','') || '';
+            const idText = cells[0]?.textContent?.trim().replace('#', '') || '';
             const horaText = cells[2]?.textContent?.trim() || '';
-            const clienteTd    = cells[3];
+            const clienteTd = cells[3];
             const clienteNombre = clienteTd?.querySelector('strong')?.textContent?.trim() || '';
-            const clienteSpans  = clienteTd?.querySelectorAll('span') || [];
-            const clienteEmail  = clienteSpans[0]?.textContent?.trim() || '';
-            const clienteTel    = clienteSpans[1]?.textContent?.trim() || '';
+            const clienteSpans = clienteTd?.querySelectorAll('span') || [];
+            const clienteEmail = clienteSpans[0]?.textContent?.trim() || '';
+            const clienteTel = clienteSpans[1]?.textContent?.trim() || '';
             const { servicio, duracion } = extractServicioFromTd(cells[4]);
-            const precio  = cells[5]?.textContent?.trim().replace(' €','').replace('€','').trim() || '';
+            const precio = cells[5]?.textContent?.trim().replace(' €', '').replace('€', '').trim() || '';
             const barbero = cells[6]?.querySelector('.b-badge')?.textContent?.trim() || cells[6]?.textContent?.trim() || '';
-            const estado  = row.dataset.estado || guessEstadoFromBadge(cells[7]);
-            const notas   = cells[9]?.textContent?.trim() === '—' ? '' : cells[9]?.textContent?.trim() || '';
+            const estado = row.dataset.estado || guessEstadoFromBadge(cells[7]);
+            const notas = cells[9]?.textContent?.trim() === '—' ? '' : cells[9]?.textContent?.trim() || '';
             return {
                 id: idText,
                 fecha: row.dataset.fecha || '',
@@ -1255,33 +1258,33 @@
                 token: row.dataset.token || '',
                 creado_en: row.dataset.creado || '',
                 nueva_fecha_propuesta: row.dataset.nuevaFecha || '',
-                nueva_hora_propuesta:  row.dataset.nuevaHora  || '',
-                motivo_cambio:         row.dataset.motivo     || '',
-                ronda_negociacion:     row.dataset.ronda      || '0',
+                nueva_hora_propuesta: row.dataset.nuevaHora || '',
+                motivo_cambio: row.dataset.motivo || '',
+                ronda_negociacion: row.dataset.ronda || '0',
             };
-        } catch(e) { console.error('extractFromRow', e); return null; }
+        } catch (e) { console.error('extractFromRow', e); return null; }
     }
 
     function extractFromCard(card) {
         try {
-            const idText   = card.querySelector('.rc-id')?.textContent?.trim().replace('#','') || '';
+            const idText = card.querySelector('.rc-id')?.textContent?.trim().replace('#', '') || '';
             const horaText = card.querySelector('.rc-hora')?.textContent?.trim() || '';
-            const nombre   = card.querySelector('.rc-cliente-name')?.textContent?.trim() || '';
-            const metas    = card.querySelectorAll('.rc-meta-item');
-            const email    = (metas[0]?.textContent || '').replace('✉','').trim();
-            const tel      = (metas[1]?.textContent || '').replace('📞','').trim();
+            const nombre = card.querySelector('.rc-cliente-name')?.textContent?.trim() || '';
+            const metas = card.querySelectorAll('.rc-meta-item');
+            const email = (metas[0]?.textContent || '').replace('✉', '').trim();
+            const tel = (metas[1]?.textContent || '').replace('📞', '').trim();
             const detalles = card.querySelectorAll('.rc-detail');
             let servicio = '—', duracion = '';
             if (detalles.length > 0) {
                 const svcDet = detalles[0];
                 servicio = svcDet?.querySelector('.rc-detail-value')?.textContent?.trim() || '—';
-                duracion = svcDet?.querySelector('.rc-detail-sub')?.textContent?.trim()  || '';
+                duracion = svcDet?.querySelector('.rc-detail-sub')?.textContent?.trim() || '';
             }
-            const precio  = card.querySelector('.rc-detail-value.gold')?.textContent?.trim().replace(' €','').replace('€','') || '';
+            const precio = card.querySelector('.rc-detail-value.gold')?.textContent?.trim().replace(' €', '').replace('€', '') || '';
             const barbero = card.querySelector('.rc-barbero-pill')?.textContent?.trim() || '';
             const estadoBadge = card.querySelector('.ebadge');
-            const estado  = card.dataset.estado || (estadoBadge ? guessEstadoFromClass(estadoBadge) : '');
-            const notas   = card.querySelector('.rc-notas')?.textContent?.replace(/^"|"$/g,'').trim() || '';
+            const estado = card.dataset.estado || (estadoBadge ? guessEstadoFromClass(estadoBadge) : '');
+            const notas = card.querySelector('.rc-notas')?.textContent?.replace(/^"|"$/g, '').trim() || '';
             return {
                 id: idText,
                 fecha: card.dataset.fecha || '',
@@ -1299,37 +1302,37 @@
                 token: card.dataset.token || '',
                 creado_en: card.dataset.creado || '',
                 nueva_fecha_propuesta: card.dataset.nuevaFecha || '',
-                nueva_hora_propuesta:  card.dataset.nuevaHora  || '',
-                motivo_cambio:         card.dataset.motivo     || '',
-                ronda_negociacion:     card.dataset.ronda      || '0',
+                nueva_hora_propuesta: card.dataset.nuevaHora || '',
+                motivo_cambio: card.dataset.motivo || '',
+                ronda_negociacion: card.dataset.ronda || '0',
             };
-        } catch(e) { console.error('extractFromCard', e); return null; }
+        } catch (e) { console.error('extractFromCard', e); return null; }
     }
 
     function guessEstadoFromBadge(td) {
         if (!td) return '';
         const text = td.textContent.toLowerCase();
-        if (text.includes('pendiente'))  return 'pendiente';
-        if (text.includes('aceptada'))   return 'aceptada';
-        if (text.includes('denegada'))   return 'denegada';
-        if (text.includes('cancelada'))  return 'cancelada';
+        if (text.includes('pendiente')) return 'pendiente';
+        if (text.includes('aceptada')) return 'aceptada';
+        if (text.includes('denegada')) return 'denegada';
+        if (text.includes('cancelada')) return 'cancelada';
         if (text.includes('prop. barbero') || text.includes('reprogramar_barbero')) return 'reprogramar_barbero';
         if (text.includes('prop. cliente') || text.includes('reprogramar_cliente')) return 'reprogramar_cliente';
         return '';
     }
     function guessEstadoFromClass(el) {
         const cls = el.className || '';
-        if (cls.includes('pendiente'))  return 'pendiente';
-        if (cls.includes('aceptada'))   return 'aceptada';
-        if (cls.includes('denegada'))   return 'denegada';
-        if (cls.includes('cancelada'))  return 'cancelada';
+        if (cls.includes('pendiente')) return 'pendiente';
+        if (cls.includes('aceptada')) return 'aceptada';
+        if (cls.includes('denegada')) return 'denegada';
+        if (cls.includes('cancelada')) return 'cancelada';
         if (cls.includes('reprogramar_barbero')) return 'reprogramar_barbero';
         if (cls.includes('reprogramar_cliente')) return 'reprogramar_cliente';
         return '';
     }
 
     function escJS(str) {
-        return (str || '').replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/"/g,'&quot;');
+        return (str || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '&quot;');
     }
 
     // ── Init ──────────────────────────────────────────────────
