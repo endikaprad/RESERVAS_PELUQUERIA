@@ -70,6 +70,27 @@ try {
         $pieCliente    = 'Puedes hacer una nueva reserva en <a href="' . $baseUrl . '/reservas.html" style="color:#d42b2b;">nuestra web</a> o llamarnos al <a href="tel:+34944000000" style="color:#d42b2b;">+34 944 000 000</a>';
     }
 
+    // ── Bloque cancelar (solo para reservas aceptadas) ───────
+    $cancelBox = '';
+    if ($accion === 'aceptar') {
+        $urlCancelar = $baseUrl . '/backend/api/cancel-booking.php?token=' . $reserva['token'];
+        $cancelBox = "
+      <div style='background:#18181f;border:1px solid #252530;border-radius:8px;padding:16px;margin-bottom:24px;text-align:center;'>
+        <p style='color:#7a7880;font-size:13px;margin:0 0 12px;'>
+          ¿Necesitas cancelar tu reserva?
+        </p>
+        <a href='{$urlCancelar}'
+           style='display:inline-block;background:#374151;color:#f0ece3;text-decoration:none;
+                  padding:10px 24px;border-radius:6px;font-size:13px;font-weight:600;
+                  letter-spacing:0.08em;text-transform:uppercase;border:1px solid #4b5563;'>
+          Cancelar reserva
+        </a>
+        <p style='color:#52525b;font-size:11px;margin:10px 0 0;'>
+          Solo disponible hasta las 23:59 del día anterior a tu cita.
+        </p>
+      </div>";
+    }
+
     $htmlCliente = "<!DOCTYPE html><html lang='es'><head><meta charset='UTF-8'></head>
 <body style='margin:0;padding:0;background:#09080f;font-family:Arial,sans-serif;'>
   <div style='max-width:560px;margin:0 auto;background:#111119;border:1px solid #252530;border-radius:12px;overflow:hidden;'>
@@ -92,6 +113,7 @@ try {
         <tr><td style='padding:10px 0;color:#7a7880;font-size:13px;'>Hora</td>
             <td style='padding:10px 0;color:{$colorHeader};font-size:16px;font-weight:700;'>{$hora}</td></tr>
       </table>
+      {$cancelBox}
       <p style='color:#7a7880;font-size:13px;text-align:center;'>{$pieCliente}</p>
     </div>
     <div style='background:#18181f;padding:16px 32px;text-align:center;'>
