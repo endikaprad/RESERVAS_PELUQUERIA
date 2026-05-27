@@ -3372,6 +3372,388 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
             color: #6b9fff;
         }
     </style>
+    <style id="sh-style">
+        /* ── Selector de fecha ── */
+        .sh-date-row {
+            display: flex;
+            gap: .5rem;
+            align-items: center;
+            margin-bottom: .75rem;
+        }
+
+        .sh-date-input {
+            flex: 1;
+            background: #18181f;
+            border: 1px solid #252530;
+            border-radius: 8px;
+            padding: .65rem 1rem;
+            color: #f0ece3;
+            font-family: 'DM Sans', sans-serif;
+            font-size: .88rem;
+            transition: border-color .2s;
+            -webkit-appearance: none;
+            appearance: none;
+        }
+
+        .sh-date-input:focus {
+            outline: none;
+            border-color: #d42b2b;
+        }
+
+        .sh-today-btn {
+            padding: .65rem 1rem;
+            background: rgba(212, 43, 43, .1);
+            border: 1px solid rgba(212, 43, 43, .3);
+            border-radius: 8px;
+            color: #d42b2b;
+            font-family: 'DM Sans', sans-serif;
+            font-size: .75rem;
+            font-weight: 600;
+            letter-spacing: .08em;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: all .2s;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        .sh-today-btn:hover {
+            background: #d42b2b;
+            color: #fff;
+        }
+
+        /* ── Info del día ── */
+        .sh-day-info {
+            margin-bottom: .5rem;
+        }
+
+        .sh-day-info-label {
+            font-family: 'Playfair Display', serif;
+            font-size: 1rem;
+            font-weight: 700;
+            color: #f0ece3;
+            margin-bottom: .35rem;
+        }
+
+        .sh-day-blocked-warn {
+            background: rgba(212, 43, 43, .08);
+            border: 1px solid rgba(212, 43, 43, .25);
+            border-radius: 8px;
+            padding: .65rem 1rem;
+            font-size: .78rem;
+            color: #d4534b;
+            line-height: 1.5;
+        }
+
+        /* ── Leyenda ── */
+        .sh-legend {
+            display: inline-flex;
+            align-items: center;
+            gap: .35rem;
+            margin-left: auto;
+            font-size: .62rem;
+            color: #7a7880;
+            text-transform: none;
+            letter-spacing: 0;
+            font-weight: 400;
+        }
+
+        .sh-leg-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 2px;
+            flex-shrink: 0;
+        }
+
+        .sh-leg-free {
+            background: rgba(245, 240, 232, .08);
+            border: 1px solid #252530;
+        }
+
+        .sh-leg-blocked {
+            background: rgba(212, 43, 43, .35);
+            border: 1px solid rgba(212, 43, 43, .6);
+        }
+
+        .sh-leg-reserved {
+            background: rgba(34, 197, 94, .15);
+            border: 1px solid rgba(34, 197, 94, .35);
+        }
+
+        /* ── Loading ── */
+        .sh-loading {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: .75rem;
+            padding: 2rem;
+            color: #7a7880;
+            font-size: .8rem;
+        }
+
+        .sh-spinner {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            border: 2px solid rgba(212, 43, 43, .15);
+            border-top-color: #d42b2b;
+            animation: shSpin .8s linear infinite;
+        }
+
+        @keyframes shSpin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* ── Estado vacío ── */
+        .sh-empty-state {
+            text-align: center;
+            color: #7a7880;
+            font-size: .8rem;
+            padding: 2rem 1rem;
+            border: 1px dashed #252530;
+            border-radius: 10px;
+        }
+
+        /* ── Turno label ── */
+        .sh-turno-label {
+            font-size: .6rem;
+            letter-spacing: .2em;
+            text-transform: uppercase;
+            color: #7a7880;
+            margin-bottom: .5rem;
+        }
+
+        /* ── Grid de slots ── */
+        .sh-slots-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: .4rem;
+            margin-bottom: .25rem;
+        }
+
+        /* ── Slot chip ── */
+        .sh-slot {
+            position: relative;
+            padding: .55rem .25rem;
+            border-radius: 7px;
+            text-align: center;
+            font-size: .78rem;
+            font-family: 'DM Sans', sans-serif;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all .18s;
+            user-select: none;
+            border: 1px solid transparent;
+        }
+
+        /* Estado: libre */
+        .sh-slot.sh-free {
+            background: rgba(245, 240, 232, .04);
+            border-color: #252530;
+            color: #7a7880;
+        }
+
+        .sh-slot.sh-free:hover {
+            border-color: rgba(212, 43, 43, .4);
+            color: #d42b2b;
+            background: rgba(212, 43, 43, .06);
+        }
+
+        /* Estado: pendiente de bloquear */
+        .sh-slot.sh-pending-block {
+            background: rgba(212, 43, 43, .15);
+            border-color: rgba(212, 43, 43, .5);
+            color: #d42b2b;
+            font-weight: 700;
+        }
+
+        .sh-slot.sh-pending-block::after {
+            content: '+';
+            position: absolute;
+            top: 2px;
+            right: 4px;
+            font-size: .6rem;
+            opacity: .7;
+        }
+
+        /* Estado: bloqueado ya guardado */
+        .sh-slot.sh-blocked {
+            background: rgba(212, 43, 43, .25);
+            border-color: rgba(212, 43, 43, .6);
+            color: #ff8080;
+            font-weight: 600;
+        }
+
+        .sh-slot.sh-blocked::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 6px;
+            background: repeating-linear-gradient(-45deg,
+                    rgba(212, 43, 43, .15) 0px, rgba(212, 43, 43, .15) 2px,
+                    transparent 2px, transparent 5px);
+            pointer-events: none;
+        }
+
+        .sh-slot.sh-blocked:hover {
+            background: rgba(212, 43, 43, .12);
+            border-color: rgba(212, 43, 43, .3);
+            color: #9ca3af;
+        }
+
+        /* Estado: pendiente de desbloquear */
+        .sh-slot.sh-pending-unblock {
+            background: rgba(107, 114, 128, .1);
+            border-color: rgba(107, 114, 128, .35);
+            color: #9ca3af;
+            text-decoration: line-through;
+        }
+
+        .sh-slot.sh-pending-unblock::after {
+            content: '−';
+            position: absolute;
+            top: 2px;
+            right: 4px;
+            font-size: .6rem;
+            opacity: .7;
+            text-decoration: none;
+        }
+
+        /* Estado: reservado (no editable) */
+        .sh-slot.sh-reserved {
+            background: rgba(34, 197, 94, .08);
+            border-color: rgba(34, 197, 94, .25);
+            color: #22c55e;
+            cursor: not-allowed;
+            opacity: .85;
+        }
+
+        .sh-slot.sh-reserved::after {
+            content: '●';
+            position: absolute;
+            top: 3px;
+            right: 4px;
+            font-size: .5rem;
+            color: rgba(34, 197, 94, .7);
+        }
+
+        /* ── Acciones rápidas ── */
+        .sh-quick-actions {
+            display: flex;
+            gap: .5rem;
+            margin-top: 1rem;
+            margin-bottom: .75rem;
+        }
+
+        .sh-quick-btn {
+            flex: 1;
+            padding: .55rem .5rem;
+            border-radius: 7px;
+            font-family: 'DM Sans', sans-serif;
+            font-size: .68rem;
+            font-weight: 600;
+            letter-spacing: .06em;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: all .2s;
+            border: 1px solid transparent;
+        }
+
+        .sh-quick-block-all {
+            background: rgba(212, 43, 43, .08);
+            border-color: rgba(212, 43, 43, .3);
+            color: #d42b2b;
+        }
+
+        .sh-quick-block-all:hover {
+            background: #d42b2b;
+            color: #fff;
+            border-color: #d42b2b;
+        }
+
+        .sh-quick-unblock-all {
+            background: transparent;
+            border-color: #252530;
+            color: #7a7880;
+        }
+
+        .sh-quick-unblock-all:hover {
+            border-color: #7a7880;
+            color: #f0ece3;
+        }
+
+        /* ── Motivo input ── */
+        .sh-motivo-row {
+            margin-bottom: .75rem;
+        }
+
+        .sh-motivo-input {
+            width: 100%;
+            background: #18181f;
+            border: 1px solid #252530;
+            border-radius: 8px;
+            padding: .65rem 1rem;
+            color: #f0ece3;
+            font-family: 'DM Sans', sans-serif;
+            font-size: .85rem;
+            transition: border-color .2s;
+            box-sizing: border-box;
+        }
+
+        .sh-motivo-input:focus {
+            outline: none;
+            border-color: #d42b2b;
+        }
+
+        .sh-motivo-input::placeholder {
+            color: #4a4a58;
+        }
+
+        /* ── Botón guardar ── */
+        .sh-save-btn {
+            width: 100%;
+            background: linear-gradient(135deg, #d42b2b 0%, #a81e1e 100%);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            padding: .85rem 1rem;
+            font-family: 'DM Sans', sans-serif;
+            font-size: .78rem;
+            font-weight: 700;
+            letter-spacing: .12em;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: all .25s;
+            box-shadow: 0 4px 16px rgba(212, 43, 43, .25);
+        }
+
+        .sh-save-btn:hover:not(:disabled) {
+            transform: translateY(-1px);
+            box-shadow: 0 8px 24px rgba(212, 43, 43, .4);
+        }
+
+        .sh-save-btn:disabled {
+            opacity: .4;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* ── Resumen de cambios pendientes ── */
+        .sh-pending-summary {
+            display: flex;
+            align-items: center;
+            gap: .5rem;
+            padding: .5rem .85rem;
+            background: rgba(245, 158, 11, .06);
+            border: 1px solid rgba(245, 158, 11, .2);
+            border-radius: 7px;
+            font-size: .75rem;
+            color: #d4a84b;
+            margin-bottom: .75rem;
+        }
+    </style>
     </style>
 </head>
 
@@ -3667,6 +4049,7 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
         <div class="cfg-tabs">
             <button class="cfg-tab active" onclick="switchTab('auto')">Auto-aceptar</button>
             <button class="cfg-tab" onclick="switchTab('vac')">Vacaciones</button>
+            <button class="cfg-tab" onclick="switchTab('horarios')">Horarios</button>
             <button class="cfg-tab" onclick="switchTab('datos')">Datos</button>
         </div>
         <div class="cfg-body">
@@ -3747,6 +4130,74 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
                 <div class="cfg-section-label" style="margin-top:1.25rem;">Días bloqueados actualmente</div>
                 <div class="blocked-list" id="blocked-list"></div>
                 <div class="cfg-status" id="vac-status"></div>
+            </div>
+
+            <!-- ══ PESTAÑA HORARIOS: HTML ══════════════════════════════════════ -->
+            <div class="cfg-pane" id="pane-horarios">
+
+                <!-- Selector de fecha -->
+                <div class="cfg-section-label">Seleccionar día</div>
+                <div class="sh-date-row">
+                    <input type="date" id="sh-fecha-input" class="sh-date-input"
+                        onchange="shOnFechaChange()" />
+                    <button class="sh-today-btn" onclick="shSetToday()">Hoy</button>
+                </div>
+
+                <!-- Info del día seleccionado -->
+                <div class="sh-day-info" id="sh-day-info" style="display:none;">
+                    <div class="sh-day-info-label" id="sh-day-label">—</div>
+                    <div class="sh-day-blocked-warn" id="sh-day-blocked-warn" style="display:none;">
+                        🔒 Este día está bloqueado por vacaciones — los clientes no pueden reservar ningún horario.
+                    </div>
+                </div>
+
+                <!-- Grid de slots -->
+                <div class="cfg-section-label" style="margin-top:1.25rem;">
+                    Horarios disponibles
+                    <span class="sh-legend">
+                        <span class="sh-leg-dot sh-leg-free"></span>Libre
+                        <span class="sh-leg-dot sh-leg-blocked"></span>Bloqueado
+                        <span class="sh-leg-dot sh-leg-reserved"></span>Reservado
+                    </span>
+                </div>
+
+                <div class="sh-loading" id="sh-loading" style="display:none;">
+                    <div class="sh-spinner"></div>
+                    <span>Cargando horarios…</span>
+                </div>
+
+                <div class="sh-empty-state" id="sh-empty-state">
+                    Selecciona un día para gestionar sus horarios.
+                </div>
+
+                <!-- Turnos: mañana y tarde -->
+                <div id="sh-slots-container" style="display:none;">
+                    <div class="sh-turno-label">Mañana</div>
+                    <div class="sh-slots-grid" id="sh-grid-morning"></div>
+                    <div class="sh-turno-label" style="margin-top:1rem;">Tarde</div>
+                    <div class="sh-slots-grid" id="sh-grid-afternoon"></div>
+
+                    <!-- Acciones rápidas -->
+                    <div class="sh-quick-actions">
+                        <button class="sh-quick-btn sh-quick-block-all"
+                            onclick="shBlockAll()">🔒 Bloquear todos los libres</button>
+                        <button class="sh-quick-btn sh-quick-unblock-all"
+                            onclick="shUnblockAll()">🔓 Liberar todos</button>
+                    </div>
+
+                    <!-- Motivo -->
+                    <div class="sh-motivo-row">
+                        <input type="text" id="sh-motivo-input" class="sh-motivo-input"
+                            placeholder="Motivo del bloqueo (ej: Formación, Descanso…)" maxlength="100" />
+                    </div>
+
+                    <!-- Guardar -->
+                    <button class="sh-save-btn" id="sh-save-btn"
+                        onclick="shSavePending()" disabled>
+                        Guardar cambios
+                    </button>
+                    <div class="cfg-status" id="sh-status"></div>
+                </div>
             </div>
 
             <!-- ══ PESTAÑA DATOS: HTML ══════════════════════════════════════ -->
@@ -5141,6 +5592,397 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
                     }, 800);
                 }
             })();
+
+        })();
+    </script>
+    <script id="sh-script">
+        (function initSlotHorarios() {
+            'use strict';
+
+            const SH_API = './api/blocked-slots.php';
+            const SLOTS_API = './api/slots.php';
+
+            // Todos los slots del día
+            const MORNING_SLOTS = ['09:00', '09:30', '10:00', '10:30', '11:00', '11:30', '12:00', '12:30', '13:00', '13:30'];
+            const AFTERNOON_SLOTS = ['16:00', '16:30', '17:00', '17:30', '18:00', '18:30', '19:00', '19:30'];
+            const ALL_SLOTS = [...MORNING_SLOTS, ...AFTERNOON_SLOTS];
+
+            // Estado
+            let shFecha = '';
+            let shBlockedSlots = new Set(); // slots ya bloqueados en BD
+            let shReservedSlots = new Set(); // slots con reserva activa
+            let shPendingBlock = new Set(); // pendientes de bloquear
+            let shPendingUnblock = new Set(); // pendientes de desbloquear
+            let shDayBlocked = false; // día bloqueado por vacaciones
+
+            const DIAS_ES = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+            const MESES_ES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+
+            function shFormatFecha(ymd) {
+                if (!ymd) return '';
+                const [y, m, d] = ymd.split('-').map(Number);
+                const dow = new Date(y, m - 1, d).getDay();
+                return DIAS_ES[dow] + ', ' + d + ' de ' + MESES_ES[m - 1] + ' de ' + y;
+            }
+
+            // ── Inicializar la pestaña cuando se abre ─────────────────
+            (function patchSwitchTab() {
+                if (typeof window.switchTab !== 'function') {
+                    setTimeout(patchSwitchTab, 80);
+                    return;
+                }
+                const _orig = window.switchTab;
+                window.switchTab = function(tab) {
+                    _orig(tab);
+                    if (tab === 'horarios') shOnTabOpen();
+                };
+            })();
+
+            function shOnTabOpen() {
+                // Si no hay fecha seleccionada, poner hoy
+                const input = document.getElementById('sh-fecha-input');
+                if (input && !input.value) {
+                    const today = new Date().toISOString().slice(0, 10);
+                    input.value = today;
+                    shFecha = today;
+                    shLoad();
+                }
+            }
+
+            // ── Cuando el input de fecha cambia ───────────────────────
+            window.shOnFechaChange = function() {
+                const input = document.getElementById('sh-fecha-input');
+                if (!input) return;
+                shFecha = input.value;
+                if (!shFecha) return;
+                // Resetear estado pendiente al cambiar de día
+                shPendingBlock.clear();
+                shPendingUnblock.clear();
+                shLoad();
+            };
+
+            window.shSetToday = function() {
+                const today = new Date().toISOString().slice(0, 10);
+                const input = document.getElementById('sh-fecha-input');
+                if (input) input.value = today;
+                shFecha = today;
+                shPendingBlock.clear();
+                shPendingUnblock.clear();
+                shLoad();
+            };
+
+            // ── Cargar datos del día ──────────────────────────────────
+            async function shLoad() {
+                if (!shFecha) return;
+
+                shShowLoading(true);
+                shBlockedSlots.clear();
+                shReservedSlots.clear();
+                shDayBlocked = false;
+
+                // Mostrar info del día
+                const dayInfo = document.getElementById('sh-day-info');
+                const dayLabel = document.getElementById('sh-day-label');
+                if (dayInfo) dayInfo.style.display = 'block';
+                if (dayLabel) dayLabel.textContent = shFormatFecha(shFecha);
+
+                try {
+                    // 1. ¿Día bloqueado por vacaciones?
+                    // (Llamamos a slots.php con un barbero ficticio para detectar si el día está bloqueado)
+                    const [resBlocked, resSlots] = await Promise.all([
+                        fetch(`${SH_API}?fecha=${shFecha}`),
+                        // Usamos el primer barbero disponible para detectar reservas
+                        // (los slots bloqueados son globales, independientes del barbero)
+                        fetch(`${SH_API}?fecha=${shFecha}`)
+                    ]);
+
+                    // 2. Slots bloqueados manualmente
+                    const jsonBlocked = await resBlocked.json();
+                    if (jsonBlocked.ok && Array.isArray(jsonBlocked.data)) {
+                        jsonBlocked.data.forEach(item => shBlockedSlots.add(item.hora));
+                    }
+
+                    // 3. Reservas activas (todos los barberos)
+                    await shLoadReservations();
+
+                    // 4. ¿Día bloqueado por vacaciones?
+                    await shCheckDayBlocked();
+
+                } catch (e) {
+                    console.error('shLoad error:', e);
+                }
+
+                shShowLoading(false);
+                shRenderSlots();
+                shUpdateSaveBtn();
+            }
+
+            async function shLoadReservations() {
+                // Cargamos reservas de todos los barberos conocidos para marcar slots como reservados
+                const barberos = ['endika', 'marcos', 'alex'];
+                const promises = barberos.map(b =>
+                    fetch(`${SLOTS_API}?fecha=${shFecha}&barbero=${b}`)
+                    .then(r => r.json())
+                    .catch(() => null)
+                );
+                const results = await Promise.all(promises);
+                results.forEach(json => {
+                    if (json && json.ok && json.data && Array.isArray(json.data.ocupadas)) {
+                        json.data.ocupadas.forEach(h => shReservedSlots.add(h));
+                    }
+                });
+            }
+
+            async function shCheckDayBlocked() {
+                try {
+                    // Usamos el endpoint de días bloqueados
+                    const dt = new Date(shFecha + 'T00:00:00');
+                    const year = dt.getFullYear(),
+                        month = dt.getMonth() + 1;
+                    const res = await fetch(`./api/blocked-days.php?year=${year}&month=${month}`);
+                    const json = await res.json();
+                    if (json.ok && json.data && json.data[shFecha] !== undefined) {
+                        shDayBlocked = true;
+                    } else {
+                        shDayBlocked = false;
+                    }
+                } catch (e) {
+                    shDayBlocked = false;
+                }
+
+                const warn = document.getElementById('sh-day-blocked-warn');
+                if (warn) warn.style.display = shDayBlocked ? 'block' : 'none';
+            }
+
+            // ── Renderizar grid de slots ──────────────────────────────
+            function shRenderSlots() {
+                const container = document.getElementById('sh-slots-container');
+                const empty = document.getElementById('sh-empty-state');
+                if (!shFecha) {
+                    if (container) container.style.display = 'none';
+                    if (empty) empty.style.display = 'block';
+                    return;
+                }
+                if (container) container.style.display = 'block';
+                if (empty) empty.style.display = 'none';
+
+                // Filtrar por sábado
+                const dt = new Date(shFecha + 'T00:00:00');
+                const esSabado = dt.getDay() === 6;
+                const esDomingo = dt.getDay() === 0;
+
+                const morningSlots = MORNING_SLOTS.filter(s => !esSabado || s < '14:00');
+                const afternoonSlots = esSabado || esDomingo ? [] : AFTERNOON_SLOTS;
+
+                shRenderGrid('sh-grid-morning', morningSlots);
+                shRenderGrid('sh-grid-afternoon', afternoonSlots);
+
+                // Si es domingo, mostrar mensaje especial
+                if (esDomingo) {
+                    const grid = document.getElementById('sh-grid-morning');
+                    if (grid) grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:1rem;color:#7a7880;font-size:.8rem;">Cerrado los domingos.</div>';
+                }
+            }
+
+            function shRenderGrid(gridId, slots) {
+                const grid = document.getElementById(gridId);
+                if (!grid) return;
+                if (!slots.length) {
+                    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:.5rem;color:#4a4a58;font-size:.75rem;font-style:italic;">Sin horarios</div>';
+                    return;
+                }
+                grid.innerHTML = slots.map(slot => shSlotHtml(slot)).join('');
+            }
+
+            function shSlotHtml(slot) {
+                const isReserved = shReservedSlots.has(slot) && !shBlockedSlots.has(slot);
+                const isBlocked = shBlockedSlots.has(slot) && !shPendingUnblock.has(slot);
+                const isPendingBlock = shPendingBlock.has(slot);
+                const isPendingUnblock = shPendingUnblock.has(slot);
+
+                let cls = 'sh-slot';
+                let title = slot;
+                let onclick = '';
+
+                if (isReserved) {
+                    cls += ' sh-reserved';
+                    title = slot + ' (reservado)';
+                    // No editable
+                } else if (isPendingUnblock) {
+                    cls += ' sh-pending-unblock';
+                    title = slot + ' — clic para cancelar desbloqueo';
+                    onclick = `onclick="shToggleSlot('${slot}')"`;
+                } else if (isBlocked) {
+                    cls += ' sh-blocked';
+                    title = slot + ' — bloqueado (clic para desbloquear)';
+                    onclick = `onclick="shToggleSlot('${slot}')"`;
+                } else if (isPendingBlock) {
+                    cls += ' sh-pending-block';
+                    title = slot + ' — pendiente de bloquear (clic para cancelar)';
+                    onclick = `onclick="shToggleSlot('${slot}')"`;
+                } else {
+                    cls += ' sh-free';
+                    title = slot + ' — libre (clic para bloquear)';
+                    onclick = `onclick="shToggleSlot('${slot}')"`;
+                }
+
+                return `<div class="${cls}" title="${title}" ${onclick}>${slot}</div>`;
+            }
+
+            // ── Toggle de un slot ─────────────────────────────────────
+            window.shToggleSlot = function(slot) {
+                if (shReservedSlots.has(slot) && !shBlockedSlots.has(slot)) return; // reservado, no editable
+
+                if (shBlockedSlots.has(slot)) {
+                    // Ya bloqueado: marcar para desbloquear (o cancelar el desbloqueo)
+                    if (shPendingUnblock.has(slot)) {
+                        shPendingUnblock.delete(slot);
+                    } else {
+                        shPendingUnblock.add(slot);
+                    }
+                } else {
+                    // Libre: marcar para bloquear (o cancelar el bloqueo pendiente)
+                    if (shPendingBlock.has(slot)) {
+                        shPendingBlock.delete(slot);
+                    } else {
+                        shPendingBlock.add(slot);
+                    }
+                }
+
+                shRenderSlots();
+                shUpdateSaveBtn();
+            };
+
+            // ── Bloquear todos los libres ─────────────────────────────
+            window.shBlockAll = function() {
+                const dt = new Date(shFecha + 'T00:00:00');
+                const esSabado = dt.getDay() === 6;
+                const slots = ALL_SLOTS.filter(s => !esSabado || s < '14:00');
+
+                slots.forEach(slot => {
+                    if (!shBlockedSlots.has(slot) && !shReservedSlots.has(slot)) {
+                        shPendingBlock.add(slot);
+                    }
+                });
+                shRenderSlots();
+                shUpdateSaveBtn();
+            };
+
+            // ── Liberar todos ─────────────────────────────────────────
+            window.shUnblockAll = function() {
+                shPendingBlock.clear();
+                shBlockedSlots.forEach(slot => shPendingUnblock.add(slot));
+                shRenderSlots();
+                shUpdateSaveBtn();
+            };
+
+            // ── Actualizar estado del botón Guardar ───────────────────
+            function shUpdateSaveBtn() {
+                const btn = document.getElementById('sh-save-btn');
+                if (!btn) return;
+                const hasPending = shPendingBlock.size > 0 || shPendingUnblock.size > 0;
+                btn.disabled = !hasPending;
+
+                // Mostrar resumen de cambios pendientes
+                const existingSummary = document.getElementById('sh-pending-summary');
+                if (existingSummary) existingSummary.remove();
+
+                if (hasPending) {
+                    const summary = document.createElement('div');
+                    summary.id = 'sh-pending-summary';
+                    summary.className = 'sh-pending-summary';
+                    const parts = [];
+                    if (shPendingBlock.size > 0) parts.push(`🔒 ${shPendingBlock.size} a bloquear`);
+                    if (shPendingUnblock.size > 0) parts.push(`🔓 ${shPendingUnblock.size} a liberar`);
+                    summary.textContent = parts.join(' · ');
+                    btn.insertAdjacentElement('beforebegin', summary);
+                }
+            }
+
+            // ── Guardar cambios pendientes ────────────────────────────
+            window.shSavePending = async function() {
+                const motivo = (document.getElementById('sh-motivo-input')?.value || '').trim() || 'No disponible';
+                const btn = document.getElementById('sh-save-btn');
+                if (btn) {
+                    btn.disabled = true;
+                    btn.textContent = 'Guardando…';
+                }
+
+                try {
+                    const ops = [];
+
+                    // Bloquear slots pendientes
+                    if (shPendingBlock.size > 0) {
+                        ops.push(
+                            fetch(SH_API, {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify({
+                                    accion: 'bloquear_slots',
+                                    fecha: shFecha,
+                                    horas: Array.from(shPendingBlock),
+                                    motivo
+                                })
+                            })
+                        );
+                    }
+
+                    // Desbloquear slots pendientes (uno a uno)
+                    shPendingUnblock.forEach(slot => {
+                        ops.push(
+                            fetch(SH_API, {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify({
+                                    accion: 'desbloquear_slot',
+                                    fecha: shFecha,
+                                    hora: slot
+                                })
+                            })
+                        );
+                    });
+
+                    await Promise.all(ops);
+
+                    shPendingBlock.clear();
+                    shPendingUnblock.clear();
+
+                    shShowStatus(true, 'Cambios guardados correctamente.');
+                    await shLoad(); // recargar estado real
+
+                } catch (e) {
+                    shShowStatus(false, 'Error al guardar. Inténtalo de nuevo.');
+                } finally {
+                    if (btn) {
+                        btn.disabled = false;
+                        btn.textContent = 'Guardar cambios';
+                    }
+                }
+            };
+
+            // ── Helpers ───────────────────────────────────────────────
+            function shShowLoading(show) {
+                const loading = document.getElementById('sh-loading');
+                const container = document.getElementById('sh-slots-container');
+                const empty = document.getElementById('sh-empty-state');
+                if (loading) loading.style.display = show ? 'flex' : 'none';
+                if (show) {
+                    if (container) container.style.display = 'none';
+                    if (empty) empty.style.display = 'none';
+                }
+            }
+
+            function shShowStatus(ok, msg) {
+                const el = document.getElementById('sh-status');
+                if (!el) return;
+                el.className = 'cfg-status visible ' + (ok ? 'ok' : 'err');
+                el.textContent = (ok ? '✓ ' : '✕ ') + msg;
+                setTimeout(() => el.classList.remove('visible'), 3500);
+            }
 
         })();
     </script>

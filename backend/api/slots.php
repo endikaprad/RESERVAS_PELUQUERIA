@@ -8,6 +8,8 @@
 //    - reprogramar_barbero/cliente → negociación en curso
 //  ESTADOS QUE LIBERAN EL SLOT:
 //    - cancelada, denegada         → slot libre para nuevas reservas
+//  SLOTS BLOQUEADOS MANUALMENTE:
+//    - slots_bloqueados            → bloqueados por el barbero desde admin
 // ============================================================
 
 header('Access-Control-Allow-Origin: *');
@@ -78,7 +80,6 @@ try {
     $ocupadasNormal = $stmtNormal->fetchAll(PDO::FETCH_COLUMN);
 
     // ── 2. Slots ORIGINALES de reservas en negociación ───────
-    // El slot original sigue "tomado" mientras la negociación esté activa
     $stmtNegOrig = $db->prepare(
         "SELECT TIME_FORMAT(hora, '%H:%i') AS hora
          FROM reservas
@@ -90,7 +91,6 @@ try {
     $ocupadasNegOrig = $stmtNegOrig->fetchAll(PDO::FETCH_COLUMN);
 
     // ── 3. Slots PROPUESTOS de reservas en negociación ───────
-    // La hora propuesta también se bloquea mientras espera confirmación
     $stmtProp = $db->prepare(
         "SELECT TIME_FORMAT(nueva_hora_propuesta, '%H:%i') AS hora
          FROM reservas
@@ -102,12 +102,42 @@ try {
     $stmtProp->execute([$barbero, $fecha]);
     $ocupadasPropuesta = $stmtProp->fetchAll(PDO::FETCH_COLUMN);
 
+    // ── 4. Slots bloqueados manualmente desde admin ───────────
+    $ocupadasManuales = [];
+    try {
+        // Crear tabla si no existe (por si el admin no la ha inicializado aún)
+        $db->exec("
+            CREATE TABLE IF NOT EXISTS slots_bloqueados (
+                id        INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+                fecha     DATE         NOT NULL,
+                hora      TIME         NOT NULL,
+                motivo    VARCHAR(200) NOT NULL DEFAULT 'No disponible',
+                creado_en DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE KEY uq_fecha_hora (fecha, hora)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+        ");
+
+        $stmtManuales = $db->prepare(
+            "SELECT TIME_FORMAT(hora, '%H:%i') AS hora
+             FROM slots_bloqueados
+             WHERE fecha = ?"
+        );
+        $stmtManuales->execute([$fecha]);
+        $ocupadasManuales = $stmtManuales->fetchAll(PDO::FETCH_COLUMN);
+    } catch (Exception $e) {
+        // Si la tabla no existe aún, ignorar
+        $ocupadasManuales = [];
+    }
+
     // ── Combinar y deduplicar ────────────────────────────────
-    // NOTA: 'cancelada' y 'denegada' NO están en ninguna de estas
-    // consultas, por lo que sus slots quedan libres correctamente.
     $todasOcupadas = array_values(
         array_unique(
-            array_merge($ocupadasNormal, $ocupadasNegOrig, $ocupadasPropuesta)
+            array_merge(
+                $ocupadasNormal,
+                $ocupadasNegOrig,
+                $ocupadasPropuesta,
+                $ocupadasManuales
+            )
         )
     );
 
