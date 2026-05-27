@@ -4,14 +4,6 @@
 //
 //  El CLIENTE responde a una propuesta de cambio de horario.
 //  ?pt=TOKEN&accion=aceptar|rechazar
-//
-//  Estados válidos para responder:
-//  - 'reprogramar_barbero': el barbero propuso, el cliente responde
-//  - 'reprogramar_cliente': el cliente ya contrapropuso (pero puede que
-//    llegue aquí de nuevo si el barbero propuso otra vez y el cliente
-//    acepta desde un email anterior)
-//
-//  FIX: La validación ahora acepta AMBOS estados de negociación activa.
 // ============================================================
 
 header('Content-Type: text/html; charset=utf-8');
@@ -44,12 +36,9 @@ try {
         mostrarPagina('error', 'No encontrada', 'Esta reserva no existe o el enlace ha caducado.');
     }
 
-    // FIX: Aceptar tanto reprogramar_barbero como reprogramar_cliente.
-    // Ambos son estados de negociación activa donde el cliente puede responder.
     $estadosValidos = ['reprogramar_barbero', 'reprogramar_cliente'];
 
     if (!in_array($reserva['estado'], $estadosValidos, true)) {
-        // Mostrar mensaje apropiado según el estado actual
         $estadoActual = $reserva['estado'];
         if ($estadoActual === 'aceptada') {
             $msg = 'Esta reserva ya fue <strong>confirmada</strong>. ¡Te esperamos!';
@@ -118,14 +107,14 @@ try {
              WHERE token = ?"
         )->execute([$nuevaFecha, $nuevaHora, $token]);
 
-        // URL de cancelación para el email de confirmación
-        $urlCancelReserva = $baseUrl . '/backend/api/cancel-booking.php?token=' . $token;
+        // ── Botón cancelar para el email de confirmación ────
+        $urlCancelarCliente = $baseUrl . '/backend/api/cancel-booking.php?token=' . $token;
         $cancelBox = "
       <div style='background:#18181f;border:1px solid #252530;border-radius:8px;padding:16px;margin-bottom:24px;text-align:center;'>
         <p style='color:#7a7880;font-size:13px;margin:0 0 12px;'>
           ¿Necesitas cancelar tu reserva?
         </p>
-        <a href='{$urlCancelReserva}'
+        <a href='{$urlCancelarCliente}'
            style='display:inline-block;background:#374151;color:#f0ece3;text-decoration:none;
                   padding:10px 24px;border-radius:6px;font-size:13px;font-weight:600;
                   letter-spacing:0.08em;text-transform:uppercase;border:1px solid #4b5563;'>
@@ -188,7 +177,7 @@ try {
 }
 
 // ════════════════════════════════════════════════════════════
-//  Pantalla de rechazo (el cliente no puede en ese horario)
+//  Pantalla de rechazo
 // ════════════════════════════════════════════════════════════
 function mostrarPantallaRechazar(
     array  $reserva,
