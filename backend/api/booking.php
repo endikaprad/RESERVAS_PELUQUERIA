@@ -1,6 +1,7 @@
 <?php
 // ============================================================
-//  POST /api/booking.php
+//  POST /api/booking.php  — FIXED
+//  Fix: unique constraint allows cancelled bookings to be re-booked
 // ============================================================
 
 require_once __DIR__ . '/helpers.php';
@@ -54,6 +55,28 @@ try {
     $b->execute([$barbero]);
     $barberoRow = $b->fetch();
     if (!$barberoRow) jsonError('Barbero no encontrado');
+
+    // ── Comprobar disponibilidad real (excluyendo canceladas/denegadas) ──
+    // FIX: La UNIQUE KEY de BD bloquea aunque el estado sea 'cancelada'.
+    // Solución: antes de insertar, eliminar filas canceladas/denegadas
+    // que coincidan con el mismo barbero+fecha+hora para liberar el slot.
+    $cleanUp = $db->prepare(
+        "DELETE FROM reservas
+         WHERE barbero_id = ? AND fecha = ? AND hora = ?
+           AND estado IN ('cancelada', 'denegada')"
+    );
+    $cleanUp->execute([$barbero, $fecha, $hora . ':00']);
+
+    // Verificar que el slot sigue libre tras la limpieza
+    $checkSlot = $db->prepare(
+        "SELECT COUNT(*) FROM reservas
+         WHERE barbero_id = ? AND fecha = ? AND hora = ?
+           AND estado IN ('pendiente', 'aceptada', 'reprogramar_barbero', 'reprogramar_cliente')"
+    );
+    $checkSlot->execute([$barbero, $fecha, $hora . ':00']);
+    if ((int)$checkSlot->fetchColumn() > 0) {
+        jsonError('Ese horario ya está reservado. Por favor elige otro.', 409);
+    }
 
     // ── Leer configuración de auto-aceptar ───────────────────
     $autoAceptar      = 'no';

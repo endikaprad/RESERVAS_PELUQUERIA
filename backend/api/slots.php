@@ -3,14 +3,11 @@
 //  GET /api/slots.php?fecha=YYYY-MM-DD&barbero=endika
 //
 //  Devuelve slots ocupados para un barbero en una fecha dada.
-//
-//  LÓGICA DE BLOQUEO:
-//  1. Reservas normales (pendiente/aceptada/denegada) → bloquean su fecha+hora.
-//  2. Reservas en negociación (reprogramar_barbero / reprogramar_cliente):
-//     - Bloquean su HORA ORIGINAL (r.fecha + r.hora) — el barbero no puede
-//       en ese slot original porque la cita sigue activa.
-//     - También bloquean la HORA PROPUESTA (nueva_fecha_propuesta + nueva_hora_propuesta)
-//       para que nadie más la reserve mientras está pendiente de confirmar.
+//  ESTADOS QUE BLOQUEAN EL SLOT:
+//    - pendiente, aceptada         → cita activa
+//    - reprogramar_barbero/cliente → negociación en curso
+//  ESTADOS QUE LIBERAN EL SLOT:
+//    - cancelada, denegada         → slot libre para nuevas reservas
 // ============================================================
 
 header('Access-Control-Allow-Origin: *');
@@ -69,22 +66,19 @@ try {
         ]);
     }
 
-    // ── 1. Slots de reservas normales ─────────────────────────
-    // pendiente, aceptada, denegada → bloquean su fecha+hora original.
-    // (cancelada libera el slot)
+    // ── 1. Slots de reservas activas (excluye cancelada y denegada) ──
     $stmtNormal = $db->prepare(
         "SELECT TIME_FORMAT(hora, '%H:%i') AS hora
          FROM reservas
          WHERE barbero_id = ?
            AND fecha      = ?
-           AND estado     IN ('pendiente', 'aceptada', 'denegada')"
+           AND estado     IN ('pendiente', 'aceptada')"
     );
     $stmtNormal->execute([$barbero, $fecha]);
     $ocupadasNormal = $stmtNormal->fetchAll(PDO::FETCH_COLUMN);
 
     // ── 2. Slots ORIGINALES de reservas en negociación ───────
-    // reprogramar_barbero / reprogramar_cliente: el slot ORIGINAL (r.fecha + r.hora)
-    // sigue perteneciendo a esta cita → debe aparecer ocupado.
+    // El slot original sigue "tomado" mientras la negociación esté activa
     $stmtNegOrig = $db->prepare(
         "SELECT TIME_FORMAT(hora, '%H:%i') AS hora
          FROM reservas
@@ -96,8 +90,7 @@ try {
     $ocupadasNegOrig = $stmtNegOrig->fetchAll(PDO::FETCH_COLUMN);
 
     // ── 3. Slots PROPUESTOS de reservas en negociación ───────
-    // La hora propuesta (nueva_hora_propuesta) en la fecha propuesta también
-    // se bloquea para que nadie pueda reservar ese hueco mientras está pendiente.
+    // La hora propuesta también se bloquea mientras espera confirmación
     $stmtProp = $db->prepare(
         "SELECT TIME_FORMAT(nueva_hora_propuesta, '%H:%i') AS hora
          FROM reservas
@@ -110,6 +103,8 @@ try {
     $ocupadasPropuesta = $stmtProp->fetchAll(PDO::FETCH_COLUMN);
 
     // ── Combinar y deduplicar ────────────────────────────────
+    // NOTA: 'cancelada' y 'denegada' NO están en ninguna de estas
+    // consultas, por lo que sus slots quedan libres correctamente.
     $todasOcupadas = array_values(
         array_unique(
             array_merge($ocupadasNormal, $ocupadasNegOrig, $ocupadasPropuesta)
