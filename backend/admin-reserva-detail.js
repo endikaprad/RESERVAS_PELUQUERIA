@@ -644,10 +644,10 @@
                     tipo: 'final',
                     icono: '✓',
                     titulo: 'Negociación finalizada — Cita confirmada',
+                    slotDestino: fechaFmt,
                     detalle: 'Horario acordado: ' + slotDestino,
                     rondaLabel: null,
                     slotOrigen: null,
-                    slotDestino: fechaFmt,
                 });
             } else {
                 items.push({
