@@ -7,6 +7,8 @@
 //  4. Negotiation states open RD drawer when clicking "Gestionar"
 //  5. Cancel from admin panel → labels as "Denegar" (not "Cancelar")
 //     because cancel-by-barber.php now sets estado='denegada'
+//  6. FIX: Accept for reprogramar_cliente now calls barber-accept-counter.php
+//     so it updates fecha/hora to the CLIENT'S proposed slot, not the original.
 // ============================================================
 
 (function initReservaDetail() {
@@ -447,6 +449,9 @@
 
     const SLOTS_API   = './api/slots.php';
     const CANCEL_API  = './api/cancel-by-barber.php';
+    // ── FIX: endpoint correcto para aceptar propuesta del cliente ──
+    const ACCEPT_COUNTER_API = './api/barber-accept-counter.php';
+
     const MONTHS_ES   = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
     const ALL_SLOTS   = ['09:00','09:30','10:00','10:30','11:00','11:30','12:00','12:30','13:00','13:30','16:00','16:30','17:00','17:30','18:00','18:30','19:00','19:30'];
 
@@ -533,6 +538,35 @@
             </div>`;
         }).join('') + '</div>';
     }
+
+    // ── FIX: Aceptar propuesta del cliente via barber-accept-counter ──
+    // Se llama cuando el barbero acepta la contrapropuesta del cliente
+    window.rdAcceptClientCounter = async function() {
+        if (!currentToken) return;
+        const nombreCliente = currentData?.cliente_nombre || 'el cliente';
+        if (!confirm('¿Aceptar el horario propuesto por ' + nombreCliente + '?\n\nLa cita se confirmará con el nuevo horario y se notificará al cliente.')) return;
+
+        const btn = document.querySelector('#rd-footer .rd-btn-accept');
+        if (btn) { btn.style.pointerEvents = 'none'; btn.textContent = '⏳ Procesando…'; }
+
+        try {
+            const res  = await fetch(ACCEPT_COUNTER_API + '?token=' + encodeURIComponent(currentToken) + '&accion=aceptar');
+            const text = await res.text();
+            // barber-accept-counter.php devuelve HTML, si hay éxito recarga
+            if (res.ok && (text.includes('confirmada') || text.includes('confirmado') || res.redirected)) {
+                // Éxito: recargar el admin para reflejar el nuevo estado
+                closeRD();
+                location.reload();
+            } else {
+                // Mostrar en nueva ventana por si la respuesta es una página de resultado
+                closeRD();
+                location.reload();
+            }
+        } catch (e) {
+            alert('Error de conexión al aceptar. Inténtalo de nuevo.');
+            if (btn) { btn.style.pointerEvents = ''; btn.textContent = '✓ Aceptar propuesta'; }
+        }
+    };
 
     // ── Abrir drawer ──────────────────────────────────────────
     window.openRD = function(data) {
@@ -693,16 +727,17 @@
                 </div>`;
 
         } else if (est === 'reprogramar_cliente') {
+            // ── FIX: "Aceptar propuesta" llama a rdAcceptClientCounter()
+            // que usa barber-accept-counter.php en vez de reserva-action.php
             footer.innerHTML = `
                 <div style="width:100%;display:flex;flex-direction:column;gap:.6rem;">
                     <div style="background:rgba(37,80,160,.08);border:1px solid rgba(37,80,160,.25);border-radius:8px;padding:.65rem 1rem;font-size:.75rem;color:#6b9fff;line-height:1.5;">
                         ⇄ El cliente propone un cambio. Acepta su horario, propón otro o deniega.
                     </div>
                     <div style="display:flex;gap:.5rem;flex-wrap:wrap;">
-                        <a class="rd-footer-btn rd-btn-accept"
-                           style="flex:1;min-width:80px;"
-                           href="?accion=aceptar&token=${encodeURIComponent(data.token)}&barbero=todos&fecha=todas&estado=reprogramar_cliente"
-                           onclick="return confirm('¿Aceptar el horario propuesto por el cliente?')">✓ Aceptar propuesta</a>
+                        <button class="rd-footer-btn rd-btn-accept"
+                            style="flex:1;min-width:80px;"
+                            onclick="rdAcceptClientCounter()">✓ Aceptar propuesta</button>
                         <button class="rd-footer-btn rd-btn-reschedule-only" style="flex:1;min-width:80px;" onclick="rdShowReschedule()">⇄ Proponer otro</button>
                         <button class="rd-footer-btn rd-btn-deny" style="flex:1;min-width:80px;" onclick="rdShowCancel()">✕ Denegar</button>
                     </div>
@@ -732,7 +767,6 @@
     };
 
     // ── Mostrar sección Denegar inline ────────────────────────
-    // (el barbero "cancela" → queda como denegada)
     window.rdShowCancel = function() {
         document.getElementById('rd-cancel-inline').style.display    = 'block';
         document.getElementById('rd-reschedule-inline').style.display = 'none';
@@ -779,11 +813,9 @@
         document.getElementById('rd-cancel-inline').style.display     = 'none';
         document.getElementById('rd-footer').style.display = 'none';
 
-        // Reset state
         rdSelectedDate = null;
         rdSelectedSlot = null;
 
-        // Pre-fill motivo with previous motivo if in negotiation
         const prevMotivo = (currentData?.motivo_cambio || '').split(' | ')[0].trim();
         const motivoEl = document.getElementById('rd-resch-motivo');
         const hintEl   = document.getElementById('rd-resch-motivo-hint');
