@@ -563,7 +563,7 @@
             items.push({
                 tipo: 'barbero',
                 icono: '⇄',
-                titulo: 'Barbero propuso cambio',
+                titulo: 'Barbero propuso cambio ',
                 detalle: motorPrimario,
                 rondaLabel: ronda >= 1 ? 'Ronda 1' : null,
                 slotOrigen: origSlot,
@@ -601,7 +601,7 @@
                 items.push({
                     tipo: 'cliente',
                     icono: '↩',
-                    titulo: 'Cliente propuso alternativa',
+                    titulo: 'Cliente propuso alternativa ',
                     detalle: 'El cliente no pudo en el horario propuesto y ofreció una alternativa.',
                     rondaLabel: r ? 'Ronda ' + r : null,
                     slotOrigen: lastBarberoSlot,
