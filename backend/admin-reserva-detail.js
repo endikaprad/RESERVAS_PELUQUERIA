@@ -644,7 +644,7 @@
                     tipo: 'final',
                     icono: '✓',
                     titulo: 'Negociación finalizada — Cita confirmada',
-                    detalle: 'Horario acordado: <strong>' + fechaFmt + '</strong>',
+                    detalle: 'Horario acordado: ' + slotDestino,
                     rondaLabel: null,
                     slotOrigen: null,
                     slotDestino: fechaFmt,
