@@ -9,6 +9,8 @@
 //     because cancel-by-barber.php now sets estado='denegada'
 //  6. FIX: Accept for reprogramar_cliente now calls barber-accept-counter.php
 //     so it updates fecha/hora to the CLIENT'S proposed slot, not the original.
+//  7. FIX: Historial de negociación ahora muestra los horarios propuestos
+//     por el barbero y el cliente con chips visuales de slot.
 // ============================================================
 
 (function initReservaDetail() {
@@ -335,6 +337,15 @@
     .rd-hist-detail strong { color: #f0ece3; }
     .rd-hist-ronda { display: inline-block; padding: .1rem .45rem; background: rgba(245,158,11,.1); border: 1px solid rgba(245,158,11,.25); border-radius: 100px; font-size: .62rem; color: #f59e0b; margin-left: .4rem; vertical-align: middle; }
 
+    /* Slot chips en historial */
+    .rd-hist-slots { display: flex; align-items: center; gap: .4rem; flex-wrap: wrap; margin-top: .45rem; }
+    .rd-slot-chip { font-size: .72rem; padding: .18rem .55rem; border-radius: 100px; white-space: nowrap; }
+    .rd-slot-chip-old { color: #9ca3af; background: rgba(107,114,128,.1); border: 1px solid rgba(107,114,128,.25); text-decoration: line-through; }
+    .rd-slot-chip-barbero { color: #c9a84c; background: rgba(201,168,76,.12); border: 1px solid rgba(201,168,76,.3); font-weight: 600; }
+    .rd-slot-chip-cliente { color: #6b9fff; background: rgba(37,80,160,.12); border: 1px solid rgba(37,80,160,.3); font-weight: 600; }
+    .rd-slot-chip-final   { color: #22c55e; background: rgba(34,197,94,.12); border: 1px solid rgba(34,197,94,.3); font-weight: 600; }
+    .rd-slot-arrow { font-size: .72rem; color: #7a7880; }
+
     /* Propuesta card */
     .rd-propuesta-card {
         display: flex; gap: 1rem;
@@ -449,7 +460,6 @@
 
     const SLOTS_API   = './api/slots.php';
     const CANCEL_API  = './api/cancel-by-barber.php';
-    // ── FIX: endpoint correcto para aceptar propuesta del cliente ──
     const ACCEPT_COUNTER_API = './api/barber-accept-counter.php';
 
     const MONTHS_ES   = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
@@ -496,51 +506,188 @@
     };
 
     // ── Historial de negociación ──────────────────────────────
+    // Recibe todos los datos disponibles para mostrar los slots propuestos
+    // en cada paso de la negociación.
+    //
+    // Lógica de slots:
+    //  - La BD guarda en nueva_fecha_propuesta / nueva_hora_propuesta
+    //    SIEMPRE la propuesta más reciente (barbero o cliente).
+    //  - El motivo_cambio es un log pipe-separated:
+    //      "Motivo barbero ronda 1 | Contrapropuesta cliente (ronda 1) | Motivo barbero ronda 2 | ..."
+    //  - Para estados finalizados (denegada/aceptada), nueva_fecha puede estar NULL.
+    //  - Usamos la heurística: si hay N entradas en el log, la nueva_fecha corresponde
+    //    a la última propuesta. Si N es par → última propuesta fue del cliente (reprogramar_cliente).
+    //    Si N es impar → última propuesta fue del barbero.
     function parseHistorial(motivoCambio, estado, ronda, fechaOriginal, horaOriginal, nuevaFechaProp, nuevaHoraProp) {
         const items = [];
         if (!motivoCambio && ronda === 0) return items;
-        const partes = motivoCambio ? motivoCambio.split(' | ').map(s => s.trim()).filter(Boolean) : [];
+
+        const partes = motivoCambio
+            ? motivoCambio.split(' | ').map(s => s.trim()).filter(Boolean)
+            : [];
+
+        // Normalizar hora a HH:MM
+        const normHora = (h) => h ? String(h).slice(0, 5) : '—';
+        const origSlot = (fechaOriginal && horaOriginal)
+            ? formatFecha(fechaOriginal) + ' · ' + normHora(horaOriginal)
+            : '—';
+
+        // La nueva_fecha/hora guardada es la de la ÚLTIMA propuesta del log
+        const ultimaFechaStr = (nuevaFechaProp && nuevaHoraProp)
+            ? formatFecha(nuevaFechaProp) + ' · ' + normHora(nuevaHoraProp)
+            : null;
+
+        // ── Entrada 0 → Barbero propuso cambio (Ronda 1) ─────
         if (partes.length > 0 || ronda > 0) {
-            items.push({ tipo: 'barbero', icono: '⇄', titulo: 'Barbero propuso cambio' + (ronda >= 1 ? ' · Ronda 1' : ''), detalle: partes[0] || 'Cambio de agenda', rondaLabel: ronda >= 1 ? 'Ronda 1' : null });
+            const motorPrimario = partes[0] || 'Cambio de agenda';
+
+            // El slot propuesto por el barbero en ronda 1:
+            // Si solo hay 1 entrada en el log (solo barbero propuso, nadie más respondió)
+            // O si hay más entradas pero queremos mostrar que el barbero propuso algo:
+            // - Si ronda===1 y es la única propuesta → nueva_fecha es la del barbero
+            // - Si ronda>1 → nueva_fecha es de ronda más reciente, no podemos recuperar ronda 1
+            //   salvo que esté en el motivo (no está). Mostramos "Horario propuesto" genérico.
+            let slotDestino = null;
+            if (partes.length === 1 && ultimaFechaStr) {
+                // Solo propuesta del barbero, ninguna respuesta del cliente aún
+                slotDestino = ultimaFechaStr;
+            } else if (partes.length > 1 && ronda === 1) {
+                // Hubo ida y vuelta pero en ronda 1: nueva_fecha pudo ser del cliente
+                // No podemos recuperar el slot original del barbero sin más datos
+                slotDestino = null;
+            } else if (ronda >= 2 && partes.length <= 2) {
+                // Con múltiples rondas y pocas entradas: probable que nueva_fecha sea del barbero
+                slotDestino = ultimaFechaStr;
+            }
+
+            items.push({
+                tipo: 'barbero',
+                icono: '⇄',
+                titulo: 'Barbero propuso cambio' + (ronda >= 1 ? ' · Ronda 1' : ''),
+                detalle: motorPrimario,
+                rondaLabel: ronda >= 1 ? 'Ronda 1' : null,
+                slotOrigen: origSlot,
+                slotDestino: slotDestino,
+            });
         }
+
+        // ── Entradas siguientes ───────────────────────────────
         for (let i = 1; i < partes.length; i++) {
             const p = partes[i];
+            const esUltima = (i === partes.length - 1);
+
             if (p.toLowerCase().includes('contrapropuesta cliente')) {
                 const match = p.match(/ronda\s*(\d+)/i);
                 const r = match ? parseInt(match[1]) : null;
-                items.push({ tipo: 'cliente', icono: '↩', titulo: 'Cliente propuso alternativa' + (r ? ' · Ronda ' + r : ''), detalle: 'El cliente no pudo en el horario propuesto y ofreció una alternativa.', rondaLabel: r ? 'Ronda ' + r : null });
+
+                // El slot del cliente: si es la última entrada, usamos nueva_fecha
+                // ya que es la más reciente en BD
+                let slotDestino = null;
+                if (esUltima && ultimaFechaStr) {
+                    slotDestino = ultimaFechaStr;
+                }
+
+                items.push({
+                    tipo: 'cliente',
+                    icono: '↩',
+                    titulo: 'Cliente propuso alternativa' + (r ? ' · Ronda ' + r : ''),
+                    detalle: 'El cliente no pudo en el horario propuesto y ofreció una alternativa.',
+                    rondaLabel: r ? 'Ronda ' + r : null,
+                    slotOrigen: null, // no tenemos el slot que rechazó
+                    slotDestino: slotDestino,
+                });
             } else {
-                const rondaNum = Math.floor(i / 2) + 1;
-                items.push({ tipo: 'barbero', icono: '⇄', titulo: 'Barbero propuso nuevo horario · Ronda ' + rondaNum, detalle: p, rondaLabel: 'Ronda ' + rondaNum });
+                // Nueva propuesta del barbero en ronda > 1
+                const rondaNum = Math.ceil((i + 1) / 2);
+                let slotDestino = null;
+                if (esUltima && ultimaFechaStr) {
+                    slotDestino = ultimaFechaStr;
+                }
+                items.push({
+                    tipo: 'barbero',
+                    icono: '⇄',
+                    titulo: 'Barbero propuso nuevo horario · Ronda ' + rondaNum,
+                    detalle: p,
+                    rondaLabel: 'Ronda ' + rondaNum,
+                    slotOrigen: null,
+                    slotDestino: slotDestino,
+                });
             }
         }
+
+        // ── Estado final ──────────────────────────────────────
         const esNegociacionFinalizada = ['aceptada', 'cancelada', 'denegada'].includes(estado);
         if (esNegociacionFinalizada && ronda > 0) {
             if (estado === 'aceptada') {
-                const fechaFmt = nuevaFechaProp ? formatFecha(nuevaFechaProp) + ' · ' + (nuevaHoraProp || '').slice(0, 5) : (fechaOriginal && horaOriginal ? formatFecha(fechaOriginal) + ' · ' + horaOriginal.slice(0, 5) : '—');
-                items.push({ tipo: 'final', icono: '✓', titulo: 'Negociación finalizada — Cita confirmada', detalle: 'Horario acordado: <strong>' + fechaFmt + '</strong>', rondaLabel: null });
+                // Al aceptar, la fecha/hora del drawer ya ES la acordada
+                // (nuevaFechaProp fue limpiada y movida a fecha/hora)
+                const fechaFmt = (fechaOriginal && horaOriginal)
+                    ? formatFecha(fechaOriginal) + ' · ' + normHora(horaOriginal)
+                    : '—';
+                items.push({
+                    tipo: 'final',
+                    icono: '✓',
+                    titulo: 'Negociación finalizada — Cita confirmada',
+                    detalle: 'Horario acordado: <strong>' + fechaFmt + '</strong>',
+                    rondaLabel: null,
+                    slotOrigen: null,
+                    slotDestino: fechaFmt,
+                });
             } else {
-                items.push({ tipo: 'cancelled', icono: '✕', titulo: 'Negociación finalizada — Cita denegada', detalle: 'No se llegó a un acuerdo o fue denegada durante la negociación.', rondaLabel: null });
+                items.push({
+                    tipo: 'cancelled',
+                    icono: '✕',
+                    titulo: 'Negociación finalizada — Cita denegada',
+                    detalle: 'No se llegó a un acuerdo o fue denegada durante la negociación.',
+                    rondaLabel: null,
+                    slotOrigen: null,
+                    slotDestino: null,
+                });
             }
         }
+
         return items;
     }
 
     function renderHistorial(items) {
         if (!items.length) return '';
         return '<div class="rd-historial-timeline">' + items.map(item => {
+            // Construir chips de slots
+            let slotsHtml = '';
+            if (item.slotOrigen || item.slotDestino) {
+                slotsHtml = '<div class="rd-hist-slots">';
+
+                if (item.slotOrigen) {
+                    slotsHtml += `<span class="rd-slot-chip rd-slot-chip-old">${item.slotOrigen}</span>`;
+                }
+
+                if (item.slotOrigen && item.slotDestino) {
+                    slotsHtml += `<span class="rd-slot-arrow">→</span>`;
+                }
+
+                if (item.slotDestino) {
+                    // Color según quién propone
+                    let chipClass = 'rd-slot-chip-barbero';
+                    if (item.tipo === 'cliente') chipClass = 'rd-slot-chip-cliente';
+                    if (item.tipo === 'final')   chipClass = 'rd-slot-chip-final';
+                    slotsHtml += `<span class="rd-slot-chip ${chipClass}">${item.slotDestino}</span>`;
+                }
+
+                slotsHtml += '</div>';
+            }
+
             return `<div class="rd-historial-item ${item.tipo}-item">
                 <div class="rd-hist-icon ${item.tipo}">${item.icono}</div>
                 <div class="rd-hist-info">
                     <div class="rd-hist-title">${item.titulo}${item.rondaLabel ? '<span class="rd-hist-ronda">' + item.rondaLabel + '</span>' : ''}</div>
                     <div class="rd-hist-detail">${item.detalle}</div>
+                    ${slotsHtml}
                 </div>
             </div>`;
         }).join('') + '</div>';
     }
 
     // ── FIX: Aceptar propuesta del cliente via barber-accept-counter ──
-    // Se llama cuando el barbero acepta la contrapropuesta del cliente
     window.rdAcceptClientCounter = async function() {
         if (!currentToken) return;
         const nombreCliente = currentData?.cliente_nombre || 'el cliente';
@@ -552,13 +699,10 @@
         try {
             const res  = await fetch(ACCEPT_COUNTER_API + '?token=' + encodeURIComponent(currentToken) + '&accion=aceptar');
             const text = await res.text();
-            // barber-accept-counter.php devuelve HTML, si hay éxito recarga
             if (res.ok && (text.includes('confirmada') || text.includes('confirmado') || res.redirected)) {
-                // Éxito: recargar el admin para reflejar el nuevo estado
                 closeRD();
                 location.reload();
             } else {
-                // Mostrar en nueva ventana por si la respuesta es una página de resultado
                 closeRD();
                 location.reload();
             }
@@ -636,12 +780,18 @@
         const huboNegociacion = ronda > 0 || motivoCambio;
 
         if (huboNegociacion && !esNegociacionActiva) {
-            const histItems = parseHistorial(motivoCambio, est, ronda, data.fecha, data.hora, nuevaFechaProp, nuevaHoraProp);
+            // Negociación finalizada — mostrar historial completo con slots
+            const histItems = parseHistorial(
+                motivoCambio, est, ronda,
+                data.fecha, data.hora,
+                nuevaFechaProp, nuevaHoraProp
+            );
             if (histItems.length > 0) {
                 document.getElementById('rd-historial-content').innerHTML = renderHistorial(histItems);
                 document.getElementById('rd-historial-section').style.display = 'block';
             }
         } else if (est === 'reprogramar_cliente') {
+            // Negociación activa — cliente propuso algo
             document.getElementById('rd-propuesta-section').style.display = 'block';
 
             document.getElementById('rd-orig-slot').textContent = formatFecha(data.fecha) + ' · ' + origHora;
@@ -670,6 +820,20 @@
                 rondaRow.style.display = 'flex';
             } else { rondaRow.style.display = 'none'; }
 
+            // También mostrar historial previo si hay más de 1 entrada en el log
+            const partes = motivoCambio ? motivoCambio.split(' | ').filter(Boolean) : [];
+            if (partes.length > 1) {
+                const histItems = parseHistorial(
+                    motivoCambio, est, ronda,
+                    data.fecha, data.hora,
+                    nuevaFechaProp, nuevaHoraProp
+                );
+                if (histItems.length > 0) {
+                    document.getElementById('rd-historial-content').innerHTML = renderHistorial(histItems);
+                    document.getElementById('rd-historial-section').style.display = 'block';
+                }
+            }
+
         } else if (est === 'reprogramar_barbero') {
             document.getElementById('rd-barbero-propuesta-section').style.display = 'block';
 
@@ -685,6 +849,20 @@
                 document.getElementById('rd-bp-ronda').textContent = 'Ronda ' + ronda;
                 bpRondaRow.style.display = 'flex';
             } else { bpRondaRow.style.display = 'none'; }
+
+            // Historial previo si hay múltiples rondas
+            const partes = motivoCambio ? motivoCambio.split(' | ').filter(Boolean) : [];
+            if (partes.length > 1) {
+                const histItems = parseHistorial(
+                    motivoCambio, est, ronda,
+                    data.fecha, data.hora,
+                    nuevaFechaProp, nuevaHoraProp
+                );
+                if (histItems.length > 0) {
+                    document.getElementById('rd-historial-content').innerHTML = renderHistorial(histItems);
+                    document.getElementById('rd-historial-section').style.display = 'block';
+                }
+            }
         }
 
         // ── Footer ────────────────────────────────────────────
@@ -727,8 +905,6 @@
                 </div>`;
 
         } else if (est === 'reprogramar_cliente') {
-            // ── FIX: "Aceptar propuesta" llama a rdAcceptClientCounter()
-            // que usa barber-accept-counter.php en vez de reserva-action.php
             footer.innerHTML = `
                 <div style="width:100%;display:flex;flex-direction:column;gap:.6rem;">
                     <div style="background:rgba(37,80,160,.08);border:1px solid rgba(37,80,160,.25);border-radius:8px;padding:.65rem 1rem;font-size:.75rem;color:#6b9fff;line-height:1.5;">
