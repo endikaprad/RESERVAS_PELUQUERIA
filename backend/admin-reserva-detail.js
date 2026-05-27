@@ -572,6 +572,13 @@
         }
 
         // ── Entradas siguientes ───────────────────────────────
+        // Track the barber's last proposed slot so the client entry can show what they rejected
+        let lastBarberoSlot = null;
+        if (partes.length === 1 && ultimaFechaStr) {
+            // Only one entry (barber proposed, client hasn't responded yet stored): barber slot = ultimaFechaStr
+            lastBarberoSlot = ultimaFechaStr;
+        }
+
         for (let i = 1; i < partes.length; i++) {
             const p = partes[i];
             const esUltima = (i === partes.length - 1);
@@ -593,9 +600,12 @@
                     titulo: 'Cliente propuso alternativa' + (r ? ' · Ronda ' + r : ''),
                     detalle: 'El cliente no pudo en el horario propuesto y ofreció una alternativa.',
                     rondaLabel: r ? 'Ronda ' + r : null,
-                    slotOrigen: null, // no tenemos el slot que rechazó
+                    slotOrigen: lastBarberoSlot,   // barber's slot that the client rejected
                     slotDestino: slotDestino,
                 });
+
+                // After the client responds, clear lastBarberoSlot (it's been consumed)
+                lastBarberoSlot = null;
             } else {
                 // Nueva propuesta del barbero en ronda > 1
                 const rondaNum = Math.ceil((i + 1) / 2);
@@ -612,6 +622,9 @@
                     slotOrigen: null,
                     slotDestino: slotDestino,
                 });
+
+                // Track this barber slot so the next client entry can use it as slotOrigen
+                lastBarberoSlot = slotDestino;
             }
         }
 
