@@ -61,13 +61,13 @@ try {
         $colorHeader   = '#22c55e';
         $tituloHeader  = 'Reserva confirmada!';
         $mensajeCliente= 'Tu cita ha sido <strong>confirmada</strong>. Te esperamos!';
-        $pieCliente    = 'Si necesitas cancelar, llamanos al <a href="tel:+34944000000" style="color:#d42b2b;">+34 944 000 000</a>';
+        $pieCliente    = '';
     } else {
         $asuntoCliente = 'Reserva no disponible - Prado Barber Co.';
         $colorHeader   = '#d42b2b';
         $tituloHeader  = 'Reserva no disponible';
         $mensajeCliente= 'Lo sentimos, <strong>' . htmlspecialchars($reserva['barbero_nombre']) . '</strong> no esta disponible para ese horario.';
-        $pieCliente    = 'Puedes hacer una nueva reserva en <a href="' . $baseUrl . '/reservas.html" style="color:#d42b2b;">nuestra web</a> o llamarnos al <a href="tel:+34944000000" style="color:#d42b2b;">+34 944 000 000</a>';
+        $pieCliente    = 'Puedes hacer una nueva reserva en <a href="' . $baseUrl . '/reservas.html" style="color:#d42b2b;">nuestra web</a>.';
     }
 
     // ── Bloque cancelar (solo para reservas aceptadas) ───────
@@ -114,7 +114,7 @@ try {
             <td style='padding:10px 0;color:{$colorHeader};font-size:16px;font-weight:700;'>{$hora}</td></tr>
       </table>
       {$cancelBox}
-      <p style='color:#7a7880;font-size:13px;text-align:center;'>{$pieCliente}</p>
+      " . ($pieCliente ? "<p style='color:#7a7880;font-size:13px;text-align:center;'>{$pieCliente}</p>" : "") . "
     </div>
     <div style='background:#18181f;padding:16px 32px;text-align:center;'>
       <p style='margin:0;color:#7a7880;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;'>2026 Prado Barber Co. - Hecho con precision en Bilbao</p>
