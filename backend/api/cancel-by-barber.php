@@ -80,8 +80,18 @@ try {
     // ── Helpers fecha ─────────────────────────────────────────
     $dias  = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
     $meses = [
-        'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
-        'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'
+        'enero',
+        'febrero',
+        'marzo',
+        'abril',
+        'mayo',
+        'junio',
+        'julio',
+        'agosto',
+        'septiembre',
+        'octubre',
+        'noviembre',
+        'diciembre'
     ];
 
     function formatFechaES(string $fecha, array $dias, array $meses): string
@@ -215,13 +225,18 @@ try {
         }
 
         // Migración automática de columnas
-        foreach ([
-            "ALTER TABLE reservas ADD COLUMN IF NOT EXISTS ronda_negociacion INT NOT NULL DEFAULT 0",
-            "ALTER TABLE reservas ADD COLUMN IF NOT EXISTS nueva_fecha_propuesta DATE NULL",
-            "ALTER TABLE reservas ADD COLUMN IF NOT EXISTS nueva_hora_propuesta TIME NULL",
-            "ALTER TABLE reservas ADD COLUMN IF NOT EXISTS motivo_cambio TEXT NULL",
-        ] as $sql) {
-            try { $db->exec($sql); } catch (PDOException $e) { /* ya existe */ }
+        foreach (
+            [
+                "ALTER TABLE reservas ADD COLUMN IF NOT EXISTS ronda_negociacion INT NOT NULL DEFAULT 0",
+                "ALTER TABLE reservas ADD COLUMN IF NOT EXISTS nueva_fecha_propuesta DATE NULL",
+                "ALTER TABLE reservas ADD COLUMN IF NOT EXISTS nueva_hora_propuesta TIME NULL",
+                "ALTER TABLE reservas ADD COLUMN IF NOT EXISTS motivo_cambio TEXT NULL",
+            ] as $sql
+        ) {
+            try {
+                $db->exec($sql);
+            } catch (PDOException $e) { /* ya existe */
+            }
         }
 
         // Ronda: incrementa cada propuesta del barbero
@@ -230,15 +245,20 @@ try {
         // IMPORTANTE: fecha y hora ORIGINAL se mantienen en r.fecha y r.hora.
         // La propuesta va en nueva_fecha_propuesta y nueva_hora_propuesta.
         // slots.php marcará r.fecha+r.hora como ocupado por tener estado reprogramar_*.
+        // Construir log con fecha incluida en el motivo del barbero
+        $logEntry = $motivo . ' [propuesta: ' . $nuevaFecha . ' ' . $nuevaHora . ']';
         $db->prepare(
             "UPDATE reservas
-             SET estado                = 'reprogramar_barbero',
-                 ronda_negociacion     = ?,
-                 nueva_fecha_propuesta = ?,
-                 nueva_hora_propuesta  = ?,
-                 motivo_cambio         = ?
-             WHERE token = ?"
-        )->execute([$ronda, $nuevaFecha, $nuevaHora . ':00', $motivo, $token]);
+     SET estado                = 'reprogramar_barbero',
+         ronda_negociacion     = ?,
+         nueva_fecha_propuesta = ?,
+         nueva_hora_propuesta  = ?,
+         motivo_cambio         = CASE 
+             WHEN motivo_cambio IS NULL OR motivo_cambio = '' THEN ?
+             ELSE CONCAT(motivo_cambio, ' | ', ?)
+         END
+     WHERE token = ?"
+        )->execute([$ronda, $nuevaFecha, $nuevaHora . ':00', $logEntry, $logEntry, $token]);
 
         $fechaNueva  = formatFechaES($nuevaFecha, $dias, $meses);
         $urlAceptar  = $baseUrl . '/backend/api/reschedule-response.php?pt=' . $token . '&accion=aceptar';
@@ -314,7 +334,6 @@ try {
 
         apiOk(['mensaje' => 'Propuesta enviada al cliente', 'ronda' => $ronda]);
     }
-
 } catch (PDOException $e) {
     apiErr('Error de base de datos: ' . $e->getMessage(), 500);
 }
