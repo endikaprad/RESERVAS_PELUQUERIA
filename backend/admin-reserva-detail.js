@@ -526,114 +526,93 @@
             ? motivoCambio.split(' | ').map(s => s.trim()).filter(Boolean)
             : [];
 
-        // Normalizar hora a HH:MM
         const normHora = (h) => h ? String(h).slice(0, 5) : '—';
-        const origSlot = (fechaOriginal && horaOriginal)
+        const origSlotStr = (fechaOriginal && horaOriginal)
             ? formatFecha(fechaOriginal) + ' · ' + normHora(horaOriginal)
             : '—';
 
-        // La nueva_fecha/hora guardada es la de la ÚLTIMA propuesta del log
-        const ultimaFechaStr = (nuevaFechaProp && nuevaHoraProp)
+        // Parse all client counter-proposal slots embedded in the log text
+        // Format: "Contrapropuesta cliente (ronda N): YYYY-MM-DD HH:MM"
+        const clientSlots = {}; // ronda -> formatted slot string
+        partes.forEach(p => {
+            const clientMatch = p.match(/contrapropuesta cliente \(ronda\s*(\d+)\)[^:]*:\s*(\d{4}-\d{2}-\d{2})\s+(\d{2}:\d{2})/i);
+            if (clientMatch) {
+                const r = parseInt(clientMatch[1]);
+                const f = clientMatch[2];
+                const h = clientMatch[3];
+                clientSlots[r] = formatFecha(f) + ' · ' + h;
+            }
+        });
+
+        // The latest stored slot (nueva_fecha_propuesta / nueva_hora_propuesta) always reflects
+        // the most recent proposal. Assign it to the correct barber round.
+        const latestStoredSlot = (nuevaFechaProp && nuevaHoraProp)
             ? formatFecha(nuevaFechaProp) + ' · ' + normHora(nuevaHoraProp)
             : null;
 
-        // ── Entrada 0 → Barbero propuso cambio (Ronda 1) ─────
-        if (partes.length > 0 || ronda > 0) {
-            const motorPrimario = partes[0] || 'Cambio de agenda';
+        // Determine if the last log entry is a barber or client entry
+        const lastParte = partes[partes.length - 1] || '';
+        const lastIsClient = /contrapropuesta cliente/i.test(lastParte);
 
-            // El slot propuesto por el barbero en ronda 1:
-            // Si solo hay 1 entrada en el log (solo barbero propuso, nadie más respondió)
-            // O si hay más entradas pero queremos mostrar que el barbero propuso algo:
-            // - Si ronda===1 y es la única propuesta → nueva_fecha es la del barbero
-            // - Si ronda>1 → nueva_fecha es de ronda más reciente, no podemos recuperar ronda 1
-            //   salvo que esté en el motivo (no está). Mostramos "Horario propuesto" genérico.
-            let slotDestino = null;
-            if (partes.length === 1 && ultimaFechaStr) {
-                // Solo propuesta del barbero, ninguna respuesta del cliente aún
-                slotDestino = ultimaFechaStr;
-            } else if (partes.length > 1 && ronda === 1) {
-                // Hubo ida y vuelta pero en ronda 1: nueva_fecha pudo ser del cliente
-                // No podemos recuperar el slot original del barbero sin más datos
-                slotDestino = null;
-            } else if (ronda >= 2 && partes.length <= 2) {
-                // Con múltiples rondas y pocas entradas: probable que nueva_fecha sea del barbero
-                slotDestino = ultimaFechaStr;
-            }
-
-            items.push({
-                tipo: 'barbero',
-                icono: '⇄',
-                titulo: 'Barbero propuso cambio ',
-                detalle: motorPrimario,
-                rondaLabel: ronda >= 1 ? 'Ronda 1' : null,
-                slotOrigen: origSlot,
-                slotDestino: slotDestino,
-            });
+        // Build barber slot map: ronda -> slot string
+        // For the latest barber proposal (no subsequent client counter in log), use latestStoredSlot
+        const barberoSlots = {};
+        // Count barber entries to find the last barber ronda
+        let barberoRondaCount = 0;
+        partes.forEach(p => {
+            if (!/contrapropuesta cliente/i.test(p)) barberoRondaCount++;
+        });
+        if (latestStoredSlot && !lastIsClient && barberoRondaCount > 0) {
+            barberoSlots[barberoRondaCount] = latestStoredSlot;
         }
 
-        // ── Entradas siguientes ───────────────────────────────
-        // Track the barber's last proposed slot so the client entry can show what they rejected
-        let lastBarberoSlot = null;
-        if (partes.length === 1 && ultimaFechaStr) {
-            // Only one entry (barber proposed, client hasn't responded yet stored): barber slot = ultimaFechaStr
-            lastBarberoSlot = ultimaFechaStr;
-        }
+        // Build timeline items by iterating the log in order
+        let barberoRondaIndex = 0;
+        partes.forEach((p) => {
+            const isClientEntry = /contrapropuesta cliente/i.test(p);
 
-        for (let i = 1; i < partes.length; i++) {
-            const p = partes[i];
-            const esUltima = (i === partes.length - 1);
+            if (!isClientEntry) {
+                // Barber proposal
+                barberoRondaIndex++;
+                const currentRonda = barberoRondaIndex;
 
-            if (p.toLowerCase().includes('contrapropuesta cliente')) {
-                const match = p.match(/ronda\s*(\d+)/i);
-                const r = match ? parseInt(match[1]) : null;
-
-                // Extraer el slot del cliente del propio texto del motivo
-                // Formato: "Contrapropuesta cliente (ronda 1): 2026-05-28 10:00"
-                const slotMatch = p.match(/:\s*(\d{4}-\d{2}-\d{2})\s+(\d{2}:\d{2})/);
-                let slotDestino = null;
-                if (slotMatch) {
-                    slotDestino = formatFecha(slotMatch[1]) + ' · ' + slotMatch[2];
-                } else if (esUltima && ultimaFechaStr) {
-                    // Fallback: si es la entrada más reciente y aún hay datos en BD
-                    slotDestino = ultimaFechaStr;
+                // slotOrigen: original slot for ronda 1, client's previous counter for ronda > 1
+                let slotOrigen = null;
+                if (currentRonda === 1) {
+                    slotOrigen = origSlotStr;
+                } else {
+                    slotOrigen = clientSlots[currentRonda - 1] || null;
                 }
+
+                items.push({
+                    tipo: 'barbero',
+                    icono: '⇄',
+                    titulo: 'Barbero propuso cambio',
+                    detalle: p,
+                    rondaLabel: 'Ronda ' + currentRonda,
+                    slotOrigen: slotOrigen,
+                    slotDestino: barberoSlots[currentRonda] || null,
+                });
+            } else {
+                // Client counter-proposal
+                const roundMatch = p.match(/ronda\s*(\d+)/i);
+                const clientRonda = roundMatch ? parseInt(roundMatch[1]) : barberoRondaIndex;
 
                 items.push({
                     tipo: 'cliente',
                     icono: '↩',
-                    titulo: 'Cliente propuso alternativa ',
+                    titulo: 'Cliente propuso alternativa',
                     detalle: 'El cliente no pudo en el horario propuesto y ofreció una alternativa.',
-                    rondaLabel: r ? 'Ronda ' + r : null,
-                    slotOrigen: lastBarberoSlot,
-                    slotDestino: slotDestino,
+                    rondaLabel: 'Ronda ' + clientRonda,
+                    slotOrigen: barberoSlots[clientRonda] || null,
+                    slotDestino: clientSlots[clientRonda] || null,
                 });
-
-                lastBarberoSlot = null;
-            } else {
-                // Nueva propuesta del barbero en ronda > 1
-                const rondaNum = Math.ceil((i + 1) / 2);
-                let slotDestino = null;
-                if (esUltima && ultimaFechaStr) {
-                    slotDestino = ultimaFechaStr;
-                }
-                items.push({
-                    tipo: 'barbero',
-                    icono: '⇄',
-                    titulo: 'Barbero propuso nuevo horario · Ronda ' + rondaNum,
-                    detalle: p,
-                    rondaLabel: 'Ronda ' + rondaNum,
-                    slotOrigen: null,
-                    slotDestino: slotDestino,
-                });
-
-                // Track this barber slot so the next client entry can use it as slotOrigen
-                lastBarberoSlot = slotDestino;
             }
-        }
+        });
 
-        // ── Estado final ──────────────────────────────────────
+        // Final state entry
         const esNegociacionFinalizada = ['aceptada', 'cancelada', 'denegada'].includes(estado);
-        if (esNegociacionFinalizada && ronda > 0) {
+        if (esNegociacionFinalizada && (ronda > 0 || partes.length > 0)) {
             if (estado === 'aceptada') {
                 const fechaFmt = (fechaOriginal && horaOriginal)
                     ? formatFecha(fechaOriginal) + ' · ' + normHora(horaOriginal)
