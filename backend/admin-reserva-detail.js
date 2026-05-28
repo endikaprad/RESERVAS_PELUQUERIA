@@ -626,7 +626,37 @@
                 const HIST_PAGE = 10;
                 let histShown = HIST_PAGE;
 
-                function renderHistItems() {
+                function buildHistItem(h) {
+                    const isCancel = ['cancelada', 'denegada'].includes(h.estado);
+                    const el = document.createElement('div');
+                    el.className = 'cs-hist-item';
+                    el.innerHTML = `
+                        <span class="cs-hist-dot ${isCancel ? 'cs-dot-cancel' : 'cs-dot-ok'}"></span>
+                        <span class="cs-hist-fecha">${escHtml(h.fecha)}</span>
+                        <div class="cs-hist-info">
+                            <div class="cs-hist-svc">${escHtml(h.servicio)}</div>
+                            <div class="cs-hist-barb">${escHtml(h.barbero)} · ${h.hora}</div>
+                        </div>
+                        ${isCancel
+                            ? `<span class="cs-hist-cancel-price">cancelada</span>`
+                            : `<span class="cs-hist-price">${h.precio} €</span>`
+                        }`;
+                    return el;
+                }
+
+                function animateItems(newEls, direction) {
+                    newEls.forEach((el, i) => {
+                        el.style.opacity = '0';
+                        el.style.transform = direction === 'down' ? 'translateY(-10px)' : 'translateY(10px)';
+                        el.style.transition = `opacity .25s ease ${i * 40}ms, transform .25s ease ${i * 40}ms`;
+                        requestAnimationFrame(() => requestAnimationFrame(() => {
+                            el.style.opacity = '1';
+                            el.style.transform = 'translateY(0)';
+                        }));
+                    });
+                }
+
+                function renderHistItems(direction) {
                     const items = d.historial.slice(0, histShown);
                     const hayMas = d.historial.length > histShown;
                     const hayMenos = histShown > HIST_PAGE;
@@ -646,27 +676,46 @@
                         </div>`;
                     }).join('');
 
+                    // Animar todos los items recién renderizados
+                    const allItems = Array.from(histEl.querySelectorAll('.cs-hist-item'));
+                    const newOnes = direction === 'down'
+                        ? allItems.slice(histShown - HIST_PAGE)
+                        : allItems;
+                    animateItems(newOnes, direction || 'up');
+
                     const btnWrap = document.createElement('div');
                     btnWrap.style.cssText = 'display:flex;gap:.5rem;margin-top:.6rem;';
 
                     if (hayMas) {
                         const remaining = d.historial.length - histShown;
                         const btnMas = document.createElement('button');
-                        btnMas.textContent = `Ver ${Math.min(remaining, HIST_PAGE)} más (${remaining} restantes)`;
-                        btnMas.style.cssText = 'flex:1;padding:.55rem;border-radius:7px;background:transparent;border:1px dashed #252530;color:#7a7880;font-family:\'DM Sans\',sans-serif;font-size:.72rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;transition:all .2s;';
-                        btnMas.onmouseenter = () => { btnMas.style.borderColor = '#d42b2b'; btnMas.style.color = '#d42b2b'; };
-                        btnMas.onmouseleave = () => { btnMas.style.borderColor = '#252530'; btnMas.style.color = '#7a7880'; };
-                        btnMas.onclick = () => { histShown += HIST_PAGE; renderHistItems(); };
+                        btnMas.innerHTML = `<span class="cs-btn-icon">↓</span> Ver ${Math.min(remaining, HIST_PAGE)} más <span style="opacity:.6;font-weight:400;">(${remaining} restantes)</span>`;
+                        btnMas.style.cssText = 'flex:1;padding:.6rem .75rem;border-radius:7px;background:rgba(212,43,43,.06);border:1px solid rgba(212,43,43,.25);color:#d42b2b;font-family:\'DM Sans\',sans-serif;font-size:.72rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;transition:all .25s;display:flex;align-items:center;justify-content:center;gap:.35rem;';
+                        btnMas.onmouseenter = () => { btnMas.style.background = '#d42b2b'; btnMas.style.color = '#fff'; btnMas.style.borderColor = '#d42b2b'; btnMas.style.transform = 'translateY(-1px)'; btnMas.style.boxShadow = '0 4px 16px rgba(212,43,43,.3)'; };
+                        btnMas.onmouseleave = () => { btnMas.style.background = 'rgba(212,43,43,.06)'; btnMas.style.color = '#d42b2b'; btnMas.style.borderColor = 'rgba(212,43,43,.25)'; btnMas.style.transform = ''; btnMas.style.boxShadow = ''; };
+                        btnMas.onclick = () => {
+                            btnMas.style.transform = 'scale(.97)';
+                            setTimeout(() => { histShown += HIST_PAGE; renderHistItems('down'); }, 120);
+                        };
                         btnWrap.appendChild(btnMas);
                     }
 
                     if (hayMenos) {
                         const btnMenos = document.createElement('button');
-                        btnMenos.textContent = 'Ver menos';
-                        btnMenos.style.cssText = 'flex:1;padding:.55rem;border-radius:7px;background:transparent;border:1px dashed #252530;color:#7a7880;font-family:\'DM Sans\',sans-serif;font-size:.72rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;transition:all .2s;';
-                        btnMenos.onmouseenter = () => { btnMenos.style.borderColor = '#6b9fff'; btnMenos.style.color = '#6b9fff'; };
-                        btnMenos.onmouseleave = () => { btnMenos.style.borderColor = '#252530'; btnMenos.style.color = '#7a7880'; };
-                        btnMenos.onclick = () => { histShown = HIST_PAGE; renderHistItems(); };
+                        btnMenos.innerHTML = `<span>↑</span> Ver menos`;
+                        btnMenos.style.cssText = 'flex:1;padding:.6rem .75rem;border-radius:7px;background:rgba(107,114,128,.06);border:1px solid rgba(107,114,128,.25);color:#9ca3af;font-family:\'DM Sans\',sans-serif;font-size:.72rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;transition:all .25s;display:flex;align-items:center;justify-content:center;gap:.35rem;';
+                        btnMenos.onmouseenter = () => { btnMenos.style.background = 'rgba(107,114,128,.15)'; btnMenos.style.color = '#f0ece3'; btnMenos.style.borderColor = '#6b7280'; btnMenos.style.transform = 'translateY(-1px)'; };
+                        btnMenos.onmouseleave = () => { btnMenos.style.background = 'rgba(107,114,128,.06)'; btnMenos.style.color = '#9ca3af'; btnMenos.style.borderColor = 'rgba(107,114,128,.25)'; btnMenos.style.transform = ''; };
+                        btnMenos.onclick = () => {
+                            // Animar colapso antes de reducir
+                            const toHide = Array.from(histEl.querySelectorAll('.cs-hist-item')).slice(HIST_PAGE);
+                            toHide.reverse().forEach((el, i) => {
+                                el.style.transition = `opacity .2s ease ${i * 30}ms, transform .2s ease ${i * 30}ms`;
+                                el.style.opacity = '0';
+                                el.style.transform = 'translateY(-8px)';
+                            });
+                            setTimeout(() => { histShown = HIST_PAGE; renderHistItems('up'); }, toHide.length * 30 + 220);
+                        };
                         btnWrap.appendChild(btnMenos);
                     }
 
