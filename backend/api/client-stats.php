@@ -263,7 +263,7 @@ try {
     // ── Formatear historial ───────────────────────────────────
     $histFormatted = [];
     $meses = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
-    foreach (array_slice($historial, 0, 20) as $h) {
+    foreach (array_slice($historial, 0, 50) as $h) {
         $dt = new DateTime($h['fecha']);
         $histFormatted[] = [
             'fecha'    => $dt->format('j') . ' ' . $meses[(int)$dt->format('n')] . ' ' . $dt->format('Y'),

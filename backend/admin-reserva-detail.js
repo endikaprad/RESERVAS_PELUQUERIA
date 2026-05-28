@@ -619,24 +619,44 @@
         }
 
         // Historial
+        // Historial
         const histEl = document.getElementById('cs-hist-list');
         if (histEl) {
             if (d.historial && d.historial.length) {
-                histEl.innerHTML = d.historial.map(h => {
-                    const isCancel = ['cancelada', 'denegada'].includes(h.estado);
-                    return `<div class="cs-hist-item">
-                        <span class="cs-hist-dot ${isCancel ? 'cs-dot-cancel' : 'cs-dot-ok'}"></span>
-                        <span class="cs-hist-fecha">${escHtml(h.fecha)}</span>
-                        <div class="cs-hist-info">
-                            <div class="cs-hist-svc">${escHtml(h.servicio)}</div>
-                            <div class="cs-hist-barb">${escHtml(h.barbero)} · ${h.hora}</div>
-                        </div>
-                        ${isCancel
-                            ? `<span class="cs-hist-cancel-price">cancelada</span>`
-                            : `<span class="cs-hist-price">${h.precio} €</span>`
-                        }
-                    </div>`;
-                }).join('');
+                const HIST_PAGE = 10;
+                let histShown = HIST_PAGE;
+
+                function renderHistItems() {
+                    const items = d.historial.slice(0, histShown);
+                    const hayMas = d.historial.length > histShown;
+                    histEl.innerHTML = items.map(h => {
+                        const isCancel = ['cancelada', 'denegada'].includes(h.estado);
+                        return `<div class="cs-hist-item">
+                            <span class="cs-hist-dot ${isCancel ? 'cs-dot-cancel' : 'cs-dot-ok'}"></span>
+                            <span class="cs-hist-fecha">${escHtml(h.fecha)}</span>
+                            <div class="cs-hist-info">
+                                <div class="cs-hist-svc">${escHtml(h.servicio)}</div>
+                                <div class="cs-hist-barb">${escHtml(h.barbero)} · ${h.hora}</div>
+                            </div>
+                            ${isCancel
+                                ? `<span class="cs-hist-cancel-price">cancelada</span>`
+                                : `<span class="cs-hist-price">${h.precio} €</span>`
+                            }
+                        </div>`;
+                    }).join('');
+                    if (hayMas) {
+                        const remaining = d.historial.length - histShown;
+                        const btn = document.createElement('button');
+                        btn.textContent = `Ver ${Math.min(remaining, HIST_PAGE)} más (${remaining} restantes)`;
+                        btn.style.cssText = 'margin-top:.6rem;width:100%;padding:.55rem;border-radius:7px;background:transparent;border:1px dashed #252530;color:#7a7880;font-family:\'DM Sans\',sans-serif;font-size:.72rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;transition:all .2s;';
+                        btn.onmouseenter = () => { btn.style.borderColor = '#d42b2b'; btn.style.color = '#d42b2b'; };
+                        btn.onmouseleave = () => { btn.style.borderColor = '#252530'; btn.style.color = '#7a7880'; };
+                        btn.onclick = () => { histShown += HIST_PAGE; renderHistItems(); };
+                        histEl.appendChild(btn);
+                    }
+                }
+
+                renderHistItems();
             } else {
                 histEl.innerHTML = '<span style="font-size:.78rem;color:#7a7880;">Sin historial previo.</span>';
             }
