@@ -155,16 +155,6 @@ try {
     $icsUid    = 'reserva-' . $id . '@pradobarber.es';
     $icsContent = buildIcsContent($fecha, $hora, $duracionMinutos, $servicioRow['nombre'], $barberoRow['nombre'], $notas, $icsUid);
 
-    $emailHeaderIcon = "
-      <td width='42' height='42' valign='middle'
-          style='width:42px;height:42px;background:rgba(201,168,76,.14);
-                 border:1px solid rgba(201,168,76,.3);border-radius:9px;
-                 text-align:center;vertical-align:middle;font-size:20px;
-                 line-height:42px;mso-line-height-rule:exactly;'>
-        <span style='display:block;width:42px;height:42px;line-height:42px;
-                     text-align:center;font-size:20px;'>&#x23F0;&#xFE0E;</span>
-      </td>";
-
     // ================================================================
     //  EMAIL AL PELUQUERO
     // ================================================================
@@ -261,17 +251,9 @@ try {
         $htmlCliente = "<!DOCTYPE html><html lang='es'><head><meta charset='UTF-8'></head>
 <body style='margin:0;padding:0;background:#09080f;font-family:Arial,sans-serif;'>
   <div style='max-width:560px;margin:0 auto;background:#111119;border:1px solid #252530;border-radius:12px;overflow:hidden;'>
-    <div style='background:linear-gradient(135deg,#1a1a2e 0%,#111119 100%);border-bottom:3px solid #22c55e;padding:28px 32px;'>
-      <table role='presentation' cellpadding='0' cellspacing='0' border='0' style='border-collapse:separate;margin:0 0 10px;'>
-        <tr>
-          {$emailHeaderIcon}
-          <td valign='middle' style='padding-left:12px;vertical-align:middle;'>
-            <div style='font-size:11px;line-height:1.2;letter-spacing:.2em;text-transform:uppercase;color:#22c55e;font-weight:700;margin:0 0 3px;'>Reserva</div>
-            <h1 style='margin:0;color:#fff;font-size:20px;line-height:1.25;font-weight:700;'>¡Reserva confirmada!</h1>
-          </td>
-        </tr>
-      </table>
-      <p style='margin:0;color:rgba(255,255,255,0.72);font-size:14px;'>Prado Barber Co. &mdash; Bilbao</p>
+    <div style='background:#22c55e;padding:24px 32px;'>
+      <h1 style='margin:0;color:#fff;font-size:20px;font-weight:700;'>¡Reserva confirmada!</h1>
+      <p style='margin:6px 0 0;color:rgba(255,255,255,0.8);font-size:14px;'>Prado Barber Co. &mdash; Bilbao</p>
     </div>
     <div style='padding:32px;'>
       <p style='color:#f0ece3;font-size:15px;margin-bottom:24px;'>
@@ -306,17 +288,9 @@ try {
         $htmlCliente = "<!DOCTYPE html><html lang='es'><head><meta charset='UTF-8'></head>
 <body style='margin:0;padding:0;background:#09080f;font-family:Arial,sans-serif;'>
   <div style='max-width:560px;margin:0 auto;background:#111119;border:1px solid #252530;border-radius:12px;overflow:hidden;'>
-    <div style='background:linear-gradient(135deg,#1a1a2e 0%,#111119 100%);border-bottom:3px solid #c9a84c;padding:28px 32px;'>
-      <table role='presentation' cellpadding='0' cellspacing='0' border='0' style='border-collapse:separate;margin:0 0 10px;'>
-        <tr>
-          {$emailHeaderIcon}
-          <td valign='middle' style='padding-left:12px;vertical-align:middle;'>
-            <div style='font-size:11px;line-height:1.2;letter-spacing:.2em;text-transform:uppercase;color:#c9a84c;font-weight:700;margin:0 0 3px;'>Reserva</div>
-            <h1 style='margin:0;color:#fff;font-size:20px;line-height:1.25;font-weight:700;'>Reserva pendiente de confirmación</h1>
-          </td>
-        </tr>
-      </table>
-      <p style='margin:0;color:rgba(255,255,255,0.72);font-size:14px;'>Prado Barber Co. &mdash; Bilbao</p>
+    <div style='background:#c9a84c;padding:24px 32px;'>
+      <h1 style='margin:0;color:#000;font-size:20px;font-weight:700;'>Reserva pendiente de confirmación</h1>
+      <p style='margin:6px 0 0;color:rgba(0,0,0,0.6);font-size:14px;'>Prado Barber Co. &mdash; Bilbao</p>
     </div>
     <div style='padding:32px;'>
       <p style='color:#f0ece3;font-size:15px;margin-bottom:24px;'>

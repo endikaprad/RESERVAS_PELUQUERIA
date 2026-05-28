@@ -286,18 +286,26 @@ function buildReminderEmail(
     <!-- CABECERA -->
     <div style='background:linear-gradient(135deg,#1a1a2e 0%,#111119 100%);
                 border-bottom:3px solid #c9a84c;padding:28px 32px;'>
-      <div style='display:flex;align-items:center;gap:12px;margin-bottom:8px;'>
-        <div style='width:40px;height:40px;border-radius:10px;background:rgba(201,168,76,.15);
-                    border:1px solid rgba(201,168,76,.3);display:flex;align-items:center;
-                    justify-content:center;font-size:18px;'>⏰</div>
-        <div>
-          <div style='font-size:11px;letter-spacing:.2em;text-transform:uppercase;
-                      color:#c9a84c;font-weight:600;margin-bottom:2px;'>Recordatorio</div>
-          <h1 style='margin:0;color:#f0ece3;font-size:19px;font-weight:700;'>
-            Tu cita es mañana
-          </h1>
-        </div>
-      </div>
+      <table role='presentation' cellpadding='0' cellspacing='0' border='0'
+             style='border-collapse:separate;margin:0 0 8px;'>
+        <tr>
+          <td width='40' height='40' valign='middle'
+              style='width:40px;height:40px;background:rgba(201,168,76,.15);
+                     border:1px solid rgba(201,168,76,.3);border-radius:10px;
+                     text-align:center;vertical-align:middle;font-size:18px;
+                     line-height:40px;mso-line-height-rule:exactly;'>
+            <span style='display:block;width:40px;height:40px;line-height:40px;
+                         text-align:center;font-size:18px;'>&#x23F0;&#xFE0E;</span>
+          </td>
+          <td valign='middle' style='padding-left:12px;vertical-align:middle;'>
+            <div style='font-size:11px;letter-spacing:.2em;text-transform:uppercase;
+                        color:#c9a84c;font-weight:600;margin-bottom:2px;line-height:1.2;'>Recordatorio</div>
+            <h1 style='margin:0;color:#f0ece3;font-size:19px;font-weight:700;line-height:1.25;'>
+              Tu cita es mañana
+            </h1>
+          </td>
+        </tr>
+      </table>
       <p style='margin:0;color:#7a7880;font-size:13px;'>Prado Barber Co. &mdash; Bilbao</p>
     </div>
 
