@@ -1,5 +1,5 @@
 // ============================================================
-//  PRADO BARBER CO. — admin-reserva-detail.js  (v2 — con stats de cliente)
+//  PRADO BARBER CO. — admin-reserva-detail.js  (v3 — stats por teléfono)
 // ============================================================
 
 (function initReservaDetail() {
@@ -200,16 +200,13 @@
         <!-- TAB: PERFIL CLIENTE ──────────────────────────────── -->
         <div class="rd-body" id="rd-pane-cliente" style="display:none;">
 
-            <!-- Loading state -->
             <div id="rd-stats-loading" style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:3rem 1rem;gap:1rem;">
                 <div style="width:32px;height:32px;border-radius:50%;border:2px solid rgba(212,43,43,.15);border-top-color:#d42b2b;animation:rdSpin .8s linear infinite;"></div>
                 <span style="font-size:.8rem;color:#7a7880;letter-spacing:.08em;">Cargando estadísticas…</span>
             </div>
 
-            <!-- Content -->
             <div id="rd-stats-content" style="display:none;">
 
-                <!-- KPIs -->
                 <div class="rd-section">
                     <div class="rd-section-label">Estadísticas</div>
                     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">
@@ -242,7 +239,6 @@
                     </div>
                 </div>
 
-                <!-- Nivel -->
                 <div class="rd-section" id="cs-nivel-section">
                     <div class="rd-section-label">Fidelidad</div>
                     <div class="rd-cliente-card" style="margin-bottom:.75rem;">
@@ -263,31 +259,26 @@
                     </div>
                 </div>
 
-                <!-- Preferencias -->
                 <div class="rd-section" id="cs-prefs-section">
                     <div class="rd-section-label">Preferencias detectadas</div>
                     <div id="cs-prefs-tags" style="display:flex;flex-wrap:wrap;gap:5px;"></div>
                 </div>
 
-                <!-- Gasto por servicio -->
                 <div class="rd-section" id="cs-gasto-section">
                     <div class="rd-section-label">Gasto por servicio</div>
                     <div id="cs-gasto-list"></div>
                 </div>
 
-                <!-- Insights -->
                 <div class="rd-section" id="cs-insights-section">
                     <div class="rd-section-label">Insights automáticos</div>
                     <div id="cs-insights-list"></div>
                 </div>
 
-                <!-- Historial de visitas -->
                 <div class="rd-section" id="cs-hist-section">
                     <div class="rd-section-label">Historial de visitas</div>
                     <div id="cs-hist-list"></div>
                 </div>
 
-                <!-- Nota interna -->
                 <div class="rd-section" style="border-bottom:none;" id="cs-nota-section">
                     <div class="rd-section-label">Nota interna del barbero</div>
                     <div id="cs-nota-view" style="background:#18181f;border-radius:8px;padding:.75rem;border:1px solid #252530;font-size:.82rem;color:#7a7880;line-height:1.6;font-style:italic;min-height:44px;">—</div>
@@ -309,274 +300,143 @@
         <div class="rd-footer" id="rd-footer"></div>
     </div>`;
 
-    // ── CSS del drawer ────────────────────────────────────────
+    // ── CSS ───────────────────────────────────────────────────
     const style = document.createElement('style');
     style.textContent = `
     @keyframes rdSpin { to { transform: rotate(360deg); } }
-
-    .rd-overlay {
-        position: fixed; inset: 0;
-        background: rgba(0,0,0,.65); backdrop-filter: blur(4px);
-        z-index: 800; opacity: 0; pointer-events: none; transition: opacity .3s ease;
-    }
-    .rd-overlay.open { opacity: 1; pointer-events: all; }
-
-    .rd-drawer {
-        position: fixed; top: 0; right: 0; bottom: 0;
-        width: min(480px, 100vw);
-        background: #111119; border-left: 1px solid #252530;
-        z-index: 801; display: flex; flex-direction: column;
-        transform: translateX(100%);
-        transition: transform .38s cubic-bezier(.16,1,.3,1);
-        overflow: hidden;
-    }
-    .rd-drawer.open { transform: translateX(0); }
-
-    .rd-header {
-        display: flex; align-items: flex-start; justify-content: space-between;
-        padding: 1.25rem 1.5rem; border-bottom: 1px solid #252530; flex-shrink: 0;
-        background: linear-gradient(135deg, #18181f, #111119);
-    }
-    .rd-header-left { display: flex; flex-direction: column; gap: .2rem; }
-    .rd-id { font-size: .65rem; letter-spacing: .15em; text-transform: uppercase; color: #7a7880; }
-    .rd-hora-wrap { display: flex; align-items: center; gap: .75rem; margin: .15rem 0; }
-    .rd-hora { font-family: 'Playfair Display', serif; font-size: 2rem; font-weight: 700; color: #d42b2b; line-height: 1; }
-    .rd-fecha { font-size: .85rem; color: #a0a0b0; }
-    .rd-close {
-        width: 32px; height: 32px; border-radius: 50%;
-        background: transparent; border: 1px solid #252530;
-        color: #7a7880; cursor: pointer; font-size: .9rem;
-        display: flex; align-items: center; justify-content: center;
-        transition: all .2s; flex-shrink: 0;
-    }
-    .rd-close:hover { border-color: #d42b2b; color: #d42b2b; }
-
-    .rd-estado-badge {
-        display: inline-flex; align-items: center;
-        padding: .22rem .65rem; border-radius: 100px;
-        font-size: .68rem; font-weight: 600; letter-spacing: .04em; white-space: nowrap;
-    }
-    .rdb-pendiente  { background: rgba(245,158,11,.12); border: 1px solid rgba(245,158,11,.3); color: #f59e0b; }
-    .rdb-aceptada   { background: rgba(34,197,94,.12);  border: 1px solid rgba(34,197,94,.3);  color: #22c55e; }
-    .rdb-denegada   { background: rgba(212,43,43,.12);  border: 1px solid rgba(212,43,43,.3);  color: #d42b2b; }
-    .rdb-cancelada  { background: rgba(107,114,128,.12);border: 1px solid rgba(107,114,128,.3);color: #9ca3af; }
-    .rdb-reprogramar_barbero { background: rgba(201,168,76,.12); border: 1px solid rgba(201,168,76,.3); color: #c9a84c; }
-    .rdb-reprogramar_cliente { background: rgba(37,80,160,.12);  border: 1px solid rgba(37,80,160,.35); color: #6b9fff; }
-
-    /* Tabs */
-    .rd-tabs {
-        display: flex; flex-shrink: 0;
-        border-bottom: 1px solid #252530;
-    }
-    .rd-tab {
-        flex: 1; padding: .75rem 1rem;
-        background: transparent; border: none;
-        font-family: 'DM Sans', sans-serif; font-size: .72rem;
-        font-weight: 600; letter-spacing: .08em; text-transform: uppercase;
-        color: #7a7880; cursor: pointer;
-        border-bottom: 2px solid transparent;
-        transition: all .2s;
-    }
-    .rd-tab:hover { color: #f0ece3; }
-    .rd-tab.active { color: #d42b2b; border-bottom-color: #d42b2b; background: rgba(212,43,43,.04); }
-
-    .rd-body { flex: 1; overflow-y: auto; padding: 1.25rem 1.5rem; }
-    .rd-body::-webkit-scrollbar { width: 4px; }
-    .rd-body::-webkit-scrollbar-thumb { background: #252530; border-radius: 2px; }
-
-    .rd-section { margin-bottom: 1.5rem; }
-    .rd-section-label {
-        font-size: .6rem; letter-spacing: .2em; text-transform: uppercase;
-        color: #d42b2b; margin-bottom: .65rem;
-        display: flex; align-items: center; gap: .5rem;
-    }
-    .rd-section-label::before { content: ''; width: 16px; height: 1px; background: #d42b2b; }
-
-    .rd-cliente-card {
-        display: flex; align-items: center; gap: 1rem;
-        background: #18181f; border: 1px solid #252530;
-        border-radius: 10px; padding: 1rem 1.25rem;
-    }
-    .rd-avatar {
-        width: 44px; height: 44px; border-radius: 10px;
-        background: rgba(212,43,43,.1); border: 1px solid rgba(212,43,43,.2);
-        display: flex; align-items: center; justify-content: center;
-        font-family: 'Playfair Display', serif; font-size: .9rem; font-weight: 700; color: #d42b2b; flex-shrink: 0;
-    }
-    .rd-cliente-info { display: flex; flex-direction: column; gap: .2rem; min-width: 0; }
-    .rd-cliente-nombre { font-size: .95rem; font-weight: 500; color: #f0ece3; }
-    .rd-meta-link { font-size: .78rem; color: #7a7880; text-decoration: none; transition: color .2s; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .rd-meta-link:hover { color: #d42b2b; }
-
-    .rd-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: .75rem; }
-    .rd-info-block { background: #18181f; border: 1px solid #252530; border-radius: 8px; padding: .75rem 1rem; }
-    .rd-info-label { font-size: .6rem; letter-spacing: .12em; text-transform: uppercase; color: #7a7880; margin-bottom: .25rem; }
-    .rd-info-value { font-size: .88rem; color: #f0ece3; font-weight: 500; }
-    .rd-info-sub   { font-size: .72rem; color: #7a7880; margin-top: .15rem; }
-    .rd-gold  { color: #c9a84c !important; }
-    .rd-muted { color: #7a7880 !important; font-size: .78rem !important; font-weight: 400 !important; }
-    .rd-barbero-pill {
-        display: inline-block; padding: .2rem .65rem;
-        background: rgba(212,43,43,.08); border: 1px solid rgba(212,43,43,.2);
-        border-radius: 100px; font-size: .75rem; color: #d42b2b;
-    }
-
-    .rd-notas-box {
-        font-size: .82rem; color: #7a7880; font-style: italic;
-        padding: .75rem 1rem; background: #0d0d14;
-        border-radius: 6px; border-left: 2px solid #2a2a38; line-height: 1.7;
-    }
-
-    /* Stats KPIs */
-    .rd-stat-kpi {
-        background: #18181f; border: 1px solid #252530; border-radius: 8px;
-        padding: .75rem; text-align: center;
-    }
-    .rd-stat-kpi.rd-stat-accent { border-color: rgba(212,43,43,.3); background: rgba(212,43,43,.06); }
-    .rd-stat-val { font-family: 'Playfair Display', serif; font-size: 1.3rem; font-weight: 700; color: #f0ece3; line-height: 1; }
-    .rd-stat-accent .rd-stat-val { color: #d42b2b; }
-    .rd-stat-lbl { font-size: .65rem; letter-spacing: .08em; text-transform: uppercase; color: #7a7880; margin-top: 4px; }
-
-    /* Pref tag */
-    .cs-pref-tag {
-        display: inline-flex; align-items: center; gap: 4px;
-        font-size: .72rem; padding: 4px 9px; border-radius: 100px;
-        background: #18181f; border: 1px solid #252530; color: #7a7880;
-    }
-
-    /* Gasto bar */
-    .cs-spend-row { display: flex; align-items: center; gap: 8px; margin-bottom: 7px; }
-    .cs-spend-lbl { font-size: .72rem; color: #7a7880; width: 100px; flex-shrink: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .cs-spend-track { flex: 1; height: 8px; background: #1c1c26; border-radius: 4px; overflow: hidden; border: 1px solid #252530; }
-    .cs-spend-fill { height: 100%; border-radius: 4px; width: 0; transition: width 1s ease .1s; }
-    .cs-spend-amt { font-size: .72rem; font-weight: 500; color: #f0ece3; min-width: 38px; text-align: right; }
-
-    /* Insight row */
-    .cs-insight-row {
-        display: flex; align-items: flex-start; gap: 10px;
-        padding: .6rem 0; border-bottom: 1px solid #252530;
-    }
-    .cs-insight-row:last-child { border-bottom: none; }
-    .cs-insight-icon {
-        width: 30px; height: 30px; border-radius: 7px;
-        display: flex; align-items: center; justify-content: center;
-        font-size: .85rem; flex-shrink: 0; margin-top: 1px;
-    }
-    .cs-insight-text { font-size: .8rem; color: #c0bcc9; line-height: 1.5; flex: 1; }
-
-    /* Historial */
-    .cs-hist-item {
-        display: flex; align-items: center; gap: 10px;
-        padding: .55rem 0; border-bottom: 1px solid #252530;
-    }
-    .cs-hist-item:last-child { border-bottom: none; }
-    .cs-hist-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
-    .cs-dot-ok     { background: #639922; }
-    .cs-dot-cancel { background: #888780; }
-    .cs-hist-fecha { font-size: .72rem; color: #7a7880; width: 86px; flex-shrink: 0; }
-    .cs-hist-info  { flex: 1; min-width: 0; }
-    .cs-hist-svc   { font-size: .82rem; color: #f0ece3; }
-    .cs-hist-barb  { font-size: .7rem; color: #7a7880; }
-    .cs-hist-price { font-size: .78rem; font-weight: 500; color: #c9a84c; white-space: nowrap; }
-    .cs-hist-cancel-price { font-size: .72rem; color: #7a7880; white-space: nowrap; }
-
-    /* Historial de negociación */
-    .rd-historial-timeline { display: flex; flex-direction: column; gap: .5rem; }
-    .rd-historial-item {
-        display: flex; gap: .75rem; align-items: flex-start;
-        background: #18181f; border: 1px solid #252530;
-        border-radius: 8px; padding: .75rem 1rem;
-    }
-    .rd-historial-item.barbero-item { border-color: rgba(201,168,76,.25); }
-    .rd-historial-item.cliente-item { border-color: rgba(37,80,160,.25); }
-    .rd-historial-item.final-item   { border-color: rgba(34,197,94,.25); }
-    .rd-historial-item.cancelled-item { border-color: rgba(107,114,128,.25); }
-    .rd-hist-icon { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: .75rem; flex-shrink: 0; margin-top: .1rem; }
-    .rd-hist-icon.barbero { background: rgba(201,168,76,.15); border: 1px solid rgba(201,168,76,.3); color: #c9a84c; }
-    .rd-hist-icon.cliente { background: rgba(37,80,160,.15);  border: 1px solid rgba(37,80,160,.3);  color: #6b9fff; }
-    .rd-hist-icon.final   { background: rgba(34,197,94,.15);  border: 1px solid rgba(34,197,94,.3);  color: #22c55e; }
-    .rd-hist-icon.cancelled { background: rgba(107,114,128,.15); border: 1px solid rgba(107,114,128,.3); color: #9ca3af; }
-    .rd-hist-info { flex: 1; min-width: 0; }
-    .rd-hist-title { font-size: .8rem; font-weight: 600; margin-bottom: .25rem; }
-    .rd-hist-detail { font-size: .75rem; color: #7a7880; }
-    .rd-hist-detail strong { color: #f0ece3; }
-    .rd-hist-ronda { display: inline-block; padding: .1rem .45rem; background: rgba(245,158,11,.1); border: 1px solid rgba(245,158,11,.25); border-radius: 100px; font-size: .62rem; color: #f59e0b; margin-left: .4rem; vertical-align: middle; }
-    .rd-hist-slots { display: flex; align-items: center; gap: .4rem; flex-wrap: wrap; margin-top: .45rem; }
-    .rd-slot-chip { font-size: .72rem; padding: .18rem .55rem; border-radius: 100px; white-space: nowrap; }
-    .rd-slot-chip-old { color: #9ca3af; background: rgba(107,114,128,.1); border: 1px solid rgba(107,114,128,.25); text-decoration: line-through; }
-    .rd-slot-chip-barbero { color: #c9a84c; background: rgba(201,168,76,.12); border: 1px solid rgba(201,168,76,.3); font-weight: 600; }
-    .rd-slot-chip-cliente { color: #6b9fff; background: rgba(37,80,160,.12); border: 1px solid rgba(37,80,160,.3); font-weight: 600; }
-    .rd-slot-chip-final   { color: #22c55e; background: rgba(34,197,94,.12); border: 1px solid rgba(34,197,94,.3); font-weight: 600; }
-
-    .rd-propuesta-card {
-        display: flex; gap: 1rem;
-        background: #18181f; border: 1px solid rgba(37,80,160,.35);
-        border-radius: 10px; padding: 1rem 1.25rem; margin-bottom: .5rem;
-    }
-    .rd-barbero-prop { border-color: rgba(201,168,76,.3); }
-    .rd-propuesta-icon { font-size: 1.3rem; color: #6b9fff; flex-shrink: 0; line-height: 1.4; }
-    .rd-propuesta-info { flex: 1; min-width: 0; }
-    .rd-propuesta-title { font-size: .88rem; font-weight: 600; color: #6b9fff; margin-bottom: .65rem; }
-    .rd-propuesta-detail { display: flex; flex-direction: column; gap: .45rem; }
-    .rd-propuesta-row { display: flex; align-items: flex-start; gap: .75rem; font-size: .8rem; }
-    .rd-propuesta-label { color: #7a7880; width: 120px; flex-shrink: 0; }
-    .rd-propuesta-val-old { color: #9ca3af; text-decoration: line-through; }
-    .rd-propuesta-val-new { color: #c9a84c; font-weight: 600; }
-    .rd-propuesta-val-muted { color: #d4a84b; font-style: italic; }
-    .rd-ronda-badge { display: inline-block; padding: .15rem .55rem; background: rgba(245,158,11,.1); border: 1px solid rgba(245,158,11,.3); border-radius: 100px; font-size: .68rem; color: #f59e0b; }
-
-    .rd-token-row { display: flex; align-items: center; gap: .6rem; }
-    .rd-token { flex: 1; font-size: .65rem; color: #7a7880; background: #0d0d14; border: 1px solid #1c1c26; border-radius: 5px; padding: .4rem .6rem; font-family: monospace; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .rd-copy-btn { width: 30px; height: 30px; border-radius: 6px; background: transparent; border: 1px solid #252530; color: #7a7880; cursor: pointer; font-size: .9rem; display: flex; align-items: center; justify-content: center; transition: all .2s; flex-shrink: 0; }
-    .rd-copy-btn:hover { border-color: #c9a84c; color: #c9a84c; }
-
-    .rd-footer {
-        border-top: 1px solid #252530; padding: 1rem 1.5rem;
-        display: flex; gap: .6rem; flex-wrap: wrap; flex-shrink: 0; background: #0d0d14;
-    }
-    .rd-footer-btn {
-        flex: 1; min-width: 80px;
-        padding: .7rem .75rem; border-radius: 8px;
-        font-family: 'DM Sans', sans-serif; font-size: .72rem; font-weight: 700;
-        letter-spacing: .08em; text-transform: uppercase; cursor: pointer;
-        text-decoration: none; transition: all .22s;
-        display: flex; align-items: center; justify-content: center; gap: .3rem;
-        border: 1px solid transparent;
-    }
-    .rd-btn-accept    { background: rgba(34,197,94,.1);  border-color: rgba(34,197,94,.35);  color: #22c55e; }
-    .rd-btn-accept:hover    { background: #22c55e; color: #000; }
-    .rd-btn-deny      { background: rgba(212,43,43,.1);  border-color: rgba(212,43,43,.3);   color: #d42b2b; }
-    .rd-btn-deny:hover      { background: #d42b2b; color: #fff; }
-    .rd-btn-reschedule-only { background: rgba(201,168,76,.1); border-color: rgba(201,168,76,.35); color: #c9a84c; }
-    .rd-btn-reschedule-only:hover { background: #c9a84c; color: #000; }
-    .rd-btn-cancel-only { background: rgba(107,114,128,.1); border-color: rgba(107,114,128,.3); color: #9ca3af; }
-    .rd-btn-cancel-only:hover { background: #374151; color: #fff; border-color: #4b5563; }
-
-    .rd-cal-cell {
-        aspect-ratio: 1; display: flex; align-items: center; justify-content: center;
-        border-radius: 6px; font-size: .72rem; cursor: pointer; transition: all .15s;
-        border: 1px solid transparent;
-    }
-    .rd-cal-cell:hover:not(.rdc-dis):not(.rdc-empty) { border-color: rgba(201,168,76,.4); color: #c9a84c; }
-    .rd-cal-cell.rdc-today:not(.rdc-sel) { border-color: rgba(212,43,43,.35); color: #d42b2b; }
-    .rd-cal-cell.rdc-dis  { color: #2a2a38; cursor: not-allowed; }
-    .rd-cal-cell.rdc-sel  { background: rgba(201,168,76,.18); border-color: #c9a84c; color: #c9a84c; font-weight: 700; }
-    .rd-cal-cell.rdc-empty { cursor: default; }
-
-    .rd-slot {
-        padding: .5rem .25rem; border: 1px solid #252530; border-radius: 6px;
-        text-align: center; font-size: .78rem; color: #7a7880;
-        cursor: pointer; transition: all .18s; background: #18181f;
-    }
-    .rd-slot:hover:not(.rds-taken):not(.rds-past) { border-color: #c9a84c; color: #c9a84c; }
-    .rd-slot.rds-sel   { background: rgba(201,168,76,.12); border-color: #c9a84c; color: #c9a84c; font-weight: 600; }
-    .rd-slot.rds-taken { opacity: .3; cursor: not-allowed; text-decoration: line-through; }
-    .rd-slot.rds-past  { opacity: .2; cursor: not-allowed; text-decoration: line-through; }
-
-    .rd-clickable { cursor: pointer; }
-    tr.rd-clickable:hover td { background: rgba(37,37,48,.6) !important; }
-
-    @media (max-width: 520px) { .rd-grid-2 { grid-template-columns: 1fr; } }
+    .rd-overlay { position:fixed;inset:0;background:rgba(0,0,0,.65);backdrop-filter:blur(4px);z-index:800;opacity:0;pointer-events:none;transition:opacity .3s ease; }
+    .rd-overlay.open { opacity:1;pointer-events:all; }
+    .rd-drawer { position:fixed;top:0;right:0;bottom:0;width:min(480px,100vw);background:#111119;border-left:1px solid #252530;z-index:801;display:flex;flex-direction:column;transform:translateX(100%);transition:transform .38s cubic-bezier(.16,1,.3,1);overflow:hidden; }
+    .rd-drawer.open { transform:translateX(0); }
+    .rd-header { display:flex;align-items:flex-start;justify-content:space-between;padding:1.25rem 1.5rem;border-bottom:1px solid #252530;flex-shrink:0;background:linear-gradient(135deg,#18181f,#111119); }
+    .rd-header-left { display:flex;flex-direction:column;gap:.2rem; }
+    .rd-id { font-size:.65rem;letter-spacing:.15em;text-transform:uppercase;color:#7a7880; }
+    .rd-hora-wrap { display:flex;align-items:center;gap:.75rem;margin:.15rem 0; }
+    .rd-hora { font-family:'Playfair Display',serif;font-size:2rem;font-weight:700;color:#d42b2b;line-height:1; }
+    .rd-fecha { font-size:.85rem;color:#a0a0b0; }
+    .rd-close { width:32px;height:32px;border-radius:50%;background:transparent;border:1px solid #252530;color:#7a7880;cursor:pointer;font-size:.9rem;display:flex;align-items:center;justify-content:center;transition:all .2s;flex-shrink:0; }
+    .rd-close:hover { border-color:#d42b2b;color:#d42b2b; }
+    .rd-estado-badge { display:inline-flex;align-items:center;padding:.22rem .65rem;border-radius:100px;font-size:.68rem;font-weight:600;letter-spacing:.04em;white-space:nowrap; }
+    .rdb-pendiente  { background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.3);color:#f59e0b; }
+    .rdb-aceptada   { background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.3);color:#22c55e; }
+    .rdb-denegada   { background:rgba(212,43,43,.12);border:1px solid rgba(212,43,43,.3);color:#d42b2b; }
+    .rdb-cancelada  { background:rgba(107,114,128,.12);border:1px solid rgba(107,114,128,.3);color:#9ca3af; }
+    .rdb-reprogramar_barbero { background:rgba(201,168,76,.12);border:1px solid rgba(201,168,76,.3);color:#c9a84c; }
+    .rdb-reprogramar_cliente { background:rgba(37,80,160,.12);border:1px solid rgba(37,80,160,.35);color:#6b9fff; }
+    .rd-tabs { display:flex;flex-shrink:0;border-bottom:1px solid #252530; }
+    .rd-tab { flex:1;padding:.75rem 1rem;background:transparent;border:none;font-family:'DM Sans',sans-serif;font-size:.72rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#7a7880;cursor:pointer;border-bottom:2px solid transparent;transition:all .2s; }
+    .rd-tab:hover { color:#f0ece3; }
+    .rd-tab.active { color:#d42b2b;border-bottom-color:#d42b2b;background:rgba(212,43,43,.04); }
+    .rd-body { flex:1;overflow-y:auto;padding:1.25rem 1.5rem; }
+    .rd-body::-webkit-scrollbar { width:4px; }
+    .rd-body::-webkit-scrollbar-thumb { background:#252530;border-radius:2px; }
+    .rd-section { margin-bottom:1.5rem; }
+    .rd-section-label { font-size:.6rem;letter-spacing:.2em;text-transform:uppercase;color:#d42b2b;margin-bottom:.65rem;display:flex;align-items:center;gap:.5rem; }
+    .rd-section-label::before { content:'';width:16px;height:1px;background:#d42b2b; }
+    .rd-cliente-card { display:flex;align-items:center;gap:1rem;background:#18181f;border:1px solid #252530;border-radius:10px;padding:1rem 1.25rem; }
+    .rd-avatar { width:44px;height:44px;border-radius:10px;background:rgba(212,43,43,.1);border:1px solid rgba(212,43,43,.2);display:flex;align-items:center;justify-content:center;font-family:'Playfair Display',serif;font-size:.9rem;font-weight:700;color:#d42b2b;flex-shrink:0; }
+    .rd-cliente-info { display:flex;flex-direction:column;gap:.2rem;min-width:0; }
+    .rd-cliente-nombre { font-size:.95rem;font-weight:500;color:#f0ece3; }
+    .rd-meta-link { font-size:.78rem;color:#7a7880;text-decoration:none;transition:color .2s;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+    .rd-meta-link:hover { color:#d42b2b; }
+    .rd-grid-2 { display:grid;grid-template-columns:1fr 1fr;gap:.75rem; }
+    .rd-info-block { background:#18181f;border:1px solid #252530;border-radius:8px;padding:.75rem 1rem; }
+    .rd-info-label { font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;color:#7a7880;margin-bottom:.25rem; }
+    .rd-info-value { font-size:.88rem;color:#f0ece3;font-weight:500; }
+    .rd-info-sub { font-size:.72rem;color:#7a7880;margin-top:.15rem; }
+    .rd-gold  { color:#c9a84c !important; }
+    .rd-muted { color:#7a7880 !important;font-size:.78rem !important;font-weight:400 !important; }
+    .rd-barbero-pill { display:inline-block;padding:.2rem .65rem;background:rgba(212,43,43,.08);border:1px solid rgba(212,43,43,.2);border-radius:100px;font-size:.75rem;color:#d42b2b; }
+    .rd-notas-box { font-size:.82rem;color:#7a7880;font-style:italic;padding:.75rem 1rem;background:#0d0d14;border-radius:6px;border-left:2px solid #2a2a38;line-height:1.7; }
+    .rd-stat-kpi { background:#18181f;border:1px solid #252530;border-radius:8px;padding:.75rem;text-align:center; }
+    .rd-stat-kpi.rd-stat-accent { border-color:rgba(212,43,43,.3);background:rgba(212,43,43,.06); }
+    .rd-stat-val { font-family:'Playfair Display',serif;font-size:1.3rem;font-weight:700;color:#f0ece3;line-height:1; }
+    .rd-stat-accent .rd-stat-val { color:#d42b2b; }
+    .rd-stat-lbl { font-size:.65rem;letter-spacing:.08em;text-transform:uppercase;color:#7a7880;margin-top:4px; }
+    .cs-pref-tag { display:inline-flex;align-items:center;gap:4px;font-size:.72rem;padding:4px 9px;border-radius:100px;background:#18181f;border:1px solid #252530;color:#7a7880; }
+    .cs-spend-row { display:flex;align-items:center;gap:8px;margin-bottom:7px; }
+    .cs-spend-lbl { font-size:.72rem;color:#7a7880;width:100px;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+    .cs-spend-track { flex:1;height:8px;background:#1c1c26;border-radius:4px;overflow:hidden;border:1px solid #252530; }
+    .cs-spend-fill { height:100%;border-radius:4px;width:0;transition:width 1s ease .1s; }
+    .cs-spend-amt { font-size:.72rem;font-weight:500;color:#f0ece3;min-width:38px;text-align:right; }
+    .cs-insight-row { display:flex;align-items:flex-start;gap:10px;padding:.6rem 0;border-bottom:1px solid #252530; }
+    .cs-insight-row:last-child { border-bottom:none; }
+    .cs-insight-icon { width:30px;height:30px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:.85rem;flex-shrink:0;margin-top:1px; }
+    .cs-insight-text { font-size:.8rem;color:#c0bcc9;line-height:1.5;flex:1; }
+    .cs-hist-item { display:flex;align-items:center;gap:10px;padding:.55rem 0;border-bottom:1px solid #252530; }
+    .cs-hist-item:last-child { border-bottom:none; }
+    .cs-hist-dot { width:8px;height:8px;border-radius:50%;flex-shrink:0; }
+    .cs-dot-ok     { background:#639922; }
+    .cs-dot-cancel { background:#888780; }
+    .cs-hist-fecha { font-size:.72rem;color:#7a7880;width:86px;flex-shrink:0; }
+    .cs-hist-info  { flex:1;min-width:0; }
+    .cs-hist-svc   { font-size:.82rem;color:#f0ece3; }
+    .cs-hist-barb  { font-size:.7rem;color:#7a7880; }
+    .cs-hist-price { font-size:.78rem;font-weight:500;color:#c9a84c;white-space:nowrap; }
+    .cs-hist-cancel-price { font-size:.72rem;color:#7a7880;white-space:nowrap; }
+    .rd-propuesta-card { display:flex;gap:1rem;background:#18181f;border:1px solid rgba(37,80,160,.35);border-radius:10px;padding:1rem 1.25rem;margin-bottom:.5rem; }
+    .rd-barbero-prop { border-color:rgba(201,168,76,.3); }
+    .rd-propuesta-icon { font-size:1.3rem;color:#6b9fff;flex-shrink:0;line-height:1.4; }
+    .rd-propuesta-info { flex:1;min-width:0; }
+    .rd-propuesta-title { font-size:.88rem;font-weight:600;color:#6b9fff;margin-bottom:.65rem; }
+    .rd-propuesta-detail { display:flex;flex-direction:column;gap:.45rem; }
+    .rd-propuesta-row { display:flex;align-items:flex-start;gap:.75rem;font-size:.8rem; }
+    .rd-propuesta-label { color:#7a7880;width:120px;flex-shrink:0; }
+    .rd-propuesta-val-old { color:#9ca3af;text-decoration:line-through; }
+    .rd-propuesta-val-new { color:#c9a84c;font-weight:600; }
+    .rd-propuesta-val-muted { color:#d4a84b;font-style:italic; }
+    .rd-ronda-badge { display:inline-block;padding:.15rem .55rem;background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);border-radius:100px;font-size:.68rem;color:#f59e0b; }
+    .rd-token-row { display:flex;align-items:center;gap:.6rem; }
+    .rd-token { flex:1;font-size:.65rem;color:#7a7880;background:#0d0d14;border:1px solid #1c1c26;border-radius:5px;padding:.4rem .6rem;font-family:monospace;overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
+    .rd-copy-btn { width:30px;height:30px;border-radius:6px;background:transparent;border:1px solid #252530;color:#7a7880;cursor:pointer;font-size:.9rem;display:flex;align-items:center;justify-content:center;transition:all .2s;flex-shrink:0; }
+    .rd-copy-btn:hover { border-color:#c9a84c;color:#c9a84c; }
+    .rd-footer { border-top:1px solid #252530;padding:1rem 1.5rem;display:flex;gap:.6rem;flex-wrap:wrap;flex-shrink:0;background:#0d0d14; }
+    .rd-footer-btn { flex:1;min-width:80px;padding:.7rem .75rem;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:.72rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;text-decoration:none;transition:all .22s;display:flex;align-items:center;justify-content:center;gap:.3rem;border:1px solid transparent; }
+    .rd-btn-accept { background:rgba(34,197,94,.1);border-color:rgba(34,197,94,.35);color:#22c55e; }
+    .rd-btn-accept:hover { background:#22c55e;color:#000; }
+    .rd-btn-deny { background:rgba(212,43,43,.1);border-color:rgba(212,43,43,.3);color:#d42b2b; }
+    .rd-btn-deny:hover { background:#d42b2b;color:#fff; }
+    .rd-btn-reschedule-only { background:rgba(201,168,76,.1);border-color:rgba(201,168,76,.35);color:#c9a84c; }
+    .rd-btn-reschedule-only:hover { background:#c9a84c;color:#000; }
+    .rd-btn-cancel-only { background:rgba(107,114,128,.1);border-color:rgba(107,114,128,.3);color:#9ca3af; }
+    .rd-btn-cancel-only:hover { background:#374151;color:#fff;border-color:#4b5563; }
+    .rd-cal-cell { aspect-ratio:1;display:flex;align-items:center;justify-content:center;border-radius:6px;font-size:.72rem;cursor:pointer;transition:all .15s;border:1px solid transparent; }
+    .rd-cal-cell:hover:not(.rdc-dis):not(.rdc-empty) { border-color:rgba(201,168,76,.4);color:#c9a84c; }
+    .rd-cal-cell.rdc-today:not(.rdc-sel) { border-color:rgba(212,43,43,.35);color:#d42b2b; }
+    .rd-cal-cell.rdc-dis { color:#2a2a38;cursor:not-allowed; }
+    .rd-cal-cell.rdc-sel { background:rgba(201,168,76,.18);border-color:#c9a84c;color:#c9a84c;font-weight:700; }
+    .rd-cal-cell.rdc-empty { cursor:default; }
+    .rd-slot { padding:.5rem .25rem;border:1px solid #252530;border-radius:6px;text-align:center;font-size:.78rem;color:#7a7880;cursor:pointer;transition:all .18s;background:#18181f; }
+    .rd-slot:hover:not(.rds-taken):not(.rds-past) { border-color:#c9a84c;color:#c9a84c; }
+    .rd-slot.rds-sel { background:rgba(201,168,76,.12);border-color:#c9a84c;color:#c9a84c;font-weight:600; }
+    .rd-slot.rds-taken { opacity:.3;cursor:not-allowed;text-decoration:line-through; }
+    .rd-slot.rds-past { opacity:.2;cursor:not-allowed;text-decoration:line-through; }
+    .rd-clickable { cursor:pointer; }
+    tr.rd-clickable:hover td { background:rgba(37,37,48,.6) !important; }
+    /* Historial negociación */
+    .rd-historial-timeline { display:flex;flex-direction:column;gap:.5rem; }
+    .rd-historial-item { display:flex;gap:.75rem;align-items:flex-start;background:#18181f;border:1px solid #252530;border-radius:8px;padding:.75rem 1rem; }
+    .rd-historial-item.barbero-item { border-color:rgba(201,168,76,.25); }
+    .rd-historial-item.cliente-item { border-color:rgba(37,80,160,.25); }
+    .rd-historial-item.final-item   { border-color:rgba(34,197,94,.25); }
+    .rd-historial-item.cancelled-item { border-color:rgba(107,114,128,.25); }
+    .rd-hist-icon { width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.75rem;flex-shrink:0;margin-top:.1rem; }
+    .rd-hist-icon.barbero { background:rgba(201,168,76,.15);border:1px solid rgba(201,168,76,.3);color:#c9a84c; }
+    .rd-hist-icon.cliente { background:rgba(37,80,160,.15);border:1px solid rgba(37,80,160,.3);color:#6b9fff; }
+    .rd-hist-icon.final   { background:rgba(34,197,94,.15);border:1px solid rgba(34,197,94,.3);color:#22c55e; }
+    .rd-hist-icon.cancelled { background:rgba(107,114,128,.15);border:1px solid rgba(107,114,128,.3);color:#9ca3af; }
+    .rd-hist-info { flex:1;min-width:0; }
+    .rd-hist-title { font-size:.8rem;font-weight:600;margin-bottom:.25rem; }
+    .rd-hist-detail { font-size:.75rem;color:#7a7880; }
+    .rd-hist-detail strong { color:#f0ece3; }
+    .rd-hist-ronda { display:inline-block;padding:.1rem .45rem;background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.25);border-radius:100px;font-size:.62rem;color:#f59e0b;margin-left:.4rem;vertical-align:middle; }
+    .rd-hist-slots { display:flex;align-items:center;gap:.4rem;flex-wrap:wrap;margin-top:.45rem; }
+    .rd-slot-chip { font-size:.72rem;padding:.18rem .55rem;border-radius:100px;white-space:nowrap; }
+    .rd-slot-chip-old { color:#9ca3af;background:rgba(107,114,128,.1);border:1px solid rgba(107,114,128,.25);text-decoration:line-through; }
+    .rd-slot-chip-barbero { color:#c9a84c;background:rgba(201,168,76,.12);border:1px solid rgba(201,168,76,.3);font-weight:600; }
+    .rd-slot-chip-cliente { color:#6b9fff;background:rgba(37,80,160,.12);border:1px solid rgba(37,80,160,.3);font-weight:600; }
+    .rd-slot-chip-final   { color:#22c55e;background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.3);font-weight:600; }
+    @media (max-width:520px) { .rd-grid-2 { grid-template-columns:1fr; } }
     `;
     document.head.appendChild(style);
 
@@ -585,11 +445,11 @@
     document.body.appendChild(wrap);
 
     // ── Estado ────────────────────────────────────────────────
-    let currentToken   = null;
-    let currentData    = null;
-    let currentEmail   = null;
-    let statsLoaded    = false;
-    let currentNota    = '';
+    let currentToken    = null;
+    let currentData     = null;
+    let currentTelefono = null; // clave principal para stats
+    let statsLoaded     = false;
+    let currentNota     = '';
 
     // ── Calendario inline ─────────────────────────────────────
     let rdCalDate      = new Date();
@@ -597,17 +457,15 @@
     let rdSelectedSlot = null;
     let rdTakenSlots   = [];
 
-    const SLOTS_API       = './api/slots.php';
-    const CANCEL_API      = './api/cancel-by-barber.php';
-    const ACCEPT_CTR_API  = './api/barber-accept-counter.php';
-    const STATS_API       = './api/cliente-stats.php';
-    const NOTA_API        = './api/nota-cliente.php';
+    const SLOTS_API      = './api/slots.php';
+    const CANCEL_API     = './api/cancel-by-barber.php';
+    const ACCEPT_CTR_API = './api/barber-accept-counter.php';
+    const STATS_API      = './api/client-stats.php';
+    const NOTA_API       = './api/nota-cliente.php';
 
     const MONTHS_ES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
     const ALL_SLOTS = ['09:00','09:30','10:00','10:30','11:00','11:30','12:00','12:30','13:00','13:30','16:00','16:30','17:00','17:30','18:00','18:30','19:00','19:30'];
-
-    const DIAS_ES  = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
-    const MESES_ES = ['','ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+    const DIAS_ES   = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
     const MESES_LARGO = ['','enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
 
     function formatFecha(ymd) {
@@ -619,8 +477,9 @@
     function formatFechaCorta(ymd) {
         if (!ymd) return '—';
         const [y, m, d] = ymd.split('-').map(Number);
+        const meses = ['','ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
         const dow = new Date(y, m - 1, d).getDay();
-        return DIAS_ES[dow] + ' ' + d + ' ' + MESES_ES[m];
+        return DIAS_ES[dow] + ' ' + d + ' ' + meses[m];
     }
     function initials(name) {
         return (name || '—').split(' ').slice(0, 2).map(p => p[0]).join('').toUpperCase();
@@ -648,17 +507,25 @@
         if (tab === 'cliente' && !statsLoaded) loadClientStats();
     };
 
-    // ── Cargar estadísticas del cliente ───────────────────────
+    // ── Cargar estadísticas del cliente por TELÉFONO ──────────
     async function loadClientStats() {
-        if (!currentEmail) return;
+        if (!currentTelefono) {
+            document.getElementById('rd-stats-loading').innerHTML =
+                '<span style="color:#d42b2b;font-size:.8rem;">No hay teléfono asociado a esta reserva.</span>';
+            return;
+        }
         document.getElementById('rd-stats-loading').style.display = 'flex';
         document.getElementById('rd-stats-content').style.display = 'none';
         try {
-            const res  = await fetch(STATS_API + '?email=' + encodeURIComponent(currentEmail));
+            const url = STATS_API + '?telefono=' + encodeURIComponent(currentTelefono);
+            const res  = await fetch(url);
             const json = await res.json();
             if (json.ok) {
                 renderClientStats(json.data);
                 statsLoaded = true;
+            } else {
+                document.getElementById('rd-stats-loading').innerHTML =
+                    '<span style="color:#d42b2b;font-size:.8rem;">Error: ' + (json.error || 'desconocido') + '</span>';
             }
         } catch (e) {
             document.getElementById('rd-stats-loading').innerHTML =
@@ -684,7 +551,7 @@
         const nivelNom  = document.getElementById('cs-nivel-nombre');
         const nivelSub  = document.getElementById('cs-nivel-sub');
         if (nivelIcon) {
-            nivelIcon.innerHTML    = `<i class="ti ${nivel.icon || 'ti-user'}" style="font-size:1rem;" aria-hidden="true"></i>`;
+            nivelIcon.textContent      = nivelIconChar(nivel.nombre);
             nivelIcon.style.background = nivel.color_bg || 'rgba(212,43,43,.1)';
             nivelIcon.style.color      = nivel.color_text || '#d42b2b';
             nivelIcon.style.border     = '1px solid ' + (nivel.color_text || '#d42b2b') + '33';
@@ -714,7 +581,7 @@
         const prefsEl = document.getElementById('cs-prefs-tags');
         if (prefsEl && d.preferencias && d.preferencias.length) {
             prefsEl.innerHTML = d.preferencias.map(p =>
-                `<span class="cs-pref-tag"><i class="ti ${p.icon}" style="font-size:11px;${p.color ? 'color:' + p.color : ''}" aria-hidden="true"></i> ${escHtml(p.label)}</span>`
+                `<span class="cs-pref-tag" style="${p.color ? 'color:' + p.color + ';border-color:' + p.color + '44;' : ''}">${escHtml(p.label)}</span>`
             ).join('');
         } else if (prefsEl) {
             prefsEl.innerHTML = '<span style="font-size:.78rem;color:#7a7880;">Sin datos suficientes aún.</span>';
@@ -728,16 +595,10 @@
                     <div class="cs-spend-row">
                         <span class="cs-spend-lbl" title="${escHtml(s.nombre)}">${escHtml(s.nombre)}</span>
                         <div class="cs-spend-track">
-                            <div class="cs-spend-fill" style="background:${s.color};" data-pct="${s.pct}"></div>
+                            <div class="cs-spend-fill" style="background:${s.color};width:${s.pct}%;"></div>
                         </div>
                         <span class="cs-spend-amt">${s.gasto} €</span>
                     </div>`).join('');
-                // Animar barras
-                setTimeout(() => {
-                    gastoEl.querySelectorAll('.cs-spend-fill').forEach(el => {
-                        el.style.width = el.dataset.pct + '%';
-                    });
-                }, 150);
             } else {
                 gastoEl.innerHTML = '<span style="font-size:.78rem;color:#7a7880;">Sin datos aún.</span>';
             }
@@ -749,13 +610,11 @@
             if (d.insights && d.insights.length) {
                 insEl.innerHTML = d.insights.map(i => `
                     <div class="cs-insight-row">
-                        <div class="cs-insight-icon" style="background:${i.bg};color:${i.color};">
-                            <i class="ti ${i.icon}" style="font-size:.9rem;" aria-hidden="true"></i>
-                        </div>
+                        <div class="cs-insight-icon" style="background:${i.bg};color:${i.color};">●</div>
                         <div class="cs-insight-text">${escHtml(i.texto)}</div>
                     </div>`).join('');
             } else {
-                insEl.innerHTML = '<span style="font-size:.78rem;color:#7a7880;">Sin insights disponibles aún.</span>';
+                insEl.innerHTML = '<span style="font-size:.78rem;color:#7a7880;">Sin insights disponibles.</span>';
             }
         }
 
@@ -768,7 +627,7 @@
                     return `<div class="cs-hist-item">
                         <span class="cs-hist-dot ${isCancel ? 'cs-dot-cancel' : 'cs-dot-ok'}"></span>
                         <span class="cs-hist-fecha">${escHtml(h.fecha)}</span>
-                        <div class="cs-hist-info" style="flex:1;min-width:0;">
+                        <div class="cs-hist-info">
                             <div class="cs-hist-svc">${escHtml(h.servicio)}</div>
                             <div class="cs-hist-barb">${escHtml(h.barbero)} · ${h.hora}</div>
                         </div>
@@ -794,7 +653,12 @@
         if (notaInput) notaInput.value = currentNota;
     }
 
-    // ── Nota: editar / guardar / cancelar ─────────────────────
+    function nivelIconChar(nombre) {
+        const map = { 'Platino': '💎', 'Oro': '🏆', 'Plata': '🥈', 'Bronce': '🥉', 'Nuevo': '👤' };
+        return map[nombre] || '👤';
+    }
+
+    // ── Nota interna ──────────────────────────────────────────
     window.rdNotaEdit = function() {
         document.getElementById('cs-nota-view').style.display = 'none';
         document.getElementById('cs-nota-edit-btn').style.display = 'none';
@@ -808,14 +672,14 @@
         document.getElementById('cs-nota-edit-wrap').style.display = 'none';
     };
     window.rdNotaSave = async function() {
-        if (!currentEmail) return;
+        if (!currentTelefono) return;
         const nota = document.getElementById('cs-nota-input').value.trim();
         const btn  = document.getElementById('cs-nota-save-btn');
         btn.disabled = true; btn.textContent = 'Guardando…';
         try {
             const res  = await fetch(NOTA_API, {
                 method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email: currentEmail, nota })
+                body: JSON.stringify({ telefono: currentTelefono, nota })
             });
             const json = await res.json();
             if (json.ok) {
@@ -825,7 +689,7 @@
                 notaView.style.fontStyle = nota ? 'italic' : 'normal';
                 rdNotaCancel();
             }
-        } catch (e) {/* ignore */}
+        } catch (e) { /* ignore */ }
         btn.disabled = false; btn.textContent = 'Guardar nota';
     };
 
@@ -892,7 +756,7 @@
             if (item.slotOrigen || item.slotDestino) {
                 slotsHtml = '<div class="rd-hist-slots">';
                 if (item.slotOrigen) slotsHtml += `<span class="rd-slot-chip rd-slot-chip-old">${item.slotOrigen}</span>`;
-                if (item.slotOrigen && item.slotDestino) slotsHtml += `<span class="rd-slot-arrow" style="font-size:.72rem;color:#7a7880;">→</span>`;
+                if (item.slotOrigen && item.slotDestino) slotsHtml += `<span style="font-size:.72rem;color:#7a7880;">→</span>`;
                 if (item.slotDestino) {
                     let chipClass = item.tipo === 'cliente' ? 'rd-slot-chip-cliente' : item.tipo === 'final' ? 'rd-slot-chip-final' : 'rd-slot-chip-barbero';
                     slotsHtml += `<span class="rd-slot-chip ${chipClass}">${item.slotDestino}</span>`;
@@ -910,7 +774,7 @@
         }).join('') + '</div>';
     }
 
-    // ── Aceptar propuesta cliente via barber-accept-counter ───
+    // ── Aceptar propuesta cliente ─────────────────────────────
     window.rdAcceptClientCounter = async function() {
         if (!currentToken) return;
         const nombreCliente = currentData?.cliente_nombre || 'el cliente';
@@ -919,21 +783,20 @@
         if (btn) { btn.style.pointerEvents = 'none'; btn.textContent = '⏳ Procesando…'; }
         try {
             await fetch(ACCEPT_CTR_API + '?token=' + encodeURIComponent(currentToken) + '&accion=aceptar');
-        } catch (e) {/* ignore */}
+        } catch (e) { /* ignore */ }
         closeRD(); location.reload();
     };
 
     // ── Abrir drawer ──────────────────────────────────────────
     window.openRD = function(data) {
-        currentToken = data.token || '';
-        currentData  = data;
-        currentEmail = data.cliente_email || '';
-        statsLoaded  = false;
+        currentToken    = data.token || '';
+        currentData     = data;
+        // CLAVE: usar teléfono como identificador del cliente
+        currentTelefono = data.cliente_telefono || '';
+        statsLoaded     = false;
 
-        document.getElementById('rd-cancel-inline').style.display    = 'none';
+        document.getElementById('rd-cancel-inline').style.display     = 'none';
         document.getElementById('rd-reschedule-inline').style.display = 'none';
-
-        // Reset tabs → mostrar pestaña reserva
         rdSwitchTab('reserva');
 
         // Header
@@ -978,18 +841,18 @@
         document.getElementById('rd-token').textContent = (data.token || '').slice(0, 32) + '…';
 
         // Negociación
-        document.getElementById('rd-propuesta-section').style.display         = 'none';
-        document.getElementById('rd-barbero-propuesta-section').style.display  = 'none';
-        document.getElementById('rd-historial-section').style.display          = 'none';
+        document.getElementById('rd-propuesta-section').style.display        = 'none';
+        document.getElementById('rd-barbero-propuesta-section').style.display = 'none';
+        document.getElementById('rd-historial-section').style.display         = 'none';
 
-        const ronda         = parseInt(data.ronda_negociacion || 0);
-        const motivoCambio  = data.motivo_cambio || '';
+        const ronda          = parseInt(data.ronda_negociacion || 0);
+        const motivoCambio   = data.motivo_cambio || '';
         const nuevaFechaProp = data.nueva_fecha_propuesta || '';
         const nuevaHoraPropRaw = data.nueva_hora_propuesta || '';
-        const nuevaHoraProp = nuevaHoraPropRaw ? nuevaHoraPropRaw.slice(0, 5) : '';
-        const origHora      = data.hora ? data.hora.slice(0, 5) : '—';
-        const esNegActiva   = ['reprogramar_barbero', 'reprogramar_cliente'].includes(est);
-        const huboNeg       = ronda > 0 || motivoCambio;
+        const nuevaHoraProp  = nuevaHoraPropRaw ? nuevaHoraPropRaw.slice(0, 5) : '';
+        const origHora       = data.hora ? data.hora.slice(0, 5) : '—';
+        const esNegActiva    = ['reprogramar_barbero', 'reprogramar_cliente'].includes(est);
+        const huboNeg        = ronda > 0 || motivoCambio;
 
         if (huboNeg && !esNegActiva) {
             const histItems = parseHistorial(motivoCambio, est, ronda, data.fecha, data.hora, nuevaFechaProp, nuevaHoraProp);
@@ -1000,17 +863,22 @@
         } else if (est === 'reprogramar_cliente') {
             document.getElementById('rd-propuesta-section').style.display = 'block';
             document.getElementById('rd-orig-slot').textContent = formatFecha(data.fecha) + ' · ' + origHora;
-            document.getElementById('rd-new-slot').textContent  = nuevaFechaProp && nuevaHoraProp ? formatFecha(nuevaFechaProp) + ' · ' + nuevaHoraProp : 'Pendiente de confirmar';
+            document.getElementById('rd-new-slot').textContent  = nuevaFechaProp && nuevaHoraProp ? formatFecha(nuevaFechaProp) + ' · ' + nuevaHoraProp : 'Pendiente';
             const motivoRow = document.getElementById('rd-motivo-row');
-            if (motivoCambio) { document.getElementById('rd-motivo').textContent = motivoCambio.split(' | ')[0].replace(/\s*\[propuesta:[^\]]+\]/gi, '').trim(); motivoRow.style.display = 'flex'; }
-            else { motivoRow.style.display = 'none'; }
+            if (motivoCambio) {
+                document.getElementById('rd-motivo').textContent = motivoCambio.split(' | ')[0].replace(/\s*\[propuesta:[^\]]+\]/gi, '').trim();
+                motivoRow.style.display = 'flex';
+            } else { motivoRow.style.display = 'none'; }
             const rondaRow = document.getElementById('rd-ronda-row');
             if (ronda > 0) { document.getElementById('rd-ronda').textContent = 'Ronda ' + ronda; rondaRow.style.display = 'flex'; }
             else { rondaRow.style.display = 'none'; }
             const partes = motivoCambio ? motivoCambio.split(' | ').filter(Boolean) : [];
             if (partes.length > 2) {
                 const histItems = parseHistorial(motivoCambio, est, ronda, data.fecha, data.hora, nuevaFechaProp, nuevaHoraProp);
-                if (histItems.length > 0) { document.getElementById('rd-historial-content').innerHTML = renderHistorial(histItems); document.getElementById('rd-historial-section').style.display = 'block'; }
+                if (histItems.length > 0) {
+                    document.getElementById('rd-historial-content').innerHTML = renderHistorial(histItems);
+                    document.getElementById('rd-historial-section').style.display = 'block';
+                }
             }
         } else if (est === 'reprogramar_barbero') {
             document.getElementById('rd-barbero-propuesta-section').style.display = 'block';
@@ -1047,7 +915,7 @@
             footer.innerHTML = `
                 <div style="width:100%;display:flex;flex-direction:column;gap:.6rem;">
                     <div style="background:rgba(201,168,76,.08);border:1px solid rgba(201,168,76,.2);border-radius:8px;padding:.65rem 1rem;font-size:.75rem;color:#d4a84b;line-height:1.5;">
-                        ⏳ Esperando respuesta del cliente. Puedes cambiar tu propuesta o denegar.
+                        ⏳ Esperando respuesta del cliente.
                     </div>
                     <div style="display:flex;gap:.6rem;">
                         <button class="rd-footer-btn rd-btn-reschedule-only" onclick="rdShowReschedule()">⇄ Cambiar propuesta</button>
@@ -1058,11 +926,11 @@
             footer.innerHTML = `
                 <div style="width:100%;display:flex;flex-direction:column;gap:.6rem;">
                     <div style="background:rgba(37,80,160,.08);border:1px solid rgba(37,80,160,.25);border-radius:8px;padding:.65rem 1rem;font-size:.75rem;color:#6b9fff;line-height:1.5;">
-                        ⇄ El cliente propone un cambio. Acepta su horario, propón otro o deniega.
+                        ⇄ El cliente propone un cambio de horario.
                     </div>
                     <div style="display:flex;gap:.5rem;flex-wrap:wrap;">
-                        <button class="rd-footer-btn rd-btn-accept" style="flex:1;min-width:80px;" onclick="rdAcceptClientCounter()">✓ Aceptar propuesta</button>
-                        <button class="rd-footer-btn rd-btn-reschedule-only" style="flex:1;min-width:80px;" onclick="rdShowReschedule()">⇄ Proponer otro</button>
+                        <button class="rd-footer-btn rd-btn-accept" style="flex:1;min-width:80px;" onclick="rdAcceptClientCounter()">✓ Aceptar</button>
+                        <button class="rd-footer-btn rd-btn-reschedule-only" style="flex:1;min-width:80px;" onclick="rdShowReschedule()">⇄ Otro horario</button>
                         <button class="rd-footer-btn rd-btn-deny" style="flex:1;min-width:80px;" onclick="rdShowCancel()">✕ Denegar</button>
                     </div>
                 </div>`;
@@ -1091,7 +959,7 @@
 
     // ── Denegar inline ────────────────────────────────────────
     window.rdShowCancel = function() {
-        document.getElementById('rd-cancel-inline').style.display    = 'block';
+        document.getElementById('rd-cancel-inline').style.display     = 'block';
         document.getElementById('rd-reschedule-inline').style.display = 'none';
         document.getElementById('rd-footer').style.display = 'none';
         document.getElementById('rd-cancel-motivo').value = '';
@@ -1111,7 +979,7 @@
         try {
             const res  = await fetch(CANCEL_API, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token: currentToken, accion: 'cancelar', motivo }) });
             const json = await res.json();
-            if (json.ok) { rdShowInlineStatus('rd-cancel-status', true, '✓ Reserva denegada. Email enviado al cliente.'); setTimeout(() => { closeRD(); location.reload(); }, 2200); }
+            if (json.ok) { rdShowInlineStatus('rd-cancel-status', true, '✓ Reserva denegada. Email enviado.'); setTimeout(() => { closeRD(); location.reload(); }, 2200); }
             else { rdShowInlineStatus('rd-cancel-status', false, json.error || 'Error al denegar.'); }
         } catch (e) { rdShowInlineStatus('rd-cancel-status', false, 'Error de conexión.'); }
         finally { btn.disabled = false; btn.textContent = '✕ Confirmar denegación'; }
@@ -1147,6 +1015,7 @@
         document.getElementById('rd-reschedule-inline').style.display = 'none';
         document.getElementById('rd-footer').style.display = 'flex';
     };
+
     function rdRenderCal() {
         const title = document.getElementById('rd-cal-title');
         if (title) title.textContent = MONTHS_ES[rdCalDate.getMonth()] + ' ' + rdCalDate.getFullYear();
@@ -1177,8 +1046,7 @@
         grid.innerHTML = html;
     }
     window.rdCalNav = function(dir) {
-        rdCalDate.setMonth(rdCalDate.getMonth() + dir);
-        rdRenderCal();
+        rdCalDate.setMonth(rdCalDate.getMonth() + dir); rdRenderCal();
     };
     window.rdSelectDate = async function(iso) {
         rdSelectedDate = iso; rdSelectedSlot = null;
@@ -1187,16 +1055,24 @@
         rdRenderCal();
         const slotsGrid = document.getElementById('rd-slots-grid');
         const dt = new Date(iso + 'T00:00:00');
-        if (dt.getDay() === 0) { slotsGrid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:.85rem;color:#d42b2b;font-size:.8rem;">🔒 Los domingos estamos cerrados</div>'; return; }
-        slotsGrid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:.85rem;color:#7a7880;font-size:.8rem;">Cargando horarios…</div>';
+        if (dt.getDay() === 0) {
+            slotsGrid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:.85rem;color:#d42b2b;font-size:.8rem;">🔒 Domingos cerrado</div>';
+            return;
+        }
+        slotsGrid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:.85rem;color:#7a7880;font-size:.8rem;">Cargando…</div>';
         try {
             const barberoId = currentData?.barbero_id || '';
             const res  = await fetch(`${SLOTS_API}?fecha=${iso}&barbero=${barberoId}`);
             const json = await res.json();
-            if (json.ok && json.data.bloqueado) { slotsGrid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:.85rem;color:#d42b2b;font-size:.8rem;">🔒 Día bloqueado: ${json.data.motivo || 'No disponible'}</div>`; return; }
+            if (json.ok && json.data.bloqueado) {
+                slotsGrid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:.85rem;color:#d42b2b;font-size:.8rem;">🔒 ${json.data.motivo || 'No disponible'}</div>`;
+                return;
+            }
             rdTakenSlots = json.ok ? (json.data.ocupadas || []) : [];
             rdRenderSlots(iso);
-        } catch (e) { slotsGrid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:.85rem;color:#d42b2b;font-size:.8rem;">Error al cargar horarios</div>'; }
+        } catch (e) {
+            slotsGrid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:.85rem;color:#d42b2b;font-size:.8rem;">Error al cargar</div>';
+        }
     };
     function rdRenderSlots(iso) {
         const slotsGrid = document.getElementById('rd-slots-grid');
@@ -1231,14 +1107,14 @@
         if (!motivo) { rdShowInlineStatus('rd-resch-status', false, 'El motivo es obligatorio.'); return; }
         if (!rdSelectedDate) { rdShowInlineStatus('rd-resch-status', false, 'Selecciona una fecha.'); return; }
         if (!rdSelectedSlot) { rdShowInlineStatus('rd-resch-status', false, 'Selecciona una hora.'); return; }
-        if (!confirm('¿Enviar propuesta de cambio a ' + (currentData?.cliente_nombre || '') + '?\n' + rdSelectedDate + ' a las ' + rdSelectedSlot)) return;
+        if (!confirm('¿Enviar propuesta a ' + (currentData?.cliente_nombre || '') + '?\n' + rdSelectedDate + ' a las ' + rdSelectedSlot)) return;
         const btn = document.getElementById('rd-btn-do-reschedule');
         btn.disabled = true; btn.style.opacity = '.4'; btn.textContent = 'Enviando…';
         try {
             const res  = await fetch(CANCEL_API, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token: currentToken, accion: 'reprogramar', motivo, nueva_fecha: rdSelectedDate, nueva_hora: rdSelectedSlot }) });
             const json = await res.json();
-            if (json.ok) { rdShowInlineStatus('rd-resch-status', true, '✓ Propuesta enviada. El cliente fue notificado por email.'); setTimeout(() => { closeRD(); location.reload(); }, 2200); }
-            else { rdShowInlineStatus('rd-resch-status', false, json.error || 'Error al enviar propuesta.'); }
+            if (json.ok) { rdShowInlineStatus('rd-resch-status', true, '✓ Propuesta enviada. Cliente notificado.'); setTimeout(() => { closeRD(); location.reload(); }, 2200); }
+            else { rdShowInlineStatus('rd-resch-status', false, json.error || 'Error al enviar.'); }
         } catch (e) { rdShowInlineStatus('rd-resch-status', false, 'Error de conexión.'); }
         finally { btn.disabled = false; btn.style.opacity = '1'; btn.textContent = '⇄ Enviar propuesta'; }
     };
@@ -1259,7 +1135,7 @@
 
     document.addEventListener('keydown', e => { if (e.key === 'Escape') closeRD(); });
 
-    // ── Escucha de clicks en filas/cards ──────────────────────
+    // ── Extracción de datos desde filas/cards ─────────────────
     function extractServicioFromTd(td) {
         if (!td) return { servicio: '—', duracion: '' };
         const spanEl = td.querySelector('span');
@@ -1367,8 +1243,8 @@
         if (text.includes('aceptada'))  return 'aceptada';
         if (text.includes('denegada'))  return 'denegada';
         if (text.includes('cancelada')) return 'cancelada';
-        if (text.includes('prop. barbero') || text.includes('reprogramar_barbero')) return 'reprogramar_barbero';
-        if (text.includes('prop. cliente') || text.includes('reprogramar_cliente')) return 'reprogramar_cliente';
+        if (text.includes('reprogramar_barbero') || text.includes('prop. barbero')) return 'reprogramar_barbero';
+        if (text.includes('reprogramar_cliente') || text.includes('prop. cliente')) return 'reprogramar_cliente';
         return '';
     }
     function guessEstadoFromClass(el) {
