@@ -805,7 +805,7 @@
 
             const motivoRow = document.getElementById('rd-motivo-row');
             if (motivoCambio) {
-                document.getElementById('rd-motivo').textContent = motivoCambio.split(' | ')[0];
+                document.getElementById('rd-motivo').textContent = motivoCambio.split(' | ')[0].replace(/\s*\[propuesta:[^\]]+\]/gi, '').trim();
                 motivoRow.style.display = 'flex';
             } else { motivoRow.style.display = 'none'; }
 
@@ -987,7 +987,7 @@
         rdSelectedDate = null;
         rdSelectedSlot = null;
 
-        const prevMotivo = (currentData?.motivo_cambio || '').split(' | ')[0].trim();
+        const prevMotivo = (currentData?.motivo_cambio || '').split(' | ')[0].replace(/\s*\[propuesta:[^\]]+\]/gi, '').trim();
         const motivoEl = document.getElementById('rd-resch-motivo');
         const hintEl = document.getElementById('rd-resch-motivo-hint');
         const reqEl = document.getElementById('rd-resch-motivo-required');
@@ -1119,7 +1119,7 @@
 
     window.rdDoReschedule = async function () {
         const motivoInput = (document.getElementById('rd-resch-motivo').value || '').trim();
-        const motivoPrevio = (currentData?.motivo_cambio || '').split(' | ')[0].trim();
+        const motivoPrevio = (currentData?.motivo_cambio || '').split(' | ')[0].replace(/\s*\[propuesta:[^\]]+\]/gi, '').trim();
         const motivo = motivoInput || motivoPrevio;
 
         if (!motivo) { rdShowInlineStatus('rd-resch-status', false, 'El motivo es obligatorio.'); return; }
