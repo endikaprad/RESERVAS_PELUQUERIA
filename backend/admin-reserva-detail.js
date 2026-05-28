@@ -635,8 +635,6 @@
         const esNegociacionFinalizada = ['aceptada', 'cancelada', 'denegada'].includes(estado);
         if (esNegociacionFinalizada && ronda > 0) {
             if (estado === 'aceptada') {
-                // Al aceptar, la fecha/hora del drawer ya ES la acordada
-                // (nuevaFechaProp fue limpiada y movida a fecha/hora)
                 const fechaFmt = (fechaOriginal && horaOriginal)
                     ? formatFecha(fechaOriginal) + ' · ' + normHora(horaOriginal)
                     : '—';
@@ -644,7 +642,7 @@
                     tipo: 'final',
                     icono: '✓',
                     titulo: 'Negociación finalizada — Cita confirmada',
-                    detalle: 'Horario acordado: <strong>' + fechaFmt + '</strong>',
+                    detalle: '',
                     rondaLabel: null,
                     slotOrigen: null,
                     slotDestino: fechaFmt,
