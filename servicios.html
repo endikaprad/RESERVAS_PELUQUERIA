@@ -14,6 +14,7 @@
         <link rel="stylesheet" href="css/servicios.css" />
 
         <script src="backend/main.js?v=1" defer></script>
+        <script src="backend/servicios.js?v=1" defer></script>
     </head>
     <body>
 
@@ -51,147 +52,10 @@
         </div>
 
         <div class="services-full">
-            <!-- CORTES -->
-            <div class="svc-category reveal">
-                <div class="svc-category-title">Cortes</div>
-                <div class="svc-list">
-                    <div class="svc-row">
-                        <div class="svc-row-info">
-                            <div class="svc-row-name">Corte Clásico</div>
-                            <div class="svc-row-desc">Corte a tijera o máquina,
-                                acabado a navaja y secado.</div>
-                        </div>
-                        <div class="svc-row-meta">
-                            <div class="svc-row-duration">30 min</div>
-                            <div class="svc-row-price">18 €</div>
-                            <a href="reservas.html"
-                                class="btn btn-outline svc-row-btn"
-                                style="padding:.5rem 1rem; font-size:.7rem;">
-                                Reservar
-                            </a>
-                        </div>
-                    </div>
-                    <div class="svc-row">
-                        <div class="svc-row-info">
-                            <div class="svc-row-name">Degradado (Fade)</div>
-                            <div class="svc-row-desc">High fade, mid fade o low
-                                fade con acabado perfecto.</div>
-                        </div>
-                        <div class="svc-row-meta">
-                            <div class="svc-row-duration">40 min</div>
-                            <div class="svc-row-price">22 €</div>
-                            <a href="reservas.html"
-                                class="btn btn-outline svc-row-btn"
-                                style="padding:.5rem 1rem; font-size:.7rem;">
-                                Reservar
-                            </a>
-                        </div>
-                    </div>
-                    <div class="svc-row">
-                        <div class="svc-row-info">
-                            <div class="svc-row-name">Corte Infantil (hasta 12
-                                años)</div>
-                            <div class="svc-row-desc">Corte adaptado a los más
-                                pequeños, con paciencia y cuidado.</div>
-                        </div>
-                        <div class="svc-row-meta">
-                            <div class="svc-row-duration">25 min</div>
-                            <div class="svc-row-price">14 €</div>
-                            <a href="reservas.html"
-                                class="btn btn-outline svc-row-btn"
-                                style="padding:.5rem 1rem; font-size:.7rem;">
-                                Reservar
-                            </a>
-                        </div>
-                    </div>
-                </div>
+            <div id="svc-loading" style="text-align:center;padding:4rem 0;color:var(--color-muted);font-size:.85rem;letter-spacing:.1em;">
+                Cargando servicios…
             </div>
-
-            <!-- BARBA -->
-            <div class="svc-category reveal">
-                <div class="svc-category-title">Barba</div>
-                <div class="svc-list">
-                    <div class="svc-row">
-                        <div class="svc-row-info">
-                            <div class="svc-row-name">Arreglo de Barba</div>
-                            <div class="svc-row-desc">Perfilado, hidratación y
-                                acabado con aceite premium.</div>
-                        </div>
-                        <div class="svc-row-meta">
-                            <div class="svc-row-duration">20 min</div>
-                            <div class="svc-row-price">12 €</div>
-                            <a href="reservas.html"
-                                class="btn btn-outline svc-row-btn"
-                                style="padding:.5rem 1rem; font-size:.7rem;">
-                                Reservar
-                            </a>
-                        </div>
-                    </div>
-                    <div class="svc-row">
-                        <div class="svc-row-info">
-                            <div class="svc-row-name">Afeitado con Navaja</div>
-                            <div class="svc-row-desc">Afeitado clásico con
-                                toalla caliente, espuma artesanal y
-                                navaja.</div>
-                        </div>
-                        <div class="svc-row-meta">
-                            <div class="svc-row-duration">30 min</div>
-                            <div class="svc-row-price">20 €</div>
-                            <a href="reservas.html"
-                                class="btn btn-outline svc-row-btn"
-                                style="padding:.5rem 1rem; font-size:.7rem;">
-                                Reservar
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- PACKS -->
-            <div class="svc-category reveal">
-                <div class="svc-category-title">Packs combinados</div>
-                <div class="svc-list">
-                    <div class="svc-row">
-                        <div class="svc-row-info">
-                            <div class="svc-row-name">Corte + Barba</div>
-                            <div class="svc-row-desc">El pack más popular. Corte
-                                completo y arreglo de barba.</div>
-                        </div>
-                        <div class="svc-row-meta">
-                            <div class="svc-row-duration">50 min</div>
-                            <div class="svc-row-price">26 €</div>
-                            <a href="reservas.html"
-                                class="btn btn-outline svc-row-btn"
-                                style="padding:.5rem 1rem; font-size:.7rem;">
-                                Reservar
-                            </a>
-                        </div>
-                    </div>
-                    <div class="svc-row"
-                        style="border-color:var(--color-gold-dim);">
-                        <div class="svc-row-info">
-                            <div class="svc-row-name">
-                                Sesión Premium
-                                <span class="badge badge-gold"
-                                    style="margin-left:.75rem;">Destacado</span>
-                            </div>
-                            <div class="svc-row-desc">
-                                Corte, degradado, barba a navaja, mascarilla
-                                facial y masaje capilar.
-                            </div>
-                        </div>
-                        <div class="svc-row-meta">
-                            <div class="svc-row-duration">75 min</div>
-                            <div class="svc-row-price">45 €</div>
-                            <a href="reservas.html"
-                                class="btn btn-primary svc-row-btn"
-                                style="padding:.5rem 1rem; font-size:.7rem;">
-                                Reservar
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            <div id="svc-grid"></div>
 
             <!-- CTA -->
             <div class="cta-banner reveal" style="margin-top:1rem;">
