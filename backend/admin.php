@@ -1133,22 +1133,27 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
             display: flex;
             border-bottom: 1px solid #252530;
             flex-shrink: 0;
+            overflow: hidden;
         }
 
         .cfg-tab {
             flex: 1;
-            padding: .85rem 1rem;
+            min-width: 0;
+            padding: .82rem .45rem;
             background: transparent;
             border: none;
             font-family: 'DM Sans', sans-serif;
-            font-size: .75rem;
-            font-weight: 600;
-            letter-spacing: .1em;
+            font-size: .66rem;
+            font-weight: 700;
+            letter-spacing: .055em;
+            line-height: 1.15;
             text-transform: uppercase;
             color: #7a7880;
             cursor: pointer;
             border-bottom: 2px solid transparent;
             transition: all .2s;
+            white-space: normal;
+            text-align: center;
         }
 
         .cfg-tab:hover {
@@ -1195,6 +1200,87 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
 
         .cfg-section-label:first-child {
             margin-top: 0;
+        }
+
+        .rm-kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 8px;
+            margin-bottom: 1.4rem;
+        }
+
+        .rd-stat-kpi {
+            min-width: 0;
+            background: #18181f;
+            border: 1px solid #252530;
+            border-radius: 8px;
+            padding: .9rem .55rem;
+            text-align: center;
+        }
+
+        .rd-stat-kpi.rd-stat-accent {
+            background: rgba(212, 43, 43, .08);
+            border-color: rgba(212, 43, 43, .45);
+        }
+
+        .rd-stat-val {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.15rem;
+            line-height: 1;
+            color: #f0ece3;
+            font-weight: 700;
+            margin-bottom: .28rem;
+        }
+
+        .rd-stat-accent .rd-stat-val {
+            color: #d42b2b;
+        }
+
+        .rd-stat-lbl {
+            font-size: .58rem;
+            line-height: 1.2;
+            letter-spacing: .11em;
+            color: #7a7880;
+            text-transform: uppercase;
+        }
+
+        .rm-section-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: .75rem;
+        }
+
+        .rm-refresh-btn {
+            flex-shrink: 0;
+            font-size: .62rem;
+            padding: .32rem .62rem;
+            border-radius: 5px;
+            background: transparent;
+            border: 1px solid #252530;
+            color: #7a7880;
+            font-family: 'DM Sans', sans-serif;
+            letter-spacing: .06em;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: all .2s;
+        }
+
+        .rm-refresh-btn:hover {
+            border-color: #d42b2b;
+            color: #d42b2b;
+        }
+
+        .rm-list {
+            margin-bottom: 1.35rem;
+        }
+
+        .rm-panel-box {
+            background: #18181f;
+            border: 1px solid #252530;
+            border-radius: 8px;
+            padding: 1rem 1.15rem;
+            margin-bottom: 1rem;
         }
 
         .auto-estado-chip {
@@ -6092,7 +6178,7 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
         return `
         <!-- KPIs -->
         <div class="cfg-section-label">Esta semana</div>
-        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:1.5rem;">
+        <div class="rm-kpi-grid">
             <div class="rd-stat-kpi rd-stat-accent" id="rm-kpi-enviados">
                 <div class="rd-stat-val">—</div>
                 <div class="rd-stat-lbl">Enviados</div>
@@ -6108,25 +6194,19 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
         </div>
 
         <!-- Citas de mañana -->
-        <div class="cfg-section-label" style="display:flex;align-items:center;justify-content:space-between;">
+        <div class="cfg-section-label rm-section-head">
             <span>Citas de mañana</span>
-            <button onclick="rmLoadStatus()" id="rm-refresh-btn"
-                style="font-size:.65rem;padding:.25rem .65rem;border-radius:5px;
-                       background:transparent;border:1px solid #252530;color:#7a7880;
-                       font-family:'DM Sans',sans-serif;letter-spacing:.08em;
-                       text-transform:uppercase;cursor:pointer;transition:all .2s;"
-                onmouseover="this.style.borderColor='#d42b2b';this.style.color='#d42b2b';"
-                onmouseout="this.style.borderColor='#252530';this.style.color='#7a7880';">
+            <button onclick="rmLoadStatus()" id="rm-refresh-btn" class="rm-refresh-btn">
                 ↻ Actualizar
             </button>
         </div>
-        <div id="rm-manana-list" style="margin-bottom:1.5rem;">
+        <div id="rm-manana-list" class="rm-list">
             <div class="datos-loading">Cargando…</div>
         </div>
 
         <!-- Disparador manual -->
         <div class="cfg-section-label">Envío manual</div>
-        <div style="background:#18181f;border:1px solid #252530;border-radius:10px;padding:1rem 1.25rem;margin-bottom:1rem;">
+        <div class="rm-panel-box">
             <p style="font-size:.8rem;color:#7a7880;line-height:1.6;margin-bottom:.85rem;">
                 Lanza el script de recordatorios ahora mismo. Solo enviará a citas de mañana que aún no hayan recibido recordatorio.
             </p>
