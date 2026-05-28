@@ -455,6 +455,7 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
             font-size: .65rem;
             color: #7a7880;
             margin-top: .2rem;
+            transform: translateY(5px);
         }
 
         /* ── FILTERS ── */
