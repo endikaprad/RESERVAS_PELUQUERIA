@@ -3851,7 +3851,10 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
 
         <div class="section-header">
             <div class="section-title-admin">Reservas</div>
-            <div class="section-count"><?= count($reservas) ?> resultado<?= count($reservas) != 1 ? 's' : '' ?></div>
+            <div style="display:flex;align-items:center;gap:.75rem;">
+                <div class="section-count"><?= count($reservas) ?> resultado<?= count($reservas) != 1 ? 's' : '' ?></div>
+                <button onclick="location.reload()" style="width:32px;height:32px;border-radius:50%;background:transparent;border:1px solid #252530;color:#7a7880;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:.9rem;transition:all .3s;" onmouseover="this.style.borderColor='#d42b2b';this.style.color='#d42b2b';" onmouseout="this.style.borderColor='#252530';this.style.color='#7a7880';" title="Recargar reservas">↻</button>
+            </div>
         </div>
 
         <?php if (empty($reservas)): ?>
@@ -3938,7 +3941,10 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
                 <div class="table-wrap-d">
                     <div class="table-header-d">
                         <div class="table-title-d">Reservas</div>
-                        <div style="font-size:.75rem;color:#7a7880;"><?= count($reservas) ?> resultado<?= count($reservas) != 1 ? 's' : '' ?></div>
+                        <div style="display:flex;align-items:center;gap:.75rem;">
+                            <div style="font-size:.75rem;color:#7a7880;"><?= count($reservas) ?> resultado<?= count($reservas) != 1 ? 's' : '' ?></div>
+                            <button onclick="location.reload()" style="width:32px;height:32px;border-radius:50%;background:transparent;border:1px solid #252530;color:#7a7880;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:.9rem;transition:all .3s;" onmouseover="this.style.borderColor='#d42b2b';this.style.color='#d42b2b';" onmouseout="this.style.borderColor='#252530';this.style.color='#7a7880';" title="Recargar reservas">↻</button>
+                        </div>
                     </div>
                     <table>
                         <thead>
