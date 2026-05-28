@@ -17,113 +17,124 @@ $token  = trim($_GET['pt']     ?? '');
 $accion = trim($_GET['accion'] ?? '');
 
 if (!$token || !in_array($accion, ['aceptar', 'rechazar'], true)) {
-    mostrarPagina('error', 'Enlace inválido', 'El enlace no es válido o está incompleto.');
+  mostrarPagina('error', 'Enlace inválido', 'El enlace no es válido o está incompleto.');
 }
 
 try {
-    $db = getDB();
+  $db = getDB();
 
-    $stmt = $db->prepare(
-        'SELECT r.*, s.nombre AS servicio_nombre, s.duracion,
+  $stmt = $db->prepare(
+    'SELECT r.*, s.nombre AS servicio_nombre, s.duracion,
                 b.nombre AS barbero_nombre, b.id AS barbero_id_val
          FROM reservas r
          JOIN servicios s ON s.id = r.servicio_id
          JOIN barberos  b ON b.id = r.barbero_id
          WHERE r.token = ?'
-    );
-    $stmt->execute([$token]);
-    $reserva = $stmt->fetch();
+  );
+  $stmt->execute([$token]);
+  $reserva = $stmt->fetch();
 
-    if (!$reserva) {
-        mostrarPagina('error', 'No encontrada', 'Esta reserva no existe o el enlace ha caducado.');
+  if (!$reserva) {
+    mostrarPagina('error', 'No encontrada', 'Esta reserva no existe o el enlace ha caducado.');
+  }
+
+  $estadosValidos = ['reprogramar_barbero', 'reprogramar_cliente'];
+
+  if (!in_array($reserva['estado'], $estadosValidos, true)) {
+    $estadoActual = $reserva['estado'];
+    if ($estadoActual === 'aceptada') {
+      $msg = 'Esta reserva ya fue <strong>confirmada</strong>. ¡Te esperamos!';
+    } elseif ($estadoActual === 'cancelada') {
+      $msg = 'Esta reserva ya fue <strong>cancelada</strong>.';
+    } elseif ($estadoActual === 'denegada') {
+      $msg = 'Esta reserva ya fue <strong>denegada</strong>.';
+    } elseif ($estadoActual === 'pendiente') {
+      $msg = 'Esta reserva está <strong>pendiente</strong> de confirmación por el barbero.';
+    } else {
+      $msg = 'Esta propuesta ya fue procesada anteriormente.';
     }
+    mostrarPagina('info', 'Ya procesada', $msg);
+  }
 
-    $estadosValidos = ['reprogramar_barbero', 'reprogramar_cliente'];
+  $nuevaFecha    = $reserva['nueva_fecha_propuesta'] ?? '';
+  $nuevaHora     = $reserva['nueva_hora_propuesta']  ?? '';
+  $motivoCambio  = $reserva['motivo_cambio'] ?? '';
+  $rondaActual   = (int)($reserva['ronda_negociacion'] ?? 0);
 
-    if (!in_array($reserva['estado'], $estadosValidos, true)) {
-        $estadoActual = $reserva['estado'];
-        if ($estadoActual === 'aceptada') {
-            $msg = 'Esta reserva ya fue <strong>confirmada</strong>. ¡Te esperamos!';
-        } elseif ($estadoActual === 'cancelada') {
-            $msg = 'Esta reserva ya fue <strong>cancelada</strong>.';
-        } elseif ($estadoActual === 'denegada') {
-            $msg = 'Esta reserva ya fue <strong>denegada</strong>.';
-        } elseif ($estadoActual === 'pendiente') {
-            $msg = 'Esta reserva está <strong>pendiente</strong> de confirmación por el barbero.';
-        } else {
-            $msg = 'Esta propuesta ya fue procesada anteriormente.';
-        }
-        mostrarPagina('info', 'Ya procesada', $msg);
-    }
+  if (!$nuevaFecha || !$nuevaHora) {
+    mostrarPagina('error', 'Datos incompletos', 'No se encontraron los datos de la nueva propuesta.');
+  }
 
-    $nuevaFecha    = $reserva['nueva_fecha_propuesta'] ?? '';
-    $nuevaHora     = $reserva['nueva_hora_propuesta']  ?? '';
-    $motivoCambio  = $reserva['motivo_cambio'] ?? '';
-    $rondaActual   = (int)($reserva['ronda_negociacion'] ?? 0);
+  $dias  = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+  $meses = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+  function fmtFecha(string $f, array $d, array $m): string
+  {
+    $dt = new DateTime($f);
+    return $d[$dt->format('w')] . ', ' . $dt->format('j') . ' de ' . $m[(int)$dt->format('n') - 1] . ' de ' . $dt->format('Y');
+  }
 
-    if (!$nuevaFecha || !$nuevaHora) {
-        mostrarPagina('error', 'Datos incompletos', 'No se encontraron los datos de la nueva propuesta.');
-    }
+  $baseUrl       = 'https://pradopeluqueria.infinityfree.me';
+  $fechaOriginal = fmtFecha($reserva['fecha'], $dias, $meses);
+  $horaOriginal  = substr($reserva['hora'], 0, 5);
+  $fechaNueva    = fmtFecha($nuevaFecha, $dias, $meses);
+  $horaNueva     = substr($nuevaHora, 0, 5);
 
-    $dias  = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
-    $meses = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
-    function fmtFecha(string $f, array $d, array $m): string {
-        $dt = new DateTime($f);
-        return $d[$dt->format('w')].', '.$dt->format('j').' de '.$m[(int)$dt->format('n')-1].' de '.$dt->format('Y');
-    }
-
-    $baseUrl       = 'https://pradopeluqueria.infinityfree.me';
-    $fechaOriginal = fmtFecha($reserva['fecha'], $dias, $meses);
-    $horaOriginal  = substr($reserva['hora'], 0, 5);
-    $fechaNueva    = fmtFecha($nuevaFecha, $dias, $meses);
-    $horaNueva     = substr($nuevaHora, 0, 5);
-
-    // ════════════════════════════════════════════════════════
-    //  ACEPTAR — el cliente acepta el horario propuesto
-    // ════════════════════════════════════════════════════════
-    if ($accion === 'aceptar') {
-        // Verificar que el slot propuesto sigue libre
-        $check = $db->prepare(
-            "SELECT COUNT(*) FROM reservas
+  // ════════════════════════════════════════════════════════
+  //  ACEPTAR — el cliente acepta el horario propuesto
+  // ════════════════════════════════════════════════════════
+  if ($accion === 'aceptar') {
+    // Verificar que el slot propuesto sigue libre
+    $check = $db->prepare(
+      "SELECT COUNT(*) FROM reservas
              WHERE barbero_id = ? AND fecha = ? AND hora = ?
                AND estado IN ('pendiente','aceptada')
                AND token != ?"
-        );
-        $check->execute([$reserva['barbero_id'], $nuevaFecha, $nuevaHora, $token]);
-        if ((int)$check->fetchColumn() > 0) {
-            mostrarPagina(
-                'warn',
-                'Horario ya ocupado',
-                'Lo sentimos, el horario propuesto (<strong>'.$horaNueva.' del '.$fechaNueva.'</strong>) ya fue ocupado por otro cliente.<br><br>
-                 Vuelve a <a href="'.$baseUrl.'/reservas.html" style="color:#d42b2b;">reservar una nueva cita</a> o llámanos al <a href="tel:+34944000000" style="color:#d42b2b;">+34 944 000 000</a>.'
-            );
-        }
+    );
+    $check->execute([$reserva['barbero_id'], $nuevaFecha, $nuevaHora, $token]);
+    if ((int)$check->fetchColumn() > 0) {
+      mostrarPagina(
+        'warn',
+        'Horario ya ocupado',
+        'Lo sentimos, el horario propuesto (<strong>' . $horaNueva . ' del ' . $fechaNueva . '</strong>) ya fue ocupado por otro cliente.<br><br>
+                 Vuelve a <a href="' . $baseUrl . '/reservas.html" style="color:#d42b2b;">reservar una nueva cita</a> o llámanos al <a href="tel:+34944000000" style="color:#d42b2b;">+34 944 000 000</a>.'
+      );
+    }
 
-        // Actualizar: la fecha/hora pasa a ser la propuesta, estado=aceptada
-        $db->prepare(
-            "UPDATE reservas
+    // Actualizar: la fecha/hora pasa a ser la propuesta, estado=aceptada
+    $db->prepare(
+      "UPDATE reservas
              SET fecha = ?, hora = ?, estado = 'aceptada',
                  nueva_fecha_propuesta = NULL,
                  nueva_hora_propuesta  = NULL,
                  ronda_negociacion     = 0
              WHERE token = ?"
-        )->execute([$nuevaFecha, $nuevaHora, $token]);
+    )->execute([$nuevaFecha, $nuevaHora, $token]);
 
-        // ── Google Calendar ──────────────────────────────────────────
-        $duracionMinutos = parseDuracionMinutos($reserva['duracion'] ?? '30 min');
-        $gcalUrl   = buildGCalUrl(
-            $nuevaFecha,
-            $horaNueva,
-            $duracionMinutos,
-            $reserva['servicio_nombre'],
-            $reserva['barbero_nombre'],
-            $reserva['notas'] ?? ''
-        );
-        $gcalBlock = buildGCalBlock($gcalUrl);
+    // ── Google Calendar ──────────────────────────────────────────
+    $duracionMinutos = parseDuracionMinutos($reserva['duracion'] ?? '30 min');
+    $gcalUrl   = buildGCalUrl(
+      $nuevaFecha,
+      $horaNueva,
+      $duracionMinutos,
+      $reserva['servicio_nombre'],
+      $reserva['barbero_nombre'],
+      $reserva['notas'] ?? ''
+    );
+    $gcalBlock  = buildGCalBlock($gcalUrl);
+    $icsUid     = 'reserva-' . $reserva['id'] . '-rr@pradobarber.es';
+    $icsContent = buildIcsContent(
+      $nuevaFecha,
+      $horaNueva,
+      $duracionMinutos,
+      $reserva['servicio_nombre'],
+      $reserva['barbero_nombre'],
+      $reserva['notas'] ?? '',
+      $icsUid
+    );
 
-        // ── Botón cancelar ───────────────────────────────────────────
-        $urlCancelarCliente = $baseUrl . '/backend/api/cancel-booking.php?token=' . $token;
-        $cancelBox = "
+    // ── Botón cancelar ───────────────────────────────────────────
+    $urlCancelarCliente = $baseUrl . '/backend/api/cancel-booking.php?token=' . $token;
+    $cancelBox = "
       <div style='background:#18181f;border:1px solid #252530;border-radius:8px;padding:16px;margin-bottom:24px;text-align:center;'>
         <p style='color:#7a7880;font-size:13px;margin:0 0 12px;'>
           ¿Necesitas cancelar tu reserva?
@@ -139,90 +150,106 @@ try {
         </p>
       </div>";
 
-        // Email al cliente confirmando
-        $htmlCliente = buildEmailBase('#22c55e','¡Cambio de horario confirmado!','Prado Barber Co. — Bilbao',
-            '<p style="color:#f0ece3;font-size:15px;margin-bottom:24px;">
-              Hola <strong>'.htmlspecialchars($reserva['cliente_nombre']).'</strong>,<br><br>
+    // Email al cliente confirmando
+    $htmlCliente = buildEmailBase(
+      '#22c55e',
+      '¡Cambio de horario confirmado!',
+      'Prado Barber Co. — Bilbao',
+      '<p style="color:#f0ece3;font-size:15px;margin-bottom:24px;">
+              Hola <strong>' . htmlspecialchars($reserva['cliente_nombre']) . '</strong>,<br><br>
               Has <strong>aceptado</strong> el cambio de horario. Tu nueva cita queda confirmada. ¡Te esperamos!
-            </p>'.
-            buildTabla([
-                ['Servicio', htmlspecialchars($reserva['servicio_nombre']), ''],
-                ['Barbero',  htmlspecialchars($reserva['barbero_nombre']),  ''],
-                ['Fecha',    $fechaNueva,                                   ''],
-                ['Hora',     $horaNueva,                                    '#22c55e'],
-            ]).
-            $gcalBlock .
-            $cancelBox
-        );
+            </p>' .
+        buildTabla([
+          ['Servicio', htmlspecialchars($reserva['servicio_nombre']), ''],
+          ['Barbero',  htmlspecialchars($reserva['barbero_nombre']),  ''],
+          ['Fecha',    $fechaNueva,                                   ''],
+          ['Hora',     $horaNueva,                                    '#22c55e'],
+        ]) .
+        $gcalBlock .
+        $cancelBox
+    );
 
-        // Email al barbero
-        $htmlBarbero = buildEmailBase('#22c55e','Cliente aceptó el cambio de horario','Prado Barber Co. — Admin',
-            '<p style="color:#f0ece3;font-size:15px;margin-bottom:24px;">
-              <strong>'.htmlspecialchars($reserva['cliente_nombre']).'</strong> ha aceptado el nuevo horario.
-            </p>'.
-            buildTabla([
-                ['Cliente',     htmlspecialchars($reserva['cliente_nombre']), ''],
-                ['Nueva fecha', $fechaNueva,                                  ''],
-                ['Nueva hora',  $horaNueva,                                   '#22c55e'],
-            ]).
-            '<p style="color:#7a7880;font-size:12px;text-align:center;">
-              <a href="'.$baseUrl.'/backend/admin.php" style="color:#22c55e;">Ver en el panel</a>
+    // Email al barbero
+    $htmlBarbero = buildEmailBase(
+      '#22c55e',
+      'Cliente aceptó el cambio de horario',
+      'Prado Barber Co. — Admin',
+      '<p style="color:#f0ece3;font-size:15px;margin-bottom:24px;">
+              <strong>' . htmlspecialchars($reserva['cliente_nombre']) . '</strong> ha aceptado el nuevo horario.
+            </p>' .
+        buildTabla([
+          ['Cliente',     htmlspecialchars($reserva['cliente_nombre']), ''],
+          ['Nueva fecha', $fechaNueva,                                  ''],
+          ['Nueva hora',  $horaNueva,                                   '#22c55e'],
+        ]) .
+        '<p style="color:#7a7880;font-size:12px;text-align:center;">
+              <a href="' . $baseUrl . '/backend/admin.php" style="color:#22c55e;">Ver en el panel</a>
             </p>'
-        );
+    );
 
-        sendBrevo($reserva['cliente_email'], $reserva['cliente_nombre'],
-            'Cambio de horario confirmado - Prado Barber Co.', $htmlCliente);
-        sendBrevo('endikapradodev@gmail.com', 'Prado Barber Co.',
-            'Cliente aceptó cambio - '.$reserva['cliente_nombre'], $htmlBarbero);
+    sendBrevoWithIcs(
+      $reserva['cliente_email'],
+      $reserva['cliente_nombre'],
+      'Cambio de horario confirmado - Prado Barber Co.',
+      $htmlCliente,
+      $icsContent
+    );
+    sendBrevo(
+      'endikapradodev@gmail.com',
+      'Prado Barber Co.',
+      'Cliente aceptó cambio - ' . $reserva['cliente_nombre'],
+      $htmlBarbero
+    );
 
-        mostrarPagina('ok','¡Cambio confirmado!',
-            'Tu nueva cita queda fijada para el <strong>'.$fechaNueva.'</strong> a las <strong>'.$horaNueva.'</strong>.<br><br>Hemos enviado la confirmación con el enlace de Google Calendar a tu email.'
-        );
-    }
+    mostrarPagina(
+      'ok',
+      '¡Cambio confirmado!',
+      'Tu nueva cita queda fijada para el <strong>' . $fechaNueva . '</strong> a las <strong>' . $horaNueva . '</strong>.<br><br>Hemos enviado la confirmación con el enlace de Google Calendar a tu email.'
+    );
+  }
 
-    // ════════════════════════════════════════════════════════
-    //  RECHAZAR — el cliente rechaza el horario propuesto
-    // ════════════════════════════════════════════════════════
-    if ($accion === 'rechazar') {
-        mostrarPantallaRechazar($reserva, $fechaOriginal, $horaOriginal, $fechaNueva, $horaNueva, $motivoCambio, $rondaActual, $baseUrl, $token);
-    }
-
+  // ════════════════════════════════════════════════════════
+  //  RECHAZAR — el cliente rechaza el horario propuesto
+  // ════════════════════════════════════════════════════════
+  if ($accion === 'rechazar') {
+    mostrarPantallaRechazar($reserva, $fechaOriginal, $horaOriginal, $fechaNueva, $horaNueva, $motivoCambio, $rondaActual, $baseUrl, $token);
+  }
 } catch (PDOException $e) {
-    mostrarPagina('error', 'Error de base de datos', htmlspecialchars($e->getMessage()));
+  mostrarPagina('error', 'Error de base de datos', htmlspecialchars($e->getMessage()));
 }
 
 // ════════════════════════════════════════════════════════════
 //  Pantalla de rechazo
 // ════════════════════════════════════════════════════════════
 function mostrarPantallaRechazar(
-    array  $reserva,
-    string $fechaOriginal,
-    string $horaOriginal,
-    string $fechaNueva,
-    string $horaNueva,
-    string $motivoCambio,
-    int    $ronda,
-    string $baseUrl,
-    string $token
+  array  $reserva,
+  string $fechaOriginal,
+  string $horaOriginal,
+  string $fechaNueva,
+  string $horaNueva,
+  string $motivoCambio,
+  int    $ronda,
+  string $baseUrl,
+  string $token
 ): never {
 
-    $barberoId    = $reserva['barbero_id'];
-    $tokenEnc     = urlencode($token);
-    $cancelApiUrl = $baseUrl . '/backend/api/cancel-by-barber.php';
+  $barberoId    = $reserva['barbero_id'];
+  $tokenEnc     = urlencode($token);
+  $cancelApiUrl = $baseUrl . '/backend/api/cancel-by-barber.php';
 
-    $rondaBadgeHtml = "<div class=\"ronda-badge\">⇄ Ronda de negociación {$ronda}</div>";
+  $rondaBadgeHtml = "<div class=\"ronda-badge\">⇄ Ronda de negociación {$ronda}</div>";
 
-    $motivoHtml = '';
-    if ($motivoCambio) {
-        $motivoClean = explode(' | ', $motivoCambio)[0];
-        $motivoEsc   = htmlspecialchars(trim($motivoClean));
-        $motivoHtml  = "<div class=\"motivo-box\">Motivo del barbero: {$motivoEsc}</div>";
-    }
+  $motivoHtml = '';
+  if ($motivoCambio) {
+    $motivoClean = explode(' | ', $motivoCambio)[0];
+    $motivoEsc   = htmlspecialchars(trim($motivoClean));
+    $motivoHtml  = "<div class=\"motivo-box\">Motivo del barbero: {$motivoEsc}</div>";
+  }
 
-    $svNombre   = htmlspecialchars($reserva['servicio_nombre']);
-    $bNombre    = htmlspecialchars($reserva['barbero_nombre']);
+  $svNombre   = htmlspecialchars($reserva['servicio_nombre']);
+  $bNombre    = htmlspecialchars($reserva['barbero_nombre']);
 
-    echo <<<HTML
+  echo <<<HTML
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -552,24 +579,26 @@ function mostrarPantallaRechazar(
 </body>
 </html>
 HTML;
-    exit;
+  exit;
 }
 
 // ── Helpers email ─────────────────────────────────────────────
-function buildTabla(array $filas): string {
-    $html = "<table style='width:100%;border-collapse:collapse;margin-bottom:24px;'>";
-    foreach ($filas as [$label, $valor, $color]) {
-        $style = $color ? "color:{$color};font-size:16px;font-weight:700;" : 'color:#f0ece3;font-size:13px;';
-        $html .= "<tr>
+function buildTabla(array $filas): string
+{
+  $html = "<table style='width:100%;border-collapse:collapse;margin-bottom:24px;'>";
+  foreach ($filas as [$label, $valor, $color]) {
+    $style = $color ? "color:{$color};font-size:16px;font-weight:700;" : 'color:#f0ece3;font-size:13px;';
+    $html .= "<tr>
           <td style='padding:10px 0;border-bottom:1px solid #252530;color:#7a7880;font-size:13px;width:130px;'>{$label}</td>
           <td style='padding:10px 0;border-bottom:1px solid #252530;{$style}'>{$valor}</td>
         </tr>";
-    }
-    return $html . '</table>';
+  }
+  return $html . '</table>';
 }
 
-function buildEmailBase(string $hc, string $titulo, string $sub, string $contenido): string {
-    return "<!DOCTYPE html><html lang='es'><head><meta charset='UTF-8'></head>
+function buildEmailBase(string $hc, string $titulo, string $sub, string $contenido): string
+{
+  return "<!DOCTYPE html><html lang='es'><head><meta charset='UTF-8'></head>
 <body style='margin:0;padding:0;background:#09080f;font-family:Arial,sans-serif;'>
   <div style='max-width:560px;margin:0 auto;background:#111119;border:1px solid #252530;border-radius:12px;overflow:hidden;'>
     <div style='background:{$hc};padding:24px 32px;'>
@@ -585,17 +614,18 @@ function buildEmailBase(string $hc, string $titulo, string $sub, string $conteni
 </body></html>";
 }
 
-function mostrarPagina(string $tipo, string $titulo, string $mensaje): never {
-    $baseUrl = 'https://pradopeluqueria.infinityfree.me';
-    $colores = [
-        'ok'     => ['bg' => '#22c55e', 'icon' => '✓', 'text' => '#fff'],
-        'denied' => ['bg' => '#374151', 'icon' => '✕', 'text' => '#fff'],
-        'warn'   => ['bg' => '#f59e0b', 'icon' => '⚠', 'text' => '#000'],
-        'info'   => ['bg' => '#c9a84c', 'icon' => 'i', 'text' => '#000'],
-        'error'  => ['bg' => '#6b7280', 'icon' => '!', 'text' => '#fff'],
-    ];
-    $c = $colores[$tipo] ?? $colores['error'];
-    echo "<!DOCTYPE html><html lang='es'><head><meta charset='UTF-8'>
+function mostrarPagina(string $tipo, string $titulo, string $mensaje): never
+{
+  $baseUrl = 'https://pradopeluqueria.infinityfree.me';
+  $colores = [
+    'ok'     => ['bg' => '#22c55e', 'icon' => '✓', 'text' => '#fff'],
+    'denied' => ['bg' => '#374151', 'icon' => '✕', 'text' => '#fff'],
+    'warn'   => ['bg' => '#f59e0b', 'icon' => '⚠', 'text' => '#000'],
+    'info'   => ['bg' => '#c9a84c', 'icon' => 'i', 'text' => '#000'],
+    'error'  => ['bg' => '#6b7280', 'icon' => '!', 'text' => '#fff'],
+  ];
+  $c = $colores[$tipo] ?? $colores['error'];
+  echo "<!DOCTYPE html><html lang='es'><head><meta charset='UTF-8'>
 <meta name='viewport' content='width=device-width,initial-scale=1.0'>
 <title>{$titulo} — Prado Barber Co.</title>
 <style>
@@ -629,32 +659,33 @@ function mostrarPagina(string $tipo, string $titulo, string $mensaje): never {
     </div>
   </div>
 </body></html>";
-    exit;
+  exit;
 }
 
-function sendBrevo(string $toEmail, string $toName, string $subject, string $html): bool {
-    $apiKey = defined('BREVO_API_KEY') ? BREVO_API_KEY : '';
-    if (!$apiKey) return false;
-    $payload = json_encode([
-        'sender'      => ['name' => 'Prado Barber Co.', 'email' => 'endikapradodev@gmail.com'],
-        'to'          => [['email' => $toEmail, 'name'  => $toName]],
-        'subject'     => $subject,
-        'htmlContent' => $html,
-    ]);
-    $ch = curl_init('https://api.brevo.com/v3/smtp/email');
-    curl_setopt_array($ch, [
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_POST           => true,
-        CURLOPT_POSTFIELDS     => $payload,
-        CURLOPT_TIMEOUT        => 15,
-        CURLOPT_HTTPHEADER     => [
-            'api-key: '.$apiKey,
-            'Content-Type: application/json',
-            'Accept: application/json',
-        ],
-    ]);
-    $resp     = curl_exec($ch);
-    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    curl_close($ch);
-    return $httpCode === 201;
+function sendBrevo(string $toEmail, string $toName, string $subject, string $html): bool
+{
+  $apiKey = defined('BREVO_API_KEY') ? BREVO_API_KEY : '';
+  if (!$apiKey) return false;
+  $payload = json_encode([
+    'sender'      => ['name' => 'Prado Barber Co.', 'email' => 'endikapradodev@gmail.com'],
+    'to'          => [['email' => $toEmail, 'name'  => $toName]],
+    'subject'     => $subject,
+    'htmlContent' => $html,
+  ]);
+  $ch = curl_init('https://api.brevo.com/v3/smtp/email');
+  curl_setopt_array($ch, [
+    CURLOPT_RETURNTRANSFER => true,
+    CURLOPT_POST           => true,
+    CURLOPT_POSTFIELDS     => $payload,
+    CURLOPT_TIMEOUT        => 15,
+    CURLOPT_HTTPHEADER     => [
+      'api-key: ' . $apiKey,
+      'Content-Type: application/json',
+      'Accept: application/json',
+    ],
+  ]);
+  $resp     = curl_exec($ch);
+  $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+  curl_close($ch);
+  return $httpCode === 201;
 }
