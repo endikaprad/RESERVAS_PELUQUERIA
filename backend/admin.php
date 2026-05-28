@@ -5139,28 +5139,28 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
 
                 let html = `
     <style>
-      .hm3-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
-      .hm3-legend{display:flex;align-items:center;gap:5px;}
-      .hm3-legend span{font-size:10px;color:#4a4a5a;}
-      .hm3-lswatch{width:11px;height:11px;border-radius:3px;}
-      .hm3-nav{display:flex;align-items:center;gap:.5rem;}
-      .hm3-nav-btn{width:30px;height:30px;border-radius:50%;background:transparent;border:1px solid #252530;color:#7a7880;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:.9rem;transition:all .2s;font-family:'DM Sans',sans-serif;}
-      .hm3-nav-btn:hover{border-color:#d42b2b;color:#d42b2b;}
-      .hm3-calendar{display:flex;gap:0;flex-wrap:wrap;}
-      .hm3-month{flex:1;min-width:200px;padding-right:20px;}
-      .hm3-month:last-child{padding-right:0;}
-      .hm3-mname{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#d42b2b;font-weight:600;margin-bottom:8px;}
-      .hm3-dow-row{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-bottom:3px;}
-      .hm3-dow{font-size:10px;color:#3a3a48;text-align:center;padding:2px 0;}
-      .hm3-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;}
-      .hm3-c{aspect-ratio:1;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:9px;position:relative;cursor:default;}
-      .hm3-c:hover .hm3-tip{display:block;}
-      .hm3-tip{display:none;position:absolute;bottom:calc(100% + 4px);left:50%;transform:translateX(-50%);background:#1c1c26;border:1px solid #2f2f3c;border-radius:5px;padding:3px 8px;font-size:10px;color:#f0ece3;white-space:nowrap;z-index:20;pointer-events:none;}
-      .hm3-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:14px;}
-      .hm3-stat{background:#0d0d14;border:1px solid #1c1c26;border-radius:8px;padding:10px;text-align:center;}
-      .hm3-snum{font-family:'Playfair Display',serif;font-size:1.25rem;font-weight:700;line-height:1;}
-      .hm3-slbl{font-size:10px;color:#7a7880;letter-spacing:.1em;text-transform:uppercase;margin-top:3px;}
-    </style>
+        .hm3-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+        .hm3-legend{display:flex;align-items:center;gap:5px;}
+        .hm3-legend span{font-size:10px;color:#4a4a5a;}
+        .hm3-lswatch{width:11px;height:11px;border-radius:3px;}
+        .hm3-nav{display:flex;align-items:center;gap:.5rem;}
+        .hm3-nav-btn{width:32px;height:32px;border-radius:50%;background:rgba(245,240,232,0.06);border:1px solid rgba(245,240,232,0.15);color:#f0ece3;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:1rem;font-weight:700;transition:all .2s;font-family:'DM Sans',sans-serif;line-height:1;}
+        .hm3-nav-btn:hover{border-color:#d42b2b;color:#d42b2b;background:rgba(212,43,43,0.1);}
+        .hm3-calendar{display:flex;gap:0;flex-wrap:wrap;}
+        .hm3-month{flex:1;min-width:200px;padding-right:20px;}
+        .hm3-month:last-child{padding-right:0;}
+        .hm3-mname{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#d42b2b;font-weight:600;margin-bottom:8px;}
+        .hm3-dow-row{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-bottom:3px;}
+        .hm3-dow{font-size:10px;color:#3a3a48;text-align:center;padding:2px 0;}
+        .hm3-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;}
+        .hm3-c{aspect-ratio:1;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:9px;position:relative;cursor:default;}
+        .hm3-c:hover .hm3-tip{display:block;}
+        .hm3-tip{display:none;position:absolute;bottom:calc(100% + 4px);left:50%;transform:translateX(-50%);background:#1c1c26;border:1px solid #2f2f3c;border-radius:5px;padding:3px 8px;font-size:10px;color:#f0ece3;white-space:nowrap;z-index:20;pointer-events:none;}
+        .hm3-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:14px;}
+        .hm3-stat{background:#0d0d14;border:1px solid #1c1c26;border-radius:8px;padding:10px;text-align:center;}
+        .hm3-snum{font-family:'Playfair Display',serif;font-size:1.25rem;font-weight:700;line-height:1;}
+        .hm3-slbl{font-size:10px;color:#7a7880;letter-spacing:.1em;text-transform:uppercase;margin-top:3px;}
+        </style>
     <div class="hm3-top">
       <div style="display:flex;align-items:center;gap:.75rem;">
         <div style="font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:#7a7880;">Reservas por día</div>
