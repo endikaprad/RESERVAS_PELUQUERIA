@@ -6044,6 +6044,375 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
 
         })();
     </script>
+    <script>
+        // ============================================================
+//  PRADO BARBER CO. — admin-recordatorios.js
+//  Pestaña "Recordatorios" dentro del panel de configuración
+// ============================================================
+
+(function initRecordatorios() {
+    'use strict';
+
+    const API_STATUS  = './api/reminder-status.php';
+    const API_TRIGGER = './api/reminder.php';
+
+    // ── Inyectar HTML de la pestaña en el panel de config ─────
+    // Se llama una vez que el DOM está listo
+    function injectTab() {
+        // 1. Añadir el botón de la pestaña
+        const tabsEl = document.querySelector('.cfg-tabs');
+        if (!tabsEl) return;
+
+        // Evitar duplicados
+        if (document.getElementById('cfg-tab-reminders')) return;
+
+        const tabBtn = document.createElement('button');
+        tabBtn.className    = 'cfg-tab';
+        tabBtn.id           = 'cfg-tab-reminders';
+        tabBtn.textContent  = 'Recordatorios';
+        tabBtn.setAttribute('onclick', "switchTab('recordatorios')");
+        tabsEl.appendChild(tabBtn);
+
+        // 2. Añadir el panel de contenido
+        const cfgBody = document.querySelector('.cfg-body');
+        if (!cfgBody) return;
+
+        const pane = document.createElement('div');
+        pane.className = 'cfg-pane';
+        pane.id        = 'pane-recordatorios';
+        pane.innerHTML = getPaneHTML();
+        cfgBody.appendChild(pane);
+
+        // 3. Parchear switchTab para cargar datos al abrir
+        patchSwitchTab();
+    }
+
+    // ── HTML del panel ────────────────────────────────────────
+    function getPaneHTML() {
+        return `
+        <!-- KPIs -->
+        <div class="cfg-section-label">Esta semana</div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:1.5rem;">
+            <div class="rd-stat-kpi rd-stat-accent" id="rm-kpi-enviados">
+                <div class="rd-stat-val">—</div>
+                <div class="rd-stat-lbl">Enviados</div>
+            </div>
+            <div class="rd-stat-kpi" id="rm-kpi-pendientes">
+                <div class="rd-stat-val">—</div>
+                <div class="rd-stat-lbl">Pendientes mañana</div>
+            </div>
+            <div class="rd-stat-kpi" id="rm-kpi-errores">
+                <div class="rd-stat-val">—</div>
+                <div class="rd-stat-lbl">Errores</div>
+            </div>
+        </div>
+
+        <!-- Citas de mañana -->
+        <div class="cfg-section-label" style="display:flex;align-items:center;justify-content:space-between;">
+            <span>Citas de mañana</span>
+            <button onclick="rmLoadStatus()" id="rm-refresh-btn"
+                style="font-size:.65rem;padding:.25rem .65rem;border-radius:5px;
+                       background:transparent;border:1px solid #252530;color:#7a7880;
+                       font-family:'DM Sans',sans-serif;letter-spacing:.08em;
+                       text-transform:uppercase;cursor:pointer;transition:all .2s;"
+                onmouseover="this.style.borderColor='#d42b2b';this.style.color='#d42b2b';"
+                onmouseout="this.style.borderColor='#252530';this.style.color='#7a7880';">
+                ↻ Actualizar
+            </button>
+        </div>
+        <div id="rm-manana-list" style="margin-bottom:1.5rem;">
+            <div class="datos-loading">Cargando…</div>
+        </div>
+
+        <!-- Disparador manual -->
+        <div class="cfg-section-label">Envío manual</div>
+        <div style="background:#18181f;border:1px solid #252530;border-radius:10px;padding:1rem 1.25rem;margin-bottom:1rem;">
+            <p style="font-size:.8rem;color:#7a7880;line-height:1.6;margin-bottom:.85rem;">
+                Lanza el script de recordatorios ahora mismo. Solo enviará a citas de mañana que aún no hayan recibido recordatorio.
+            </p>
+            <button id="rm-trigger-btn" onclick="rmTrigger()"
+                style="width:100%;padding:.8rem;border-radius:7px;
+                       background:linear-gradient(135deg,#c9a84c,#a17c2d);
+                       border:none;color:#000;font-family:'DM Sans',sans-serif;
+                       font-size:.78rem;font-weight:700;letter-spacing:.1em;
+                       text-transform:uppercase;cursor:pointer;transition:all .25s;
+                       box-shadow:0 4px 16px rgba(201,168,76,.2);">
+                ▶ Enviar recordatorios ahora
+            </button>
+            <div id="rm-trigger-status" class="cfg-status"></div>
+        </div>
+
+        <!-- Configuración cron -->
+        <div class="cfg-section-label">Configuración automática</div>
+        <div style="background:#18181f;border:1px solid rgba(201,168,76,.15);border-radius:10px;padding:1rem 1.25rem;margin-bottom:1.5rem;">
+            <div style="font-size:.75rem;color:#c9a84c;font-weight:600;letter-spacing:.08em;text-transform:uppercase;margin-bottom:.75rem;">
+                ⚙ Cron job recomendado (diario a las 9:00)
+            </div>
+            <div style="background:#0d0d14;border:1px solid #1c1c26;border-radius:6px;padding:.65rem .85rem;margin-bottom:.75rem;position:relative;">
+                <code id="rm-cron-cmd" style="font-family:monospace;font-size:.75rem;color:#c9a84c;word-break:break-all;">
+                    Cargando…
+                </code>
+                <button onclick="rmCopyCmd()" title="Copiar"
+                    style="position:absolute;top:6px;right:6px;width:26px;height:26px;
+                           border-radius:5px;background:transparent;border:1px solid #252530;
+                           color:#7a7880;cursor:pointer;font-size:.8rem;display:flex;
+                           align-items:center;justify-content:center;transition:all .2s;"
+                    onmouseover="this.style.borderColor='#c9a84c';this.style.color='#c9a84c';"
+                    onmouseout="this.style.borderColor='#252530';this.style.color='#7a7880';">
+                    ⎘
+                </button>
+            </div>
+            <p style="font-size:.75rem;color:#7a7880;line-height:1.55;margin:0;">
+                Si el hosting no permite cron jobs, usa un servicio externo como
+                <a href="https://cron-job.org" target="_blank" style="color:#c9a84c;">cron-job.org</a>
+                (gratuito) para llamar a la URL del script diariamente.
+            </p>
+            <div style="margin-top:.75rem;">
+                <div style="font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;color:#7a7880;margin-bottom:.4rem;">URL directa del script</div>
+                <div style="background:#0d0d14;border:1px solid #1c1c26;border-radius:6px;padding:.65rem .85rem;position:relative;">
+                    <code id="rm-cron-url" style="font-family:monospace;font-size:.72rem;color:#9ca3af;word-break:break-all;">
+                        Cargando…
+                    </code>
+                    <button onclick="rmCopyUrl()" title="Copiar URL"
+                        style="position:absolute;top:6px;right:6px;width:26px;height:26px;
+                               border-radius:5px;background:transparent;border:1px solid #252530;
+                               color:#7a7880;cursor:pointer;font-size:.8rem;display:flex;
+                               align-items:center;justify-content:center;transition:all .2s;"
+                        onmouseover="this.style.borderColor='#c9a84c';this.style.color='#c9a84c';"
+                        onmouseout="this.style.borderColor='#252530';this.style.color='#7a7880';">
+                        ⎘
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Historial de envíos -->
+        <div class="cfg-section-label">Historial reciente</div>
+        <div id="rm-log-list">
+            <div class="datos-loading">Cargando…</div>
+        </div>
+
+        <div class="cfg-status" id="rm-load-status"></div>
+        `;
+    }
+
+    // ── Estado guardado ───────────────────────────────────────
+    let rmData = null;
+
+    // ── Cargar datos del API ──────────────────────────────────
+    window.rmLoadStatus = async function () {
+        const refreshBtn = document.getElementById('rm-refresh-btn');
+        if (refreshBtn) { refreshBtn.textContent = '↻ …'; refreshBtn.disabled = true; }
+
+        try {
+            const res  = await fetch(API_STATUS);
+            const json = await res.json();
+
+            if (!json.ok) {
+                showRmStatus('rm-load-status', false, json.error || 'Error al cargar');
+                return;
+            }
+
+            rmData = json.data;
+            renderKPIs(rmData.stats);
+            renderManana(rmData.reservas_manana, rmData.manana);
+            renderLog(rmData.log_recientes);
+            renderCronInfo(rmData.cron_cmd, rmData.cron_url);
+
+        } catch (e) {
+            showRmStatus('rm-load-status', false, 'Error de conexión');
+        } finally {
+            if (refreshBtn) { refreshBtn.textContent = '↻ Actualizar'; refreshBtn.disabled = false; }
+        }
+    };
+
+    // ── KPIs ──────────────────────────────────────────────────
+    function renderKPIs(stats) {
+        const env  = document.querySelector('#rm-kpi-enviados .rd-stat-val');
+        const pend = document.querySelector('#rm-kpi-pendientes .rd-stat-val');
+        const err  = document.querySelector('#rm-kpi-errores .rd-stat-val');
+
+        if (env)  env.textContent  = stats.total_enviados;
+        if (pend) { pend.textContent = stats.pendientes_manana; pend.style.color = stats.pendientes_manana > 0 ? '#f59e0b' : '#f0ece3'; }
+        if (err)  { err.textContent  = stats.total_errores; err.style.color = stats.total_errores > 0 ? '#d42b2b' : '#f0ece3'; }
+    }
+
+    // ── Reservas de mañana ────────────────────────────────────
+    function renderManana(reservas, fechaManana) {
+        const el = document.getElementById('rm-manana-list');
+        if (!el) return;
+
+        if (!reservas || !reservas.length) {
+            el.innerHTML = `<div style="text-align:center;padding:1.5rem;color:#7a7880;font-size:.8rem;border:1px dashed #252530;border-radius:8px;">No hay citas confirmadas para el ${fechaManana}</div>`;
+            return;
+        }
+
+        el.innerHTML = reservas.map(r => {
+            const enviado = r.recordatorio_enviado == 1;
+            return `
+            <div style="display:flex;align-items:center;gap:.75rem;background:#18181f;
+                        border:1px solid ${enviado ? 'rgba(34,197,94,.25)' : 'rgba(245,158,11,.2)'};
+                        border-radius:9px;padding:.65rem 1rem;margin-bottom:.4rem;">
+                <div style="width:32px;height:32px;border-radius:7px;
+                            background:${enviado ? 'rgba(34,197,94,.1)' : 'rgba(245,158,11,.1)'};
+                            border:1px solid ${enviado ? 'rgba(34,197,94,.25)' : 'rgba(245,158,11,.25)'};
+                            display:flex;align-items:center;justify-content:center;
+                            font-size:.7rem;color:${enviado ? '#22c55e' : '#f59e0b'};
+                            font-weight:700;flex-shrink:0;">
+                    ${enviado ? '✓' : '⏳'}
+                </div>
+                <div style="flex:1;min-width:0;">
+                    <div style="font-size:.875rem;font-weight:500;color:#f0ece3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+                        ${escHtml(r.cliente_nombre)}
+                    </div>
+                    <div style="font-size:.72rem;color:#7a7880;margin-top:.1rem;">
+                        ${escHtml(r.servicio)} · ${escHtml(r.barbero)}
+                    </div>
+                </div>
+                <div style="text-align:right;flex-shrink:0;">
+                    <div style="font-size:.95rem;font-weight:700;color:#c9a84c;">${r.hora}</div>
+                    <div style="font-size:.68rem;color:${enviado ? '#22c55e' : '#7a7880'};">
+                        ${enviado ? 'Recordatorio ✓' : 'Sin recordatorio'}
+                    </div>
+                </div>
+            </div>`;
+        }).join('');
+    }
+
+    // ── Historial de log ──────────────────────────────────────
+    function renderLog(logs) {
+        const el = document.getElementById('rm-log-list');
+        if (!el) return;
+
+        if (!logs || !logs.length) {
+            el.innerHTML = '<div style="text-align:center;padding:1.5rem;color:#7a7880;font-size:.8rem;border:1px dashed #252530;border-radius:8px;">Sin registros aún. Los recordatorios aparecerán aquí una vez enviados.</div>';
+            return;
+        }
+
+        el.innerHTML = `
+        <div style="max-height:260px;overflow-y:auto;border:1px solid #252530;border-radius:8px;overflow-x:hidden;">
+            ${logs.map((l, i) => {
+                const ok = l.resultado === 'ok';
+                const fechaEnvio = l.enviado_en ? l.enviado_en.slice(0, 16).replace('T', ' ') : '—';
+                const bg = i % 2 === 0 ? '#18181f' : '#111119';
+                return `
+                <div style="display:flex;align-items:center;gap:.6rem;padding:.6rem 1rem;
+                            background:${bg};border-bottom:1px solid #1a1a26;">
+                    <span style="font-size:.75rem;color:${ok ? '#22c55e' : '#d42b2b'};
+                                 flex-shrink:0;width:14px;">
+                        ${ok ? '✓' : '✕'}
+                    </span>
+                    <div style="flex:1;min-width:0;">
+                        <div style="font-size:.78rem;color:#f0ece3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+                            ${escHtml(l.cliente_nombre || '#' + l.reserva_id)}
+                        </div>
+                        <div style="font-size:.68rem;color:#7a7880;">
+                            Cita: ${l.fecha_cita || '?'} ${l.hora_cita || ''}
+                        </div>
+                    </div>
+                    <div style="text-align:right;flex-shrink:0;">
+                        <div style="font-size:.68rem;color:#7a7880;">${fechaEnvio}</div>
+                    </div>
+                </div>`;
+            }).join('')}
+        </div>`;
+    }
+
+    // ── Cron info ─────────────────────────────────────────────
+    function renderCronInfo(cmd, url) {
+        const cmdEl = document.getElementById('rm-cron-cmd');
+        const urlEl = document.getElementById('rm-cron-url');
+        if (cmdEl) cmdEl.textContent = cmd || '—';
+        if (urlEl) urlEl.textContent = url || '—';
+    }
+
+    // ── Copiar al portapapeles ────────────────────────────────
+    window.rmCopyCmd = function () {
+        const el = document.getElementById('rm-cron-cmd');
+        navigator.clipboard.writeText(el ? el.textContent.trim() : '').then(() => {
+            showRmStatus('rm-load-status', true, '✓ Comando copiado al portapapeles.');
+        });
+    };
+    window.rmCopyUrl = function () {
+        const el = document.getElementById('rm-cron-url');
+        navigator.clipboard.writeText(el ? el.textContent.trim() : '').then(() => {
+            showRmStatus('rm-load-status', true, '✓ URL copiada al portapapeles.');
+        });
+    };
+
+    // ── Disparar manualmente ──────────────────────────────────
+    window.rmTrigger = async function () {
+        if (!rmData) { showRmStatus('rm-trigger-status', false, 'Carga el estado primero.'); return; }
+
+        const pendientes = rmData.stats.pendientes_manana;
+        if (pendientes === 0) {
+            showRmStatus('rm-trigger-status', false, 'No hay recordatorios pendientes para mañana.');
+            return;
+        }
+
+        if (!confirm(`¿Enviar ahora ${pendientes} recordatorio${pendientes !== 1 ? 's' : ''} para las citas de mañana?`)) return;
+
+        const btn = document.getElementById('rm-trigger-btn');
+        if (btn) { btn.disabled = true; btn.textContent = '⏳ Enviando…'; }
+
+        try {
+            const secretEl = document.getElementById('rm-cron-url');
+            const url = secretEl ? secretEl.textContent.trim() : API_TRIGGER;
+            const res  = await fetch(url);
+            const json = await res.json();
+
+            if (json.ok) {
+                showRmStatus('rm-trigger-status', true,
+                    `✓ ${json.enviados} recordatorio${json.enviados !== 1 ? 's' : ''} enviado${json.enviados !== 1 ? 's' : ''}.` +
+                    (json.errores > 0 ? ` ${json.errores} error${json.errores !== 1 ? 'es' : ''}.` : '')
+                );
+                // Recargar estado para reflejar los enviados
+                await rmLoadStatus();
+            } else {
+                showRmStatus('rm-trigger-status', false, json.error || 'Error al enviar.');
+            }
+        } catch (e) {
+            showRmStatus('rm-trigger-status', false, 'Error de conexión.');
+        } finally {
+            if (btn) { btn.disabled = false; btn.textContent = '▶ Enviar recordatorios ahora'; }
+        }
+    };
+
+    // ── Helpers ───────────────────────────────────────────────
+    function escHtml(str) {
+        return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    function showRmStatus(id, ok, msg) {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.className = 'cfg-status visible ' + (ok ? 'ok' : 'err');
+        el.textContent = msg;
+        clearTimeout(el._t);
+        el._t = setTimeout(() => el.classList.remove('visible'), 4000);
+    }
+
+    // ── Parchear switchTab para detectar apertura ─────────────
+    function patchSwitchTab() {
+        if (typeof window.switchTab !== 'function') {
+            setTimeout(patchSwitchTab, 60); return;
+        }
+        const _orig = window.switchTab;
+        window.switchTab = function (tab) {
+            _orig(tab);
+            if (tab === 'recordatorios') rmLoadStatus();
+        };
+    }
+
+    // ── Init ──────────────────────────────────────────────────
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', injectTab);
+    } else {
+        injectTab();
+    }
+
+})();
+    </script>
 </body>
 
 </html>
