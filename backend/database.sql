@@ -104,3 +104,7 @@ ALTER TABLE reservas MODIFY COLUMN estado
     ENUM('pendiente','aceptada','denegada','cancelada',
         'reprogramar_barbero','reprogramar_cliente')
     NOT NULL DEFAULT 'pendiente';
+
+-- Migración: marcar si el recordatorio ya fue enviado
+ALTER TABLE reservas
+  ADD COLUMN IF NOT EXISTS recordatorio_enviado TINYINT(1) NOT NULL DEFAULT 0 AFTER ronda_negociacion;
