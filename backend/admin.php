@@ -1152,7 +1152,9 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
             cursor: pointer;
             border-bottom: 2px solid transparent;
             transition: all .2s;
-            white-space: normal;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
             text-align: center;
         }
 
@@ -6155,7 +6157,8 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
         const tabBtn = document.createElement('button');
         tabBtn.className    = 'cfg-tab';
         tabBtn.id           = 'cfg-tab-reminders';
-        tabBtn.textContent  = 'Recordatorios';
+        tabBtn.textContent  = 'Avisos';
+        tabBtn.title        = 'Recordatorios';
         tabBtn.setAttribute('onclick', "switchTab('recordatorios')");
         tabsEl.appendChild(tabBtn);
 
