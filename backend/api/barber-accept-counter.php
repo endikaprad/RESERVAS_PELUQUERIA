@@ -1,19 +1,15 @@
 <?php
 // ============================================================
 //  PRADO BARBER CO. — /backend/api/barber-accept-counter.php
-//
 //  GET ?token=XXX&accion=aceptar|cancelar
-//
-//  El barbero hace clic en el email de contrapropuesta del cliente.
-//  aceptar  → pasa la reserva al nuevo horario del cliente, estado 'aceptada'
-//  cancelar → estado 'cancelada', notifica al cliente
+//  Con ICS adjunto al aceptar.
 // ============================================================
 
 header('Content-Type: text/html; charset=utf-8');
 header('Access-Control-Allow-Origin: *');
 
 require_once __DIR__ . '/../config.php';
-require_once __DIR__ . '/gcal_helper.php';
+require_once __DIR__ . '/gcal-helper.php';
 
 $token  = trim($_GET['token']  ?? '');
 $accion = trim($_GET['accion'] ?? '');
@@ -91,9 +87,9 @@ try {
              WHERE token = ?"
         )->execute([$nuevaFecha, $nuevaHora, $token]);
 
-        // ── Google Calendar ──────────────────────────────────────────
+        // ── ICS + Google Calendar ────────────────────────────────────────
         $duracionMinutos = parseDuracionMinutos($r['duracion'] ?? '30 min');
-        $gcalUrl   = buildGCalUrl(
+        $gcalUrl    = buildGCalUrl(
             $nuevaFecha,
             $horaNueva,
             $duracionMinutos,
@@ -101,9 +97,19 @@ try {
             $r['barbero_nombre'],
             $r['notas'] ?? ''
         );
-        $gcalBlock = buildGCalBlock($gcalUrl);
+        $gcalBlock  = buildGCalBlock($gcalUrl);
+        $icsUid     = 'reserva-' . $r['id'] . '-v2@pradobarber.es';
+        $icsContent = buildIcsContent(
+            $nuevaFecha,
+            $horaNueva,
+            $duracionMinutos,
+            $r['servicio_nombre'],
+            $r['barbero_nombre'],
+            $r['notas'] ?? '',
+            $icsUid
+        );
 
-        // ── Botón cancelar para el cliente ───────────────────────────
+        // ── Botón cancelar ───────────────────────────────────────────────
         $urlCancelar = $baseUrl . '/backend/api/cancel-booking.php?token=' . $r['token'];
         $cancelBox = "
       <div style='background:#18181f;border:1px solid #252530;border-radius:8px;padding:16px;margin-bottom:24px;text-align:center;'>
@@ -121,7 +127,7 @@ try {
         </p>
       </div>";
 
-        // Email al cliente confirmando
+        // Email al cliente con ICS
         $htmlCliente = "<!DOCTYPE html><html lang='es'><head><meta charset='UTF-8'></head>
 <body style='margin:0;padding:0;background:#09080f;font-family:Arial,sans-serif;'>
   <div style='max-width:560px;margin:0 auto;background:#111119;border:1px solid #252530;border-radius:12px;overflow:hidden;'>
@@ -153,7 +159,7 @@ try {
   </div>
 </body></html>";
 
-        // Email al peluquero avisando de la confirmación
+        // Email al peluquero (sin ICS)
         $htmlPeluquero = "<!DOCTYPE html><html lang='es'><head><meta charset='UTF-8'></head>
 <body style='margin:0;padding:0;background:#09080f;font-family:Arial,sans-serif;'>
   <div style='max-width:560px;margin:0 auto;background:#111119;border:1px solid #252530;border-radius:12px;overflow:hidden;'>
@@ -184,11 +190,13 @@ try {
   </div>
 </body></html>";
 
-        sendBrevo(
+        // Cliente recibe ICS adjunto, barbero no
+        sendBrevoWithIcs(
             $r['cliente_email'],
             $r['cliente_nombre'],
             'Cita confirmada — Prado Barber Co.',
-            $htmlCliente
+            $htmlCliente,
+            $icsContent
         );
         sendBrevo(
             'endikapradodev@gmail.com',
@@ -202,7 +210,7 @@ try {
             '¡Cita confirmada!',
             'Has aceptado el horario de <strong>' . htmlspecialchars($r['cliente_nombre']) . '</strong>.<br>
              Nueva cita: <strong>' . $fechaNueva . '</strong> a las <strong>' . $horaNueva . '</strong>.<br><br>
-             El cliente ha sido notificado con los detalles y el enlace de Google Calendar.'
+             El cliente ha sido notificado con el ICS para añadir la cita a su calendario.'
         );
     }
 
@@ -212,9 +220,6 @@ try {
     if ($accion === 'cancelar') {
         $db->prepare("UPDATE reservas SET estado = 'cancelada' WHERE token = ?")
             ->execute([$token]);
-
-        $fechaOriginal = $fmtFecha($r['fecha']);
-        $horaOriginal  = substr($r['hora'], 0, 5);
 
         $htmlCliente = "<!DOCTYPE html><html lang='es'><head><meta charset='UTF-8'></head>
 <body style='margin:0;padding:0;background:#09080f;font-family:Arial,sans-serif;'>
@@ -265,7 +270,6 @@ try {
     mostrarPagina('error', 'Error de base de datos', htmlspecialchars($e->getMessage()));
 }
 
-// ── Envío via Brevo API ──────────────────────────────────────
 function sendBrevo(string $toEmail, string $toName, string $subject, string $html): bool
 {
     $apiKey = defined('BREVO_API_KEY') ? BREVO_API_KEY : '';
@@ -294,7 +298,6 @@ function sendBrevo(string $toEmail, string $toName, string $subject, string $htm
     return $httpCode === 201;
 }
 
-// ── Página de resultado HTML ─────────────────────────────────
 function mostrarPagina(string $tipo, string $titulo, string $mensaje): never
 {
     $baseUrl = 'https://pradopeluqueria.infinityfree.me';

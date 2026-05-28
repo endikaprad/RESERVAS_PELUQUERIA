@@ -1,7 +1,7 @@
 <?php
 // ============================================================
 //  GET /api/reserva-action.php?token=XXX&accion=aceptar|denegar
-//  Con botón de Google Calendar en el email de aceptación.
+//  Con ICS adjunto (Google Calendar nativo en Gmail)
 // ============================================================
 
 header('Content-Type: text/html; charset=utf-8');
@@ -9,7 +9,7 @@ header('X-Content-Type-Options: nosniff');
 header('Access-Control-Allow-Origin: *');
 
 require_once __DIR__ . '/../config.php';
-require_once __DIR__ . '/gcal-helper.php';   // ← NUEVO
+require_once __DIR__ . '/gcal-helper.php';
 
 $token     = trim($_GET['token']  ?? '');
 $accion    = trim($_GET['accion'] ?? '');
@@ -72,11 +72,12 @@ try {
         $pieCliente    = 'Puedes hacer una nueva reserva en <a href="' . $baseUrl . '/reservas.html" style="color:#d42b2b;">nuestra web</a>.';
     }
 
-    // ── Google Calendar (solo si se acepta) ──────────────────────────
-    $gcalBlock = '';
+    // ── ICS + Google Calendar (solo al aceptar) ──────────────────────────
+    $gcalBlock  = '';
+    $icsContent = null;
     if ($accion === 'aceptar') {
         $duracionMinutos = parseDuracionMinutos($reserva['duracion'] ?? '30 min');
-        $gcalUrl  = buildGCalUrl(
+        $gcalUrl    = buildGCalUrl(
             $reserva['fecha'],
             $hora,
             $duracionMinutos,
@@ -84,10 +85,20 @@ try {
             $reserva['barbero_nombre'],
             $reserva['notas'] ?? ''
         );
-        $gcalBlock = buildGCalBlock($gcalUrl);
+        $gcalBlock  = buildGCalBlock($gcalUrl);
+        $icsUid     = 'reserva-' . $reserva['id'] . '@pradobarber.es';
+        $icsContent = buildIcsContent(
+            $reserva['fecha'],
+            $hora,
+            $duracionMinutos,
+            $reserva['servicio_nombre'],
+            $reserva['barbero_nombre'],
+            $reserva['notas'] ?? '',
+            $icsUid
+        );
     }
 
-    // ── Bloque cancelar (solo para reservas aceptadas) ───────────────
+    // ── Botón cancelar (solo al aceptar) ─────────────────────────────────
     $cancelBox = '';
     if ($accion === 'aceptar') {
         $urlCancelar = $baseUrl . '/backend/api/cancel-booking.php?token=' . $reserva['token'];
@@ -140,13 +151,18 @@ try {
   </div>
 </body></html>";
 
-    sendBrevo($reserva['cliente_email'], $reserva['cliente_nombre'], $asuntoCliente, $htmlCliente);
+    // Enviar con ICS si se acepta, sin ICS si se deniega
+    if ($accion === 'aceptar' && $icsContent) {
+        sendBrevoWithIcs($reserva['cliente_email'], $reserva['cliente_nombre'], $asuntoCliente, $htmlCliente, $icsContent);
+    } else {
+        sendBrevo($reserva['cliente_email'], $reserva['cliente_nombre'], $asuntoCliente, $htmlCliente);
+    }
 
     if ($accion === 'aceptar') {
         mostrarPagina('ok', 'Reserva aceptada!',
             'Has confirmado la cita de <strong>' . htmlspecialchars($reserva['cliente_nombre']) . '</strong><br>' .
             'para el <strong>' . $fechaFormateada . '</strong> a las <strong>' . $hora . '</strong>.<br><br>' .
-            'Se ha notificado al cliente por email con el enlace para añadir la cita a Google Calendar.',
+            'Se ha notificado al cliente con el ICS para añadir la cita a su calendario.',
             $fromAdmin);
     } else {
         mostrarPagina('denied', 'Reserva denegada',
@@ -159,7 +175,6 @@ try {
     mostrarPagina('error', 'Error de base de datos', htmlspecialchars($e->getMessage()), $fromAdmin);
 }
 
-// ── Envío via Brevo API ──────────────────────────────────────
 function sendBrevo(string $toEmail, string $toName, string $subject, string $html): bool {
     $apiKey = defined('BREVO_API_KEY') ? BREVO_API_KEY : '';
     if (!$apiKey) return false;
@@ -195,7 +210,6 @@ function sendBrevo(string $toEmail, string $toName, string $subject, string $htm
     return $httpCode === 201;
 }
 
-// ── Página de resultado HTML ─────────────────────────────────
 function mostrarPagina(string $tipo, string $titulo, string $mensaje, bool $fromAdmin = false): never {
     $baseUrl = 'https://pradopeluqueria.infinityfree.me';
     $colores = [

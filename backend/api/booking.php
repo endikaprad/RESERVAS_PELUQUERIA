@@ -1,10 +1,10 @@
 <?php
 // ============================================================
-//  POST /api/booking.php  — con Google Calendar
+//  POST /api/booking.php  — con ICS adjunto (Google Calendar nativo)
 // ============================================================
 
 require_once __DIR__ . '/helpers.php';
-require_once __DIR__ . '/gcal-helper.php';   // ← NUEVO
+require_once __DIR__ . '/gcal-helper.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     jsonError('Método no permitido', 405);
@@ -148,10 +148,12 @@ try {
         </p>
       </div>";
 
-    // ── Google Calendar URL ──────────────────────────────────────────
+    // ── ICS + Google Calendar (solo para reservas ACEPTADAS) ─────────────
     $duracionMinutos = parseDuracionMinutos($servicioRow['duracion'] ?? '30 min');
-    $gcalUrl  = buildGCalUrl($fecha, $hora, $duracionMinutos, $servicioRow['nombre'], $barberoRow['nombre'], $notas);
+    $gcalUrl   = buildGCalUrl($fecha, $hora, $duracionMinutos, $servicioRow['nombre'], $barberoRow['nombre'], $notas);
     $gcalBlock = buildGCalBlock($gcalUrl);
+    $icsUid    = 'reserva-' . $id . '@pradobarber.es';
+    $icsContent = buildIcsContent($fecha, $hora, $duracionMinutos, $servicioRow['nombre'], $barberoRow['nombre'], $notas, $icsUid);
 
     // ================================================================
     //  EMAIL AL PELUQUERO
@@ -306,7 +308,7 @@ try {
             <td style='padding:10px 0;color:#c9a84c;font-size:16px;font-weight:700;'>{$hora}</td></tr>
       </table>
       <div style='background:rgba(201,168,76,.06);border:1px solid rgba(201,168,76,.2);border-radius:8px;padding:14px 16px;margin-bottom:24px;font-size:13px;color:#d4a84b;'>
-        ⏳ Una vez que el barbero confirme tu cita, recibirás otro email con el enlace para añadirla a Google Calendar.
+        ⏳ Una vez que el barbero confirme tu cita, recibirás otro email con el ICS para añadirla a tu calendario.
       </div>
       {$cancelBox}
     </div>
@@ -325,8 +327,15 @@ try {
         ? "Reserva #{$id} auto-aceptada - {$nombre} - {$fechaFormateada} {$hora}"
         : "Nueva reserva #{$id} - {$nombre} - {$fechaFormateada} {$hora}";
 
+    // Peluquero: email simple sin ICS
     sendBrevo('endikapradodev@gmail.com', 'Prado Barber Co.', $asuntoPeluquero, $htmlPeluquero);
-    sendBrevo($email, $nombre, $asuntoCliente, $htmlCliente);
+
+    // Cliente: con ICS adjunto si la reserva está aceptada, sin ICS si está pendiente
+    if ($estadoFinal === 'aceptada') {
+        sendBrevoWithIcs($email, $nombre, $asuntoCliente, $htmlCliente, $icsContent);
+    } else {
+        sendBrevo($email, $nombre, $asuntoCliente, $htmlCliente);
+    }
 
     $mensaje = $estadoFinal === 'aceptada'
         ? '¡Reserva confirmada! Te hemos enviado los detalles por email.'
