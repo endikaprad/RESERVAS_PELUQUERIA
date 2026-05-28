@@ -5068,18 +5068,74 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
                     },
                 ];
 
-                const start = new Date(today);
-                start.setDate(start.getDate() - 29);
+                const todayISO = today.toISOString().slice(0, 10);
 
-                const months = [];
-                let cur = new Date(start.getFullYear(), start.getMonth(), 1);
-                const endMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-                while (cur <= endMonth) {
-                    months.push(new Date(cur));
-                    cur.setMonth(cur.getMonth() + 1);
+                // Estado de navegación: offset en meses desde el mes actual
+                // offset=0 → muestra mes anterior y mes actual
+                // offset=-1 → muestra hace 2 meses y mes anterior, etc.
+                let hmOffset = 0;
+
+                function getMonthRange(offset) {
+                    // Mostrar dos meses: (hoy - 1 + offset) y (hoy + offset)
+                    const m1 = new Date(today.getFullYear(), today.getMonth() - 1 + offset, 1);
+                    const m2 = new Date(today.getFullYear(), today.getMonth() + offset, 1);
+                    return [m1, m2];
                 }
 
-                const todayISO = today.toISOString().slice(0, 10);
+                function renderMonth(mDate) {
+                    const y = mDate.getFullYear(),
+                        m = mDate.getMonth();
+                    const daysInMonth = new Date(y, m + 1, 0).getDate();
+                    const firstDow = (new Date(y, m, 1).getDay() + 6) % 7;
+
+                    let html = `<div class="hm3-month">`;
+                    html += `<div class="hm3-mname">${MONTHS_ES[m]} ${y}</div>`;
+                    html += `<div class="hm3-dow-row">`;
+                    DOW.forEach(d => html += `<div class="hm3-dow">${d}</div>`);
+                    html += `</div><div class="hm3-grid">`;
+
+                    for (let p = 0; p < firstDow; p++) html += `<div class="hm3-c" style="background:transparent;border:none;"></div>`;
+
+                    const start30 = new Date(today);
+                    start30.setDate(start30.getDate() - 29);
+
+                    for (let d = 1; d <= daysInMonth; d++) {
+                        const dt = new Date(y, m, d);
+                        const iso = `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+                        const isInRange = dt >= start30 && dt <= today;
+                        const isToday = iso === todayISO;
+                        const v = map[iso] || 0;
+
+                        if (!isInRange) {
+                            html += `<div class="hm3-c" style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.04);color:#2a2a38;">${d}</div>`;
+                        } else {
+                            const c = COLORS[getLevel(v)];
+                            const txtColor = getLevel(v) >= 3 ? 'rgba(255,255,255,0.85)' : '#4a4a5a';
+                            const border = isToday ? '2px solid rgba(212,43,43,0.8)' : `1px solid ${c.border}`;
+                            html += `<div class="hm3-c" style="background:${c.bg};border:${border};color:${txtColor};">${d}`;
+                            if (v > 0) html += `<div class="hm3-tip">${v} cita${v!==1?'s':''}</div>`;
+                            html += `</div>`;
+                        }
+                    }
+                    html += `</div></div>`;
+                    return html;
+                }
+
+                function renderHeatmapContent() {
+                    const [m1, m2] = getMonthRange(hmOffset);
+                    const isFuture = hmOffset > 0;
+                    // No permitir navegar al futuro más allá del mes actual
+                    document.getElementById('hm-btn-next').style.opacity = hmOffset >= 0 ? '0.3' : '1';
+                    document.getElementById('hm-btn-next').style.pointerEvents = hmOffset >= 0 ? 'none' : 'auto';
+
+                    document.getElementById('hm-calendar').innerHTML = renderMonth(m1) + renderMonth(m2);
+                }
+
+                // Stats
+                const totalCitas = Object.values(map).reduce((a, b) => a + b, 0);
+                const diasActivos = Object.keys(map).filter(k => map[k] > 0).length;
+                const maxEntry = Object.entries(map).sort((a, b) => b[1] - a[1])[0];
+                const avgCitas = diasActivos > 0 ? (totalCitas / diasActivos).toFixed(1) : '0';
 
                 let html = `
     <style>
@@ -5087,6 +5143,9 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
       .hm3-legend{display:flex;align-items:center;gap:5px;}
       .hm3-legend span{font-size:10px;color:#4a4a5a;}
       .hm3-lswatch{width:11px;height:11px;border-radius:3px;}
+      .hm3-nav{display:flex;align-items:center;gap:.5rem;}
+      .hm3-nav-btn{width:30px;height:30px;border-radius:50%;background:transparent;border:1px solid #252530;color:#7a7880;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:.9rem;transition:all .2s;font-family:'DM Sans',sans-serif;}
+      .hm3-nav-btn:hover{border-color:#d42b2b;color:#d42b2b;}
       .hm3-calendar{display:flex;gap:0;flex-wrap:wrap;}
       .hm3-month{flex:1;min-width:200px;padding-right:20px;}
       .hm3-month:last-child{padding-right:0;}
@@ -5103,7 +5162,13 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
       .hm3-slbl{font-size:10px;color:#7a7880;letter-spacing:.1em;text-transform:uppercase;margin-top:3px;}
     </style>
     <div class="hm3-top">
-      <div style="font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:#7a7880;">Reservas por día</div>
+      <div style="display:flex;align-items:center;gap:.75rem;">
+        <div style="font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:#7a7880;">Reservas por día</div>
+        <div class="hm3-nav">
+          <button class="hm3-nav-btn" id="hm-btn-prev" title="Mes anterior">‹</button>
+          <button class="hm3-nav-btn" id="hm-btn-next" title="Mes siguiente" style="opacity:0.3;pointer-events:none;">›</button>
+        </div>
+      </div>
       <div class="hm3-legend">
         <span>Sin reservas</span>`;
 
@@ -5111,56 +5176,27 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
                     html += `<div class="hm3-lswatch" style="background:${c.bg};border:1px solid ${c.border};"></div>`;
                 });
                 html += `<span>Muchas</span></div></div>`;
-                html += `<div class="hm3-calendar">`;
-
-                months.forEach((mDate) => {
-                    const y = mDate.getFullYear(),
-                        m = mDate.getMonth();
-                    const daysInMonth = new Date(y, m + 1, 0).getDate();
-                    const firstDow = (new Date(y, m, 1).getDay() + 6) % 7;
-
-                    html += `<div class="hm3-month">`;
-                    html += `<div class="hm3-mname">${MONTHS_ES[m]} ${y}</div>`;
-                    html += `<div class="hm3-dow-row">`;
-                    DOW.forEach(d => html += `<div class="hm3-dow">${d}</div>`);
-                    html += `</div><div class="hm3-grid">`;
-
-                    for (let p = 0; p < firstDow; p++) html += `<div class="hm3-c" style="background:transparent;border:none;"></div>`;
-
-                    for (let d = 1; d <= daysInMonth; d++) {
-                        const dt = new Date(y, m, d);
-                        const iso = `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-                        const isInRange = dt >= start && dt <= today;
-                        const isToday = iso === todayISO;
-                        const v = map[iso] || 0;
-
-                        if (!isInRange) {
-                            html += `<div class="hm3-c" style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.04);color:#2a2a38;">${d}</div>`;
-                        } else {
-                            const c = COLORS[getLevel(v)];
-                            const txtColor = getLevel(v) >= 3 ? 'rgba(255,255,255,0.85)' : '#4a4a5a';
-                            const border = isToday ? '2px solid rgba(212,43,43,0.8)' : `1px solid ${c.border}`;
-                            html += `<div class="hm3-c" style="background:${c.bg};border:${border};color:${txtColor};">${d}`;
-                            if (v > 0) html += `<div class="hm3-tip">${v} cita${v!==1?'s':''}</div>`;
-                            html += `</div>`;
-                        }
-                    }
-                    html += `</div></div>`;
-                });
-
-                html += `</div>`;
-
-                const totalCitas = Object.values(map).reduce((a, b) => a + b, 0);
-                const diasActivos = Object.keys(map).filter(k => map[k] > 0).length;
-                const maxEntry = Object.entries(map).sort((a, b) => b[1] - a[1])[0];
-                const avgCitas = diasActivos > 0 ? (totalCitas / diasActivos).toFixed(1) : '0';
-
+                html += `<div class="hm3-calendar" id="hm-calendar"></div>`;
                 html += `<div class="hm3-stats">
       <div class="hm3-stat"><div class="hm3-snum" style="color:#d42b2b;">${totalCitas}</div><div class="hm3-slbl">Total 30d</div></div>
       <div class="hm3-stat"><div class="hm3-snum" style="color:#c9a84c;">${diasActivos}</div><div class="hm3-slbl">Días activos</div></div>
       <div class="hm3-stat"><div class="hm3-snum" style="color:#22c55e;">${maxEntry ? maxEntry[1] : 0}</div><div class="hm3-slbl">Máx. día</div></div>
       <div class="hm3-stat"><div class="hm3-snum" style="color:#6b9fff;">${avgCitas}</div><div class="hm3-slbl">Media/día activo</div></div>
     </div>`;
+
+                // Inicializar después de insertar en DOM
+                setTimeout(() => {
+                    renderHeatmapContent();
+                    document.getElementById('hm-btn-prev').addEventListener('click', () => {
+                        hmOffset--;
+                        renderHeatmapContent();
+                    });
+                    document.getElementById('hm-btn-next').addEventListener('click', () => {
+                        if (hmOffset >= 0) return;
+                        hmOffset++;
+                        renderHeatmapContent();
+                    });
+                }, 0);
 
                 return html;
             }
