@@ -4,7 +4,7 @@
 // ============================================================
 
 require_once __DIR__ . '/helpers.php';
-require_once __DIR__ . '/gcal_helper.php';   // ← NUEVO
+require_once __DIR__ . '/gcal-helper.php';   // ← NUEVO
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     jsonError('Método no permitido', 405);

@@ -9,7 +9,7 @@ header('X-Content-Type-Options: nosniff');
 header('Access-Control-Allow-Origin: *');
 
 require_once __DIR__ . '/../config.php';
-require_once __DIR__ . '/gcal_helper.php';   // ← NUEVO
+require_once __DIR__ . '/gcal-helper.php';   // ← NUEVO
 
 $token     = trim($_GET['token']  ?? '');
 $accion    = trim($_GET['accion'] ?? '');
