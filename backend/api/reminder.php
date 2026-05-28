@@ -22,7 +22,15 @@
 // ── Seguridad: proteger la llamada HTTP ──────────────────────
 // Si se llama por HTTP (no CLI), exigir el token secreto
 if (php_sapi_name() !== 'cli') {
+    header('Access-Control-Allow-Origin: *');
+    header('Access-Control-Allow-Methods: GET, OPTIONS');
+    header('Access-Control-Allow-Headers: Content-Type');
     header('Content-Type: application/json; charset=utf-8');
+
+    if (($_SERVER['REQUEST_METHOD'] ?? '') === 'OPTIONS') {
+        http_response_code(200);
+        exit;
+    }
 
     $secretToken = defined('REMINDER_SECRET') ? REMINDER_SECRET : 'prado-reminder-2026';
     $provided    = $_GET['secret'] ?? '';
@@ -40,7 +48,9 @@ require_once __DIR__ . '/gcal-helper.php';
 // ── Función de log ───────────────────────────────────────────
 function logMsg(string $msg): void {
     $line = '[' . date('Y-m-d H:i:s') . '] ' . $msg . PHP_EOL;
-    echo $line;
+    if (php_sapi_name() === 'cli') {
+        echo $line;
+    }
     // También a error_log para que InfinityFree lo capture
     error_log('REMINDER: ' . $msg);
 }
