@@ -1134,16 +1134,17 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
             border-bottom: 1px solid #252530;
             flex-shrink: 0;
             overflow: hidden;
+            padding: 0 .55rem;
         }
 
         .cfg-tab {
             flex: 1;
             min-width: 0;
-            padding: .82rem .45rem;
+            padding: .82rem .36rem;
             background: transparent;
             border: none;
             font-family: 'DM Sans', sans-serif;
-            font-size: .66rem;
+            font-size: .64rem;
             font-weight: 700;
             letter-spacing: .055em;
             line-height: 1.15;
@@ -4157,7 +4158,7 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
             <button class="cfg-close" onclick="closeCfg()">✕</button>
         </div>
         <div class="cfg-tabs">
-            <button class="cfg-tab active" onclick="switchTab('auto')">Auto-aceptar</button>
+            <button class="cfg-tab active" onclick="switchTab('auto')" title="Auto-aceptar">Auto</button>
             <button class="cfg-tab" onclick="switchTab('vac')">Vacaciones</button>
             <button class="cfg-tab" onclick="switchTab('horarios')">Horarios</button>
             <button class="cfg-tab" onclick="switchTab('datos')">Datos</button>
