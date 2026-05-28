@@ -246,18 +246,20 @@ try {
         // La propuesta va en nueva_fecha_propuesta y nueva_hora_propuesta.
         // slots.php marcará r.fecha+r.hora como ocupado por tener estado reprogramar_*.
         // Construir log con fecha incluida en el motivo del barbero
+        // Construir entrada de log con fecha/hora embebidas para recuperarlas luego
         $logEntry = $motivo . ' [propuesta: ' . $nuevaFecha . ' ' . $nuevaHora . ']';
+
         $db->prepare(
             "UPDATE reservas
-     SET estado                = 'reprogramar_barbero',
-         ronda_negociacion     = ?,
-         nueva_fecha_propuesta = ?,
-         nueva_hora_propuesta  = ?,
-         motivo_cambio         = CASE 
-             WHEN motivo_cambio IS NULL OR motivo_cambio = '' THEN ?
-             ELSE CONCAT(motivo_cambio, ' | ', ?)
-         END
-     WHERE token = ?"
+             SET estado                = 'reprogramar_barbero',
+                 ronda_negociacion     = ?,
+                 nueva_fecha_propuesta = ?,
+                 nueva_hora_propuesta  = ?,
+                 motivo_cambio         = CASE
+                     WHEN motivo_cambio IS NULL OR motivo_cambio = '' THEN ?
+                     ELSE CONCAT(motivo_cambio, ' | ', ?)
+                 END
+             WHERE token = ?"
         )->execute([$ronda, $nuevaFecha, $nuevaHora . ':00', $logEntry, $logEntry, $token]);
 
         $fechaNueva  = formatFechaES($nuevaFecha, $dias, $meses);
