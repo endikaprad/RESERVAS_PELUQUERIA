@@ -629,6 +629,7 @@
                 function renderHistItems() {
                     const items = d.historial.slice(0, histShown);
                     const hayMas = d.historial.length > histShown;
+                    const hayMenos = histShown > HIST_PAGE;
                     histEl.innerHTML = items.map(h => {
                         const isCancel = ['cancelada', 'denegada'].includes(h.estado);
                         return `<div class="cs-hist-item">
@@ -644,16 +645,32 @@
                             }
                         </div>`;
                     }).join('');
+
+                    const btnWrap = document.createElement('div');
+                    btnWrap.style.cssText = 'display:flex;gap:.5rem;margin-top:.6rem;';
+
                     if (hayMas) {
                         const remaining = d.historial.length - histShown;
-                        const btn = document.createElement('button');
-                        btn.textContent = `Ver ${Math.min(remaining, HIST_PAGE)} más (${remaining} restantes)`;
-                        btn.style.cssText = 'margin-top:.6rem;width:100%;padding:.55rem;border-radius:7px;background:transparent;border:1px dashed #252530;color:#7a7880;font-family:\'DM Sans\',sans-serif;font-size:.72rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;transition:all .2s;';
-                        btn.onmouseenter = () => { btn.style.borderColor = '#d42b2b'; btn.style.color = '#d42b2b'; };
-                        btn.onmouseleave = () => { btn.style.borderColor = '#252530'; btn.style.color = '#7a7880'; };
-                        btn.onclick = () => { histShown += HIST_PAGE; renderHistItems(); };
-                        histEl.appendChild(btn);
+                        const btnMas = document.createElement('button');
+                        btnMas.textContent = `Ver ${Math.min(remaining, HIST_PAGE)} más (${remaining} restantes)`;
+                        btnMas.style.cssText = 'flex:1;padding:.55rem;border-radius:7px;background:transparent;border:1px dashed #252530;color:#7a7880;font-family:\'DM Sans\',sans-serif;font-size:.72rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;transition:all .2s;';
+                        btnMas.onmouseenter = () => { btnMas.style.borderColor = '#d42b2b'; btnMas.style.color = '#d42b2b'; };
+                        btnMas.onmouseleave = () => { btnMas.style.borderColor = '#252530'; btnMas.style.color = '#7a7880'; };
+                        btnMas.onclick = () => { histShown += HIST_PAGE; renderHistItems(); };
+                        btnWrap.appendChild(btnMas);
                     }
+
+                    if (hayMenos) {
+                        const btnMenos = document.createElement('button');
+                        btnMenos.textContent = 'Ver menos';
+                        btnMenos.style.cssText = 'flex:1;padding:.55rem;border-radius:7px;background:transparent;border:1px dashed #252530;color:#7a7880;font-family:\'DM Sans\',sans-serif;font-size:.72rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;transition:all .2s;';
+                        btnMenos.onmouseenter = () => { btnMenos.style.borderColor = '#6b9fff'; btnMenos.style.color = '#6b9fff'; };
+                        btnMenos.onmouseleave = () => { btnMenos.style.borderColor = '#252530'; btnMenos.style.color = '#7a7880'; };
+                        btnMenos.onclick = () => { histShown = HIST_PAGE; renderHistItems(); };
+                        btnWrap.appendChild(btnMenos);
+                    }
+
+                    if (hayMas || hayMenos) histEl.appendChild(btnWrap);
                 }
 
                 renderHistItems();
