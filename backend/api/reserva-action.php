@@ -1,6 +1,7 @@
 <?php
 // ============================================================
 //  GET /api/reserva-action.php?token=XXX&accion=aceptar|denegar
+//  Con botón de Google Calendar en el email de aceptación.
 // ============================================================
 
 header('Content-Type: text/html; charset=utf-8');
@@ -8,6 +9,7 @@ header('X-Content-Type-Options: nosniff');
 header('Access-Control-Allow-Origin: *');
 
 require_once __DIR__ . '/../config.php';
+require_once __DIR__ . '/gcal_helper.php';   // ← NUEVO
 
 $token     = trim($_GET['token']  ?? '');
 $accion    = trim($_GET['accion'] ?? '');
@@ -70,7 +72,22 @@ try {
         $pieCliente    = 'Puedes hacer una nueva reserva en <a href="' . $baseUrl . '/reservas.html" style="color:#d42b2b;">nuestra web</a>.';
     }
 
-    // ── Bloque cancelar (solo para reservas aceptadas) ───────
+    // ── Google Calendar (solo si se acepta) ──────────────────────────
+    $gcalBlock = '';
+    if ($accion === 'aceptar') {
+        $duracionMinutos = parseDuracionMinutos($reserva['duracion'] ?? '30 min');
+        $gcalUrl  = buildGCalUrl(
+            $reserva['fecha'],
+            $hora,
+            $duracionMinutos,
+            $reserva['servicio_nombre'],
+            $reserva['barbero_nombre'],
+            $reserva['notas'] ?? ''
+        );
+        $gcalBlock = buildGCalBlock($gcalUrl);
+    }
+
+    // ── Bloque cancelar (solo para reservas aceptadas) ───────────────
     $cancelBox = '';
     if ($accion === 'aceptar') {
         $urlCancelar = $baseUrl . '/backend/api/cancel-booking.php?token=' . $reserva['token'];
@@ -113,6 +130,7 @@ try {
         <tr><td style='padding:10px 0;color:#7a7880;font-size:13px;'>Hora</td>
             <td style='padding:10px 0;color:{$colorHeader};font-size:16px;font-weight:700;'>{$hora}</td></tr>
       </table>
+      {$gcalBlock}
       {$cancelBox}
       " . ($pieCliente ? "<p style='color:#7a7880;font-size:13px;text-align:center;'>{$pieCliente}</p>" : "") . "
     </div>
@@ -128,7 +146,7 @@ try {
         mostrarPagina('ok', 'Reserva aceptada!',
             'Has confirmado la cita de <strong>' . htmlspecialchars($reserva['cliente_nombre']) . '</strong><br>' .
             'para el <strong>' . $fechaFormateada . '</strong> a las <strong>' . $hora . '</strong>.<br><br>' .
-            'Se ha notificado al cliente por email.',
+            'Se ha notificado al cliente por email con el enlace para añadir la cita a Google Calendar.',
             $fromAdmin);
     } else {
         mostrarPagina('denied', 'Reserva denegada',

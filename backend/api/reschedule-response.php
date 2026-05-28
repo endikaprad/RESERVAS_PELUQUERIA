@@ -4,12 +4,14 @@
 //
 //  El CLIENTE responde a una propuesta de cambio de horario.
 //  ?pt=TOKEN&accion=aceptar|rechazar
+//  Con botón de Google Calendar en el email de confirmación.
 // ============================================================
 
 header('Content-Type: text/html; charset=utf-8');
 header('Access-Control-Allow-Origin: *');
 
 require_once __DIR__ . '/../config.php';
+require_once __DIR__ . '/gcal_helper.php';   // ← NUEVO
 
 $token  = trim($_GET['pt']     ?? '');
 $accion = trim($_GET['accion'] ?? '');
@@ -22,7 +24,7 @@ try {
     $db = getDB();
 
     $stmt = $db->prepare(
-        'SELECT r.*, s.nombre AS servicio_nombre,
+        'SELECT r.*, s.nombre AS servicio_nombre, s.duracion,
                 b.nombre AS barbero_nombre, b.id AS barbero_id_val
          FROM reservas r
          JOIN servicios s ON s.id = r.servicio_id
@@ -107,7 +109,19 @@ try {
              WHERE token = ?"
         )->execute([$nuevaFecha, $nuevaHora, $token]);
 
-        // ── Botón cancelar para el email de confirmación ────
+        // ── Google Calendar ──────────────────────────────────────────
+        $duracionMinutos = parseDuracionMinutos($reserva['duracion'] ?? '30 min');
+        $gcalUrl   = buildGCalUrl(
+            $nuevaFecha,
+            $horaNueva,
+            $duracionMinutos,
+            $reserva['servicio_nombre'],
+            $reserva['barbero_nombre'],
+            $reserva['notas'] ?? ''
+        );
+        $gcalBlock = buildGCalBlock($gcalUrl);
+
+        // ── Botón cancelar ───────────────────────────────────────────
         $urlCancelarCliente = $baseUrl . '/backend/api/cancel-booking.php?token=' . $token;
         $cancelBox = "
       <div style='background:#18181f;border:1px solid #252530;border-radius:8px;padding:16px;margin-bottom:24px;text-align:center;'>
@@ -137,6 +151,7 @@ try {
                 ['Fecha',    $fechaNueva,                                   ''],
                 ['Hora',     $horaNueva,                                    '#22c55e'],
             ]).
+            $gcalBlock .
             $cancelBox
         );
 
@@ -161,7 +176,7 @@ try {
             'Cliente aceptó cambio - '.$reserva['cliente_nombre'], $htmlBarbero);
 
         mostrarPagina('ok','¡Cambio confirmado!',
-            'Tu nueva cita queda fijada para el <strong>'.$fechaNueva.'</strong> a las <strong>'.$horaNueva.'</strong>.<br><br>Hemos enviado la confirmación a tu email.'
+            'Tu nueva cita queda fijada para el <strong>'.$fechaNueva.'</strong> a las <strong>'.$horaNueva.'</strong>.<br><br>Hemos enviado la confirmación con el enlace de Google Calendar a tu email.'
         );
     }
 
@@ -206,7 +221,6 @@ function mostrarPantallaRechazar(
 
     $svNombre   = htmlspecialchars($reserva['servicio_nombre']);
     $bNombre    = htmlspecialchars($reserva['barbero_nombre']);
-    $clienteNom = htmlspecialchars($reserva['cliente_nombre']);
 
     echo <<<HTML
 <!DOCTYPE html>
@@ -302,7 +316,6 @@ function mostrarPantallaRechazar(
         <button class="mode-tab cancel"         id="tab-cancel"  onclick="switchMode('cancel')">✕ Cancelar cita</button>
       </div>
 
-      <!-- PANE: Proponer alternativa -->
       <div class="pane active" id="pane-counter">
         <p style="font-size:.82rem;color:#7a7880;margin-bottom:1rem;line-height:1.6;">
           Elige el día y la hora que mejor te vengan. El barbero recibirá tu propuesta.
@@ -334,7 +347,6 @@ function mostrarPantallaRechazar(
         <div class="status-msg" id="counter-status"></div>
       </div>
 
-      <!-- PANE: Cancelar definitivamente -->
       <div class="pane" id="pane-cancel">
         <div class="warn-box">
           ⚠ Al cancelar se liberará el hueco. Podrás hacer una nueva reserva cuando quieras.

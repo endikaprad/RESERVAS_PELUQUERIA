@@ -1,10 +1,10 @@
 <?php
 // ============================================================
-//  POST /api/booking.php  — FIXED
-//  Fix: unique constraint allows cancelled bookings to be re-booked
+//  POST /api/booking.php  — con Google Calendar
 // ============================================================
 
 require_once __DIR__ . '/helpers.php';
+require_once __DIR__ . '/gcal_helper.php';   // ← NUEVO
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     jsonError('Método no permitido', 405);
@@ -45,8 +45,7 @@ if ($fechaHora <= $ahora) {
 try {
     $db = getDB();
 
-    // ── Validar servicio y barbero ────────────────────────────
-    $s = $db->prepare('SELECT id, nombre FROM servicios WHERE id = ?');
+    $s = $db->prepare('SELECT id, nombre, duracion FROM servicios WHERE id = ?');
     $s->execute([$servicio]);
     $servicioRow = $s->fetch();
     if (!$servicioRow) jsonError('Servicio no encontrado');
@@ -56,10 +55,6 @@ try {
     $barberoRow = $b->fetch();
     if (!$barberoRow) jsonError('Barbero no encontrado');
 
-    // ── Comprobar disponibilidad real (excluyendo canceladas/denegadas) ──
-    // FIX: La UNIQUE KEY de BD bloquea aunque el estado sea 'cancelada'.
-    // Solución: antes de insertar, eliminar filas canceladas/denegadas
-    // que coincidan con el mismo barbero+fecha+hora para liberar el slot.
     $cleanUp = $db->prepare(
         "DELETE FROM reservas
          WHERE barbero_id = ? AND fecha = ? AND hora = ?
@@ -67,7 +62,6 @@ try {
     );
     $cleanUp->execute([$barbero, $fecha, $hora . ':00']);
 
-    // Verificar que el slot sigue libre tras la limpieza
     $checkSlot = $db->prepare(
         "SELECT COUNT(*) FROM reservas
          WHERE barbero_id = ? AND fecha = ? AND hora = ?
@@ -78,7 +72,6 @@ try {
         jsonError('Ese horario ya está reservado. Por favor elige otro.', 409);
     }
 
-    // ── Leer configuración de auto-aceptar ───────────────────
     $autoAceptar      = 'no';
     $autoAceptarHasta = '';
     try {
@@ -94,7 +87,6 @@ try {
         $autoAceptar = 'no';
     }
 
-    // ── Determinar si esta reserva se auto-acepta ─────────────
     $estadoFinal = 'pendiente';
 
     if ($autoAceptar !== 'no' && $autoAceptarHasta !== '') {
@@ -107,7 +99,6 @@ try {
         $estadoFinal = 'aceptada';
     }
 
-    // ── Insertar reserva ─────────────────────────────────────
     $token = bin2hex(random_bytes(32));
 
     $insert = $db->prepare(
@@ -123,7 +114,6 @@ try {
 
     $id = $db->lastInsertId();
 
-    // ── Formatear fecha legible ───────────────────────────────
     $dias  = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
     $meses = ['enero','febrero','marzo','abril','mayo','junio',
               'julio','agosto','septiembre','octubre','noviembre','diciembre'];
@@ -140,10 +130,8 @@ try {
            <td style='padding:10px 0;color:#f0ece3;font-size:13px;'>" . htmlspecialchars($notas) . "</td></tr>"
         : '';
 
-    // URL de cancelación (única para este token)
     $urlCancelar = $baseUrl . '/backend/api/cancel-booking.php?token=' . $token;
 
-    // Bloque HTML reutilizable del botón cancelar
     $cancelBox = "
       <div style='background:#18181f;border:1px solid #252530;border-radius:8px;padding:16px;margin-bottom:24px;text-align:center;'>
         <p style='color:#7a7880;font-size:13px;margin:0 0 12px;'>
@@ -159,6 +147,11 @@ try {
           Solo disponible hasta las 23:59 del día anterior a tu cita.
         </p>
       </div>";
+
+    // ── Google Calendar URL ──────────────────────────────────────────
+    $duracionMinutos = parseDuracionMinutos($servicioRow['duracion'] ?? '30 min');
+    $gcalUrl  = buildGCalUrl($fecha, $hora, $duracionMinutos, $servicioRow['nombre'], $barberoRow['nombre'], $notas);
+    $gcalBlock = buildGCalBlock($gcalUrl);
 
     // ================================================================
     //  EMAIL AL PELUQUERO
@@ -275,6 +268,7 @@ try {
         <tr><td style='padding:10px 0;color:#7a7880;font-size:13px;'>Hora</td>
             <td style='padding:10px 0;color:#22c55e;font-size:16px;font-weight:700;'>{$hora}</td></tr>
       </table>
+      {$gcalBlock}
       {$cancelBox}
     </div>
     <div style='background:#18181f;padding:16px 32px;text-align:center;'>
@@ -311,6 +305,9 @@ try {
         <tr><td style='padding:10px 0;color:#7a7880;font-size:13px;'>Hora</td>
             <td style='padding:10px 0;color:#c9a84c;font-size:16px;font-weight:700;'>{$hora}</td></tr>
       </table>
+      <div style='background:rgba(201,168,76,.06);border:1px solid rgba(201,168,76,.2);border-radius:8px;padding:14px 16px;margin-bottom:24px;font-size:13px;color:#d4a84b;'>
+        ⏳ Una vez que el barbero confirme tu cita, recibirás otro email con el enlace para añadirla a Google Calendar.
+      </div>
       {$cancelBox}
     </div>
     <div style='background:#18181f;padding:16px 32px;text-align:center;'>
@@ -324,7 +321,6 @@ try {
         $asuntoCliente = 'Reserva pendiente de confirmación - Prado Barber Co.';
     }
 
-    // ── Enviar emails ─────────────────────────────────────────
     $asuntoPeluquero = $estadoFinal === 'aceptada'
         ? "Reserva #{$id} auto-aceptada - {$nombre} - {$fechaFormateada} {$hora}"
         : "Nueva reserva #{$id} - {$nombre} - {$fechaFormateada} {$hora}";
@@ -332,7 +328,6 @@ try {
     sendBrevo('endikapradodev@gmail.com', 'Prado Barber Co.', $asuntoPeluquero, $htmlPeluquero);
     sendBrevo($email, $nombre, $asuntoCliente, $htmlCliente);
 
-    // ── Respuesta al frontend ─────────────────────────────────
     $mensaje = $estadoFinal === 'aceptada'
         ? '¡Reserva confirmada! Te hemos enviado los detalles por email.'
         : 'Solicitud enviada. Te confirmaremos por email en breve.';
@@ -354,7 +349,6 @@ try {
     jsonError('Error de base de datos: ' . $e->getMessage(), 500);
 }
 
-// ── Envío via Brevo API ───────────────────────────────────────
 function sendBrevo(string $toEmail, string $toName, string $subject, string $html): bool {
     $apiKey = defined('BREVO_API_KEY') ? BREVO_API_KEY : '';
     if (!$apiKey) return false;
