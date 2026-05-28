@@ -805,7 +805,6 @@
                 document.getElementById('rd-historial-section').style.display = 'block';
             }
         } else if (est === 'reprogramar_cliente') {
-            // Negociación activa — cliente propuso algo
             document.getElementById('rd-propuesta-section').style.display = 'block';
 
             document.getElementById('rd-orig-slot').textContent = formatFecha(data.fecha) + ' · ' + origHora;
@@ -834,9 +833,9 @@
                 rondaRow.style.display = 'flex';
             } else { rondaRow.style.display = 'none'; }
 
-            // También mostrar historial previo si hay más de 1 entrada en el log
+            // Solo mostrar historial previo si hay más de 2 entradas (es decir, ya hubo al menos 2 rondas completas)
             const partes = motivoCambio ? motivoCambio.split(' | ').filter(Boolean) : [];
-            if (partes.length > 1) {
+            if (partes.length > 2) {
                 const histItems = parseHistorial(
                     motivoCambio, est, ronda,
                     data.fecha, data.hora,
