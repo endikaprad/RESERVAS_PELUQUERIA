@@ -461,7 +461,7 @@
     const CANCEL_API     = './api/cancel-by-barber.php';
     const ACCEPT_CTR_API = './api/barber-accept-counter.php';
     const STATS_API      = './api/client-stats.php';
-    const NOTA_API       = './api/nota-cliente.php';
+    const NOTA_API       = './api/client-note.php';
 
     const MONTHS_ES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
     const ALL_SLOTS = ['09:00','09:30','10:00','10:30','11:00','11:30','12:00','12:30','13:00','13:30','16:00','16:30','17:00','17:30','18:00','18:30','19:00','19:30'];

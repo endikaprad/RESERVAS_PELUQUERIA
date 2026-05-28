@@ -1,6 +1,6 @@
 <?php
 // ============================================================
-//  PRADO BARBER CO. — /backend/api/cliente-stats.php
+//  PRADO BARBER CO. — /backend/api/client-stats.php
 //  GET ?telefono=+34600000000
 //  Devuelve estadísticas completas del cliente por teléfono.
 // ============================================================
