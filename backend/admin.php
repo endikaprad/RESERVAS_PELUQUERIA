@@ -2927,8 +2927,23 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
             border-color: #d42b2b;
         }
 
-        <style id="cancel-reschedule-css">
+        @keyframes spinOnce {
+            from {
+                transform: rotate(0deg);
+            }
 
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .reload-btn.spinning {
+            animation: spinOnce .5s ease forwards;
+            border-color: #d42b2b !important;
+            color: #d42b2b !important;
+        }
+    </style>
+    <style id="cancel-reschedule-css">
         /* ── Panel lateral: Cancelar / Reprogramar ── */
         .cr-overlay {
             position: fixed;
@@ -3853,7 +3868,7 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
             <div class="section-title-admin">Reservas</div>
             <div style="display:flex;align-items:center;gap:.75rem;">
                 <div class="section-count"><?= count($reservas) ?> resultado<?= count($reservas) != 1 ? 's' : '' ?></div>
-                <button onclick="location.reload()" style="width:32px;height:32px;border-radius:50%;background:transparent;border:1px solid #252530;color:#7a7880;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:.9rem;transition:all .3s;" onmouseover="this.style.borderColor='#d42b2b';this.style.color='#d42b2b';" onmouseout="this.style.borderColor='#252530';this.style.color='#7a7880';" title="Recargar reservas">↻</button>
+                <button class="reload-btn" onclick="this.classList.remove('spinning');void this.offsetWidth;this.classList.add('spinning');setTimeout(()=>location.reload(),400)" style="width:32px;height:32px;border-radius:50%;background:transparent;border:1px solid #252530;color:#7a7880;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:.9rem;transition:border-color .3s,color .3s;" onmouseover="this.style.borderColor='#d42b2b';this.style.color='#d42b2b';" onmouseout="this.style.borderColor='#252530';this.style.color='#7a7880';" title="Recargar reservas">↻</button>
             </div>
         </div>
 
@@ -3943,7 +3958,7 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
                         <div class="table-title-d">Reservas</div>
                         <div style="display:flex;align-items:center;gap:.75rem;">
                             <div style="font-size:.75rem;color:#7a7880;"><?= count($reservas) ?> resultado<?= count($reservas) != 1 ? 's' : '' ?></div>
-                            <button onclick="location.reload()" style="width:32px;height:32px;border-radius:50%;background:transparent;border:1px solid #252530;color:#7a7880;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:.9rem;transition:all .3s;" onmouseover="this.style.borderColor='#d42b2b';this.style.color='#d42b2b';" onmouseout="this.style.borderColor='#252530';this.style.color='#7a7880';" title="Recargar reservas">↻</button>
+                            <button class="reload-btn" onclick="this.classList.remove('spinning');void this.offsetWidth;this.classList.add('spinning');setTimeout(()=>location.reload(),400)" style="width:32px;height:32px;border-radius:50%;background:transparent;border:1px solid #252530;color:#7a7880;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:.9rem;transition:border-color .3s,color .3s;" onmouseover="this.style.borderColor='#d42b2b';this.style.color='#d42b2b';" onmouseout="this.style.borderColor='#252530';this.style.color='#7a7880';" title="Recargar reservas">↻</button>
                         </div>
                     </div>
                     <table>
