@@ -1,0 +1,60 @@
+name: Daily Reminders
+
+on:
+  schedule:
+    - cron: "0 7 * * *" # 9:00 Madrid (UTC+2 verano)
+  workflow_dispatch: # Botón manual desde GitHub
+
+jobs:
+  send-reminders:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Enviar recordatorios
+        run: |
+          pip install pycryptodome requests -q
+
+          python3 << 'PYEOF'
+          import requests
+          import re
+          from Crypto.Cipher import AES
+
+          URL = "https://pradopeluqueria.infinityfree.me/backend/api/reminder.php?secret=prado-reminder-2026"
+
+          session = requests.Session()
+          headers = {
+              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+          }
+
+          # Primera petición — obtener el challenge del anti-bot
+          r1 = session.get(URL, headers=headers)
+          print("Estado 1:", r1.status_code)
+
+          if 'slowAES' in r1.text:
+              print("Anti-bot detectado, resolviendo...")
+              
+              # Extraer los tres valores hex del HTML
+              values = re.findall(r'toNumbers\("([a-f0-9]+)"\)', r1.text)
+              
+              if len(values) >= 3:
+                  key = bytes.fromhex(values[0])
+                  iv  = bytes.fromhex(values[1])
+                  ct  = bytes.fromhex(values[2])
+                  
+                  # Descifrar AES CBC (igual que hace el JavaScript)
+                  cipher = AES.new(key, AES.MODE_CBC, iv)
+                  cookie_val = cipher.decrypt(ct).hex()
+                  print("Cookie calculada correctamente")
+                  
+                  # Segunda petición con la cookie correcta
+                  session.cookies.set('__test', cookie_val, 
+                                      domain='pradopeluqueria.infinityfree.me')
+                  r2 = session.get(URL + '&i=1', headers=headers)
+                  print("Estado 2:", r2.status_code)
+                  print("Respuesta:", r2.text[:300])
+              else:
+                  print("Error: no se pudieron extraer los valores del anti-bot")
+          else:
+              # Sin anti-bot, respuesta directa
+              print("Respuesta directa:")
+              print(r1.text[:300])
+          PYEOF
