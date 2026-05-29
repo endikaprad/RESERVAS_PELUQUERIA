@@ -374,23 +374,31 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
         .stats-trigger-btn {
             width: 36px;
             height: 36px;
-            border-radius: 50%;
-            background: transparent;
-            border: 1px solid #252530;
-            color: #7a7880;
+            border-radius: 10px;
+            background: linear-gradient(145deg, #d42b2b 0%, #8b1515 100%);
+            border: none;
+            color: #fff;
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            font-size: .9rem;
-            transition: all .3s;
+            transition: all .3s cubic-bezier(0.34, 1.56, 0.64, 1);
             flex-shrink: 0;
+            box-shadow: 0 3px 10px rgba(212, 43, 43, .35), inset 0 1px 0 rgba(255,255,255,.12);
+            position: relative;
+            overflow: hidden;
+        }
+        .stats-trigger-btn::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(145deg, rgba(255,255,255,.10) 0%, transparent 60%);
+            border-radius: inherit;
         }
 
         .stats-trigger-btn:hover {
-            border-color: #c9a84c;
-            color: #c9a84c;
-            background: rgba(201, 168, 76, .06);
+            transform: scale(1.08) translateY(-1px);
+            box-shadow: 0 6px 18px rgba(212, 43, 43, .50), inset 0 1px 0 rgba(255,255,255,.15);
         }
 
         /* ── BODY ── */
@@ -531,6 +539,49 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
             outline: none;
             border-color: #d42b2b;
         }
+
+        /* ── Admin Date Picker ── */
+        .adp-wrap { position: relative; display: inline-block; width: 100%; }
+        .adp-trigger {
+            width: 100%; background: #18181f; border: 1px solid #252530;
+            border-radius: 6px; color: #f0ece3; padding: .6rem .75rem;
+            cursor: pointer; font-family: 'DM Sans', sans-serif; font-size: .9rem;
+            display: flex; align-items: center; gap: .5rem; text-align: left;
+            transition: border-color .2s; box-sizing: border-box;
+        }
+        .adp-trigger:hover, .adp-trigger:focus { outline: none; border-color: #d42b2b; }
+        .adp-trigger-text { flex: 1; }
+        .adp-trigger svg { flex-shrink: 0; opacity: .5; }
+        .adp-popover {
+            position: absolute; top: calc(100% + 6px); left: 0; z-index: 9999;
+            background: #111119; border: 1px solid #252530; border-radius: 14px;
+            padding: 1.1rem; min-width: 256px;
+            box-shadow: 0 20px 60px rgba(0,0,0,.8);
+            display: none;
+        }
+        .adp-popover.open { display: block; }
+        .adp-hdr { display: flex; align-items: center; justify-content: space-between; margin-bottom: .9rem; }
+        .adp-title { font-weight: 700; font-size: .95rem; color: #e8e8f0; letter-spacing: .01em; }
+        .adp-nav { display: flex; gap: .3rem; }
+        .adp-nav button {
+            width: 26px; height: 26px; border: 1px solid #252530; border-radius: 7px;
+            color: #777; background: none; display: flex; align-items: center; justify-content: center;
+            cursor: pointer; font-size: 1rem; transition: .2s; line-height: 1;
+        }
+        .adp-nav button:hover { border-color: #c9a84c; color: #c9a84c; }
+        .adp-labels { display: grid; grid-template-columns: repeat(7,1fr); gap: 2px; margin-bottom: .3rem; }
+        .adp-dlabel { text-align: center; font-size: .58rem; letter-spacing: .1em; text-transform: uppercase; color: #555; padding: .15rem 0; }
+        .adp-grid { display: grid; grid-template-columns: repeat(7,1fr); gap: 2px; }
+        .adp-cell {
+            aspect-ratio: 1; display: flex; align-items: center; justify-content: center;
+            border-radius: 8px; font-size: .8rem; cursor: pointer; border: 1px solid transparent;
+            transition: .15s; color: #c8c4d8;
+        }
+        .adp-cell:hover:not(.adp-empty):not(.adp-dis) { border-color: rgba(201,168,76,.4); color: #c9a84c; }
+        .adp-cell.adp-sel { background: #c9a84c; color: #000; font-weight: 600; border-color: transparent; }
+        .adp-cell.adp-today:not(.adp-sel) { border-color: #d42b2b; color: #d42b2b; }
+        .adp-cell.adp-dis { color: #2a2a38; cursor: default; }
+        .adp-cell.adp-empty { cursor: default; }
 
         .filter-submit {
             width: 100%;
@@ -1914,16 +1965,29 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
         }
 
         .stats-title-icon {
-            width: 40px;
-            height: 40px;
-            border-radius: 10px;
-            background: linear-gradient(135deg, #d42b2b, #a81e1e);
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            background: linear-gradient(145deg, #d42b2b 0%, #8b1515 100%);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.1rem;
             flex-shrink: 0;
-            box-shadow: 0 4px 16px rgba(212, 43, 43, .35);
+            box-shadow: 0 6px 20px rgba(212, 43, 43, .40), inset 0 1px 0 rgba(255,255,255,.12);
+            position: relative;
+            overflow: hidden;
+        }
+        .stats-title-icon::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(145deg, rgba(255,255,255,.10) 0%, transparent 60%);
+            border-radius: inherit;
+        }
+        .stats-title-icon svg {
+            position: relative;
+            z-index: 1;
+            filter: drop-shadow(0 1px 2px rgba(0,0,0,.35));
         }
 
         .stats-close {
@@ -2150,8 +2214,11 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
         .kdm-bar-label {
             font-size: .72rem;
             color: #a0a0b0;
-            width: 80px;
+            width: 110px;
             flex-shrink: 0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
         .kdm-bar-track {
             flex: 1;
@@ -3356,18 +3423,33 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
 
         /* ── PERIOD SELECTOR ── */
         .stats-period-bar {
+            position: relative;
             display: flex;
             gap: .3rem;
-            flex-wrap: wrap;
+            flex-wrap: nowrap;
             margin-bottom: 1.75rem;
             padding: .3rem;
             background: #0d0d14;
             border-radius: 12px;
             border: 1px solid #1c1c26;
         }
+        .stats-period-pill {
+            position: absolute;
+            border-radius: 8px;
+            background: linear-gradient(135deg, #d42b2b, #a81e1e);
+            box-shadow: 0 2px 14px rgba(212,43,43,.45);
+            pointer-events: none;
+            z-index: 0;
+            transition: left .38s cubic-bezier(.34,1.4,.64,1),
+                        top .38s cubic-bezier(.34,1.4,.64,1),
+                        width .38s cubic-bezier(.34,1.4,.64,1),
+                        height .32s cubic-bezier(.34,1.4,.64,1);
+        }
         .stats-period-btn {
             flex: 1;
             min-width: 52px;
+            position: relative;
+            z-index: 1;
             padding: .5rem .6rem;
             background: transparent;
             border: none;
@@ -3379,18 +3461,15 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
             letter-spacing: .08em;
             text-transform: uppercase;
             cursor: pointer;
-            transition: all .2s;
+            transition: color .25s;
             white-space: nowrap;
             text-align: center;
         }
         .stats-period-btn:hover {
             color: #f0ece3;
-            background: rgba(245,240,232,.06);
         }
         .stats-period-btn.active {
-            background: linear-gradient(135deg, #d42b2b, #a81e1e);
             color: #fff;
-            box-shadow: 0 2px 12px rgba(212,43,43,.4);
         }
         @media (max-width: 480px) {
             .stats-period-btn {
@@ -3403,6 +3482,13 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
         .stats-period-loading {
             opacity: .5;
             pointer-events: none;
+        }
+        #stats-content {
+            transition: opacity .28s ease, transform .28s ease;
+        }
+        #stats-content.stats-fading {
+            opacity: 0;
+            transform: translateY(10px);
         }
 
         /* ── KPI PILLS ── */
@@ -4093,6 +4179,9 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
             border-color: #d42b2b;
         }
 
+        .sh-date-row .adp-wrap { flex: 1; }
+        .sh-date-row .adp-trigger { border-radius: 8px; padding: .65rem 1rem; font-size: .88rem; }
+
         .sh-today-btn {
             padding: .65rem 1rem;
             background: rgba(212, 43, 43, .1);
@@ -4446,6 +4535,190 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
             color: #d4a84b;
             margin-bottom: .75rem;
         }
+
+        /* ══ HORARIO DEL NEGOCIO ═══════════════════════════════ */
+        .hn-card {
+            background: #111119;
+            border: 1px solid #252530;
+            border-radius: 12px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+        .hn-period {
+            margin-bottom: .75rem;
+        }
+        .hn-period-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: .5rem;
+        }
+        .hn-period-name {
+            font-size: .8rem;
+            font-weight: 700;
+            letter-spacing: .08em;
+            text-transform: uppercase;
+            color: #c9a84c;
+        }
+        .hn-period-body {
+            transition: opacity .2s;
+        }
+        .hn-period-body.disabled {
+            opacity: .3;
+            pointer-events: none;
+        }
+        .hn-time-pair {
+            display: flex;
+            align-items: center;
+            gap: .5rem;
+        }
+        .hn-time-field {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: .25rem;
+        }
+        .hn-time-field label {
+            font-size: .68rem;
+            color: #7a7880;
+            letter-spacing: .06em;
+            text-transform: uppercase;
+        }
+        .hn-time-field input[type="time"] {
+            background: #18181f;
+            border: 1px solid #252530;
+            border-radius: 7px;
+            padding: .5rem .75rem;
+            color: #f0ece3;
+            font-family: 'DM Sans', sans-serif;
+            font-size: .85rem;
+            width: 100%;
+            box-sizing: border-box;
+            transition: border-color .2s;
+        }
+        .hn-time-field input[type="time"]:focus {
+            outline: none;
+            border-color: #d42b2b;
+        }
+        .hn-time-sep {
+            color: #4a4a58;
+            font-size: 1rem;
+            margin-top: 1.1rem;
+            flex-shrink: 0;
+        }
+        .hn-divider {
+            height: 1px;
+            background: #252530;
+            border: none;
+            margin: .75rem 0;
+        }
+        .hn-interval-row {
+            display: flex;
+            flex-direction: column;
+            gap: .4rem;
+            margin-top: .25rem;
+        }
+        .hn-interval-label {
+            font-size: .72rem;
+            color: #7a7880;
+            letter-spacing: .06em;
+            text-transform: uppercase;
+        }
+        .hn-interval-btns {
+            display: flex;
+            flex-wrap: wrap;
+            gap: .4rem;
+        }
+        .hn-int-btn {
+            background: #18181f;
+            border: 1px solid #252530;
+            border-radius: 6px;
+            padding: .35rem .75rem;
+            color: #a8a4b0;
+            font-family: 'DM Sans', sans-serif;
+            font-size: .75rem;
+            cursor: pointer;
+            transition: all .18s;
+        }
+        .hn-int-btn:hover {
+            border-color: #d42b2b;
+            color: #d42b2b;
+        }
+        .hn-int-btn.selected {
+            background: rgba(212, 43, 43, .15);
+            border-color: rgba(212, 43, 43, .5);
+            color: #d42b2b;
+            font-weight: 700;
+        }
+        .hn-preview-wrap {
+            margin-top: .85rem;
+            padding-top: .85rem;
+            border-top: 1px solid #1c1c26;
+        }
+        .hn-preview-slots {
+            display: flex;
+            flex-wrap: wrap;
+            gap: .3rem;
+            min-height: 1.8rem;
+        }
+        .hn-preview-slot {
+            background: rgba(37, 80, 160, .15);
+            border: 1px solid rgba(37, 80, 160, .3);
+            border-radius: 5px;
+            padding: .2rem .5rem;
+            font-size: .72rem;
+            color: #6e9af0;
+            font-family: 'DM Mono', monospace;
+        }
+        .hn-section-sep {
+            height: 1px;
+            background: #252530;
+            margin: 1.25rem 0;
+        }
+        .hn-days-row {
+            display: flex;
+            flex-direction: column;
+            gap: .4rem;
+            margin-top: .25rem;
+        }
+        .hn-days-label {
+            font-size: .72rem;
+            color: #7a7880;
+            letter-spacing: .06em;
+            text-transform: uppercase;
+        }
+        .hn-days-grid {
+            display: flex;
+            gap: .35rem;
+            flex-wrap: wrap;
+        }
+        .hn-day-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border: 1px solid #252530;
+            background: #18181f;
+            color: #a8a4b0;
+            font-family: 'DM Sans', sans-serif;
+            font-size: .72rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all .18s;
+            flex-shrink: 0;
+        }
+        .hn-day-btn:hover {
+            border-color: #d42b2b;
+            color: #d42b2b;
+        }
+        .hn-day-btn.active {
+            background: rgba(212, 43, 43, .18);
+            border-color: rgba(212, 43, 43, .55);
+            color: #e06060;
+            font-weight: 700;
+        }
     </style>
     </style>
 </head>
@@ -4455,7 +4728,7 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
     <div class="admin-header">
         <div class="admin-brand">Prado <span>Barber</span> · Admin</div>
         <div class="header-actions">
-            <button class="stats-trigger-btn" onclick="openStats()" title="Estadísticas"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M5 9.2h3V19H5zM10.6 5h2.8v14h-2.8zm5.6 8H19v6h-2.8z"/></svg></button>
+            <button class="stats-trigger-btn" onclick="openStats()" title="Estadísticas"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="12" width="4" height="8" rx="1.5" fill="white" opacity="0.9"/><rect x="10" y="7" width="4" height="13" rx="1.5" fill="white"/><rect x="17" y="4" width="4" height="16" rx="1.5" fill="white" opacity="0.75"/></svg></button>
             <button class="settings-btn" onclick="openCfg()" title="Configuración">⚙</button>
             <form method="POST" style="margin:0;">
                 <button class="logout-btn" name="logout" value="1">Cerrar sesión</button>
@@ -4535,7 +4808,7 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
                 <?php if ($filtroFecha === 'custom'): ?>
                     <div class="frow">
                         <span class="flabel">Día</span>
-                        <input type="date" name="fecha_custom" value="<?= htmlspecialchars($fechaCustom) ?>" />
+                        <input type="date" id="fecha-custom-input" name="fecha_custom" value="<?= htmlspecialchars($fechaCustom) ?>" />
                     </div>
                 <?php endif; ?>
                 <button type="submit" class="filter-submit">Filtrar</button>
@@ -4718,10 +4991,19 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
         <div class="stats-inner">
             <div class="stats-header">
                 <div class="stats-title">
-                    <div class="stats-title-icon">📊</div>
+                    <div class="stats-title-icon"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="12" width="4" height="9" rx="1.5" fill="white" opacity="0.85"/><rect x="10" y="7" width="4" height="14" rx="1.5" fill="white"/><rect x="17" y="3" width="4" height="18" rx="1.5" fill="white" opacity="0.7"/></svg></div>
                     Estadísticas &amp; Analytics
                 </div>
                 <button class="stats-close" onclick="closeStats()">✕</button>
+            </div>
+            <div class="stats-period-bar" id="stats-period-bar">
+                <span class="stats-period-pill" id="stats-period-pill"></span>
+                <button class="stats-period-btn" data-periodo="hoy"       onclick="changePeriodo('hoy')">Hoy</button>
+                <button class="stats-period-btn" data-periodo="semana"    onclick="changePeriodo('semana')">Semana</button>
+                <button class="stats-period-btn" data-periodo="mes"       onclick="changePeriodo('mes')">Mes</button>
+                <button class="stats-period-btn" data-periodo="trimestre" onclick="changePeriodo('trimestre')">Trimestre</button>
+                <button class="stats-period-btn" data-periodo="año"       onclick="changePeriodo('año')">Año</button>
+                <button class="stats-period-btn active" data-periodo="todo" onclick="changePeriodo('todo')">Todo</button>
             </div>
             <div id="stats-content">
                 <div class="stats-loading" id="stats-loading">
@@ -4834,8 +5116,105 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
             <!-- ══ PESTAÑA HORARIOS: HTML ══════════════════════════════════════ -->
             <div class="cfg-pane" id="pane-horarios">
 
+                <!-- ── Horario global del negocio ── -->
+                <div class="cfg-section-label">Horario del negocio</div>
+                <div class="hn-card">
+
+                    <!-- Mañana -->
+                    <div class="hn-period">
+                        <div class="hn-period-head">
+                            <span class="hn-period-name">Mañana</span>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="hn-manana-activo" onchange="hnTogglePeriod('manana')">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                        <div class="hn-period-body" id="hn-manana-body">
+                            <div class="hn-time-pair">
+                                <div class="hn-time-field">
+                                    <label>Apertura</label>
+                                    <input type="time" id="hn-manana-inicio" oninput="hnUpdatePreview()">
+                                </div>
+                                <span class="hn-time-sep">—</span>
+                                <div class="hn-time-field">
+                                    <label>Cierre</label>
+                                    <input type="time" id="hn-manana-fin" oninput="hnUpdatePreview()">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr class="hn-divider">
+
+                    <!-- Tarde -->
+                    <div class="hn-period">
+                        <div class="hn-period-head">
+                            <span class="hn-period-name">Tarde</span>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="hn-tarde-activo" onchange="hnTogglePeriod('tarde')">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                        <div class="hn-period-body" id="hn-tarde-body">
+                            <div class="hn-time-pair">
+                                <div class="hn-time-field">
+                                    <label>Apertura</label>
+                                    <input type="time" id="hn-tarde-inicio" oninput="hnUpdatePreview()">
+                                </div>
+                                <span class="hn-time-sep">—</span>
+                                <div class="hn-time-field">
+                                    <label>Cierre</label>
+                                    <input type="time" id="hn-tarde-fin" oninput="hnUpdatePreview()">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr class="hn-divider">
+
+                    <!-- Días de apertura -->
+                    <div class="hn-days-row">
+                        <span class="hn-days-label">Días de apertura</span>
+                        <div class="hn-days-grid">
+                            <button class="hn-day-btn active" data-day="1" onclick="hnToggleDay(this)" title="Lunes">L</button>
+                            <button class="hn-day-btn active" data-day="2" onclick="hnToggleDay(this)" title="Martes">M</button>
+                            <button class="hn-day-btn active" data-day="3" onclick="hnToggleDay(this)" title="Miércoles">X</button>
+                            <button class="hn-day-btn active" data-day="4" onclick="hnToggleDay(this)" title="Jueves">J</button>
+                            <button class="hn-day-btn active" data-day="5" onclick="hnToggleDay(this)" title="Viernes">V</button>
+                            <button class="hn-day-btn active" data-day="6" onclick="hnToggleDay(this)" title="Sábado">S</button>
+                            <button class="hn-day-btn" data-day="0" onclick="hnToggleDay(this)" title="Domingo">D</button>
+                        </div>
+                    </div>
+
+                    <hr class="hn-divider">
+
+                    <!-- Intervalo -->
+                    <div class="hn-interval-row">
+                        <span class="hn-interval-label">Intervalo entre citas</span>
+                        <div class="hn-interval-btns" id="hn-interval-btns">
+                            <button class="hn-int-btn" data-val="15" onclick="hnSelectInterval(this)">15 min</button>
+                            <button class="hn-int-btn" data-val="20" onclick="hnSelectInterval(this)">20 min</button>
+                            <button class="hn-int-btn selected" data-val="30" onclick="hnSelectInterval(this)">30 min</button>
+                            <button class="hn-int-btn" data-val="40" onclick="hnSelectInterval(this)">40 min</button>
+                            <button class="hn-int-btn" data-val="45" onclick="hnSelectInterval(this)">45 min</button>
+                            <button class="hn-int-btn" data-val="60" onclick="hnSelectInterval(this)">60 min</button>
+                        </div>
+                    </div>
+
+                    <!-- Vista previa -->
+                    <div class="hn-preview-wrap">
+                        <div class="cfg-section-label" style="margin-bottom:.5rem;margin-top:0;">Vista previa</div>
+                        <div class="hn-preview-slots" id="hn-preview-slots"></div>
+                    </div>
+
+                    <button class="cfg-save-btn" id="hn-save-btn" onclick="hnSave()" style="margin-top:1rem;">Guardar horario</button>
+                    <div class="cfg-status" id="hn-status"></div>
+                </div>
+
+                <div class="hn-section-sep"></div>
+                <div class="cfg-section-label">Bloquear horarios del día</div>
+
                 <!-- Selector de fecha -->
-                <div class="cfg-section-label">Seleccionar día</div>
                 <div class="sh-date-row">
                     <input type="date" id="sh-fecha-input" class="sh-date-input"
                         onchange="shOnFechaChange()" />
@@ -4950,6 +5329,25 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
         //  4. Servicios: muestra dinero perdido con tachado + canceladas
         //  5. Donut conversión: multicolor (verde/rojo/naranja), sin recorte
         // ================================================================
+
+        // ── Slots dinámicos (cargados desde horario-negocio.php) ─────────
+        window._MORNING_SLOTS   = ['09:00','09:30','10:00','10:30','11:00','11:30','12:00','12:30','13:00','13:30'];
+        window._AFTERNOON_SLOTS = ['16:00','16:30','17:00','17:30','18:00','18:30','19:00','19:30'];
+        window._ALL_SLOTS       = [...window._MORNING_SLOTS, ...window._AFTERNOON_SLOTS];
+        window._OPEN_DAYS       = [1, 2, 3, 4, 5, 6];
+
+        (async function loadDynamicSlots() {
+            try {
+                const r = await fetch('./api/horario-negocio.php?slots=1');
+                const j = await r.json();
+                if (j.ok) {
+                    window._MORNING_SLOTS   = j.data.manana        || [];
+                    window._AFTERNOON_SLOTS = j.data.tarde         || [];
+                    window._ALL_SLOTS       = j.data.todos         || [];
+                    window._OPEN_DAYS       = j.data.dias_abiertos || [1,2,3,4,5,6];
+                }
+            } catch (e) {}
+        })();
 
         // ── CONFIG PANEL ────────────────────────────────────────────────
         (function initCfgPanel() {
@@ -5105,19 +5503,19 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
                 for (let d = 1; d <= daysIn; d++) {
                     const dt = new Date(year, month, d);
                     const iso = isoDate(year, month, d);
-                    const isPast = dt < today,
-                        isSun = dt.getDay() === 0;
-                    const isBlocked = Object.prototype.hasOwnProperty.call(blockedDates, iso);
-                    const isPendAdd = pendingAdd.includes(iso);
-                    const isPendDel = pendingDel.includes(iso);
-                    const isToday = dt.getTime() === today.getTime();
+                    const isPast      = dt < today;
+                    const isClosedDay = !(window._OPEN_DAYS || [1,2,3,4,5,6]).includes(dt.getDay());
+                    const isBlocked   = Object.prototype.hasOwnProperty.call(blockedDates, iso);
+                    const isPendAdd   = pendingAdd.includes(iso);
+                    const isPendDel   = pendingDel.includes(iso);
+                    const isToday     = dt.getTime() === today.getTime();
                     let cls = 'mini-cell';
-                    if (isPast || isSun) cls += ' mc-disabled';
+                    if (isPast || isClosedDay) cls += ' mc-disabled';
                     else if (isPendDel) cls += ' mc-unblocking';
                     else if (isBlocked) cls += ' mc-blocked';
                     else if (isPendAdd) cls += ' mc-pending';
                     else if (isToday) cls += ' mc-today';
-                    const disabled = isPast || isSun;
+                    const disabled = isPast || isClosedDay;
                     const onclick = disabled ? '' : `onclick="mcCellClick('${iso}')"`;
                     const motivo = isBlocked ? (blockedDates[iso] || 'Bloqueado') : '';
                     const title2 = motivo ? `title="${motivo}"` : '';
@@ -5301,6 +5699,8 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
                 document.getElementById('stats-overlay').classList.add('open');
                 document.getElementById('stats-panel').classList.add('open');
                 document.body.style.overflow = 'hidden';
+                // Position pill after panel is visible (needs layout)
+                requestAnimationFrame(() => requestAnimationFrame(() => movePeriodPill(currentPeriodo)));
                 if (!statsLoaded) fetchStats('todo');
             };
             window.closeStats = function() {
@@ -5308,12 +5708,26 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
                 document.getElementById('stats-panel').classList.remove('open');
                 document.body.style.overflow = '';
             };
+            function movePeriodPill(periodo) {
+                const bar  = document.getElementById('stats-period-bar');
+                const pill = document.getElementById('stats-period-pill');
+                const btn  = bar && bar.querySelector(`[data-periodo="${periodo}"]`);
+                if (!btn || !pill || !bar) return;
+                const barRect = bar.getBoundingClientRect();
+                const btnRect = btn.getBoundingClientRect();
+                pill.style.left   = (btnRect.left - barRect.left) + 'px';
+                pill.style.top    = (btnRect.top  - barRect.top)  + 'px';
+                pill.style.width  = btnRect.width  + 'px';
+                pill.style.height = btnRect.height + 'px';
+            }
+
             window.changePeriodo = function(periodo) {
                 if (isFetching || periodo === currentPeriodo) return;
                 currentPeriodo = periodo;
                 document.querySelectorAll('.stats-period-btn').forEach(b => {
                     b.classList.toggle('active', b.dataset.periodo === periodo);
                 });
+                movePeriodPill(periodo);
                 fetchStats(periodo);
             };
 
@@ -5322,19 +5736,23 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
                 if (isFetching) return;
                 isFetching = true;
                 const content = document.getElementById('stats-content');
-                content.classList.add('stats-period-loading');
+                content.classList.add('stats-fading');
+                await new Promise(r => setTimeout(r, 200));
                 try {
                     const r = await fetch(STATS_API + '?periodo=' + encodeURIComponent(periodo));
                     const j = await r.json();
                     if (!j.ok) throw new Error(j.error || 'Error al cargar');
                     statsLoaded = true;
                     renderStats(j.data, periodo);
+                    requestAnimationFrame(() => {
+                        content.classList.remove('stats-fading');
+                    });
                 } catch (e) {
                     content.innerHTML =
                         `<div class="stats-loading" style="color:#d42b2b;"><div style="font-size:2rem;">⚠</div><span>${e.message}</span></div>`;
+                    content.classList.remove('stats-fading');
                 } finally {
                     isFetching = false;
-                    content.classList.remove('stats-period-loading');
                 }
             }
 
@@ -5479,9 +5897,6 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
                 hoy: 'Hoy', semana: 'Esta semana', mes: 'Este mes',
                 trimestre: 'Trimestre', año: 'Este año', todo: 'Todo el tiempo'
             };
-            function periodBtn(p, label, active) {
-                return `<button class="stats-period-btn${active === p ? ' active' : ''}" data-periodo="${p}" onclick="changePeriodo('${p}')">${label}</button>`;
-            }
 
             function renderStats(d, periodo) {
                 periodo = periodo || 'todo';
@@ -5523,16 +5938,6 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
                 const maxHora = Math.max(...horas.map(h => +h.total), 1);
 
                 let html = '';
-
-                // Period selector
-                html += `<div class="stats-period-bar">
-                    ${periodBtn('hoy','Hoy',periodo)}
-                    ${periodBtn('semana','Semana',periodo)}
-                    ${periodBtn('mes','Mes',periodo)}
-                    ${periodBtn('trimestre','Trimestre',periodo)}
-                    ${periodBtn('año','Año',periodo)}
-                    ${periodBtn('todo','Todo',periodo)}
-                </div>`;
 
                 // KPIs
                 html += '<div class="stats-kpis">';
@@ -5695,6 +6100,7 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
                 const barbs = window._statsBarberos || [];
                 const periodo = window._statsPeriodo || 'todo';
                 const totalRes = +(kpi.total_reservas || 0);
+                const ticketMedio = +(kpi.ticket_medio || 0) || (totalRes > 0 && kpi.ingresos_totales > 0 ? +(kpi.ingresos_totales) / totalRes : 0);
                 const acept = +(kpi.aceptadas || 0);
                 const pend  = +(kpi.pendientes || 0);
                 const dene  = +(kpi.denegadas || 0);
@@ -5725,7 +6131,7 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
                             { label: 'Canceladas', pct: caPct, color: '#6b7280', num: caPct+'%' },
                         ],
                         list: [
-                            { label: 'Ticket medio', val: (+(kpi.ticket_medio||0)).toFixed(0)+'€' },
+                            { label: 'Ticket medio', val: ticketMedio.toFixed(0)+'€' },
                             { label: 'Tasa conversión', val: (+(d.tasa_conversion||0)).toFixed(1)+'%' },
                             { label: 'Ingresos generados', val: (+(kpi.ingresos_totales||0)).toFixed(0)+'€' },
                         ]
@@ -5738,14 +6144,14 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
                         suffix: ' €',
                         icon: `<svg viewBox="0 0 24 24" width="22" height="22" fill="#c9a84c"><path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/></svg>`,
                         cells: [
-                            { label: 'Ticket medio', value: (+(kpi.ticket_medio||0)).toFixed(0)+'€', color: '#c9a84c' },
+                            { label: 'Ticket medio', value: ticketMedio.toFixed(0)+'€', color: '#c9a84c' },
                             { label: 'Reservas pagadas', value: acept, color: '#22c55e' },
                             { label: 'Ingresos hoy', value: (+(hoy.ingresos_hoy||0)).toFixed(0)+'€', color: '#f59e0b' },
                             { label: 'Ingresos mes', value: (+(mes.ingresos_mes||0)).toFixed(0)+'€', color: '#a78bfa' },
                         ],
                         bars: svcs.slice(0,4).map(s => {
                             const maxIng = Math.max(...svcs.map(x=>+(x.ingresos||0)),1);
-                            return { label: s.nombre.split(' ').slice(0,2).join(' '), pct: Math.round(+(s.ingresos||0)/maxIng*100), color: '#c9a84c', num: (+(s.ingresos||0)).toFixed(0)+'€' };
+                            return { label: s.nombre, pct: Math.round(+(s.ingresos||0)/maxIng*100), color: '#c9a84c', num: (+(s.ingresos||0)).toFixed(0)+'€' };
                         }),
                         list: [
                             { label: 'Mejor servicio', val: svcs[0] ? svcs[0].nombre : '—' },
@@ -5764,7 +6170,7 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
                             { label: 'Total clientes', value: +(kpi.clientes_unicos||0), color: '#5b7fd4' },
                             { label: 'Reservas totales', value: totalRes, color: '#d42b2b' },
                             { label: 'Media por cliente', value: totalRes > 0 ? (totalRes/(+(kpi.clientes_unicos||1))).toFixed(1) : '0', color: '#c9a84c' },
-                            { label: 'Ticket medio', value: (+(kpi.ticket_medio||0)).toFixed(0)+'€', color: '#22c55e' },
+                            { label: 'Ticket medio', value: ticketMedio.toFixed(0)+'€', color: '#22c55e' },
                         ],
                         bars: barbs.filter(b=>b.total_citas>0).slice(0,4).map(b => {
                             const maxC = Math.max(...barbs.map(x=>+(x.total_citas||0)),1);
@@ -5795,7 +6201,7 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
                         }),
                         list: [
                             { label: 'Ingresos estimados hoy', val: (+(hoy.ingresos_hoy||0)).toFixed(0)+'€' },
-                            { label: 'Ticket medio', val: (+(kpi.ticket_medio||0)).toFixed(0)+'€' },
+                            { label: 'Ticket medio', val: ticketMedio.toFixed(0)+'€' },
                             { label: 'Total mes en curso', val: +(mes.citas_mes||0)+' citas' },
                         ]
                     },
@@ -5814,10 +6220,10 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
                         ],
                         bars: svcs.slice(0,4).map(s => {
                             const maxIng = Math.max(...svcs.map(x=>+(x.ingresos||0)),1);
-                            return { label: s.nombre.split(' ').slice(0,2).join(' '), pct: Math.round(+(s.ingresos||0)/maxIng*100), color: '#f59e0b', num: (+(s.ingresos||0)).toFixed(0)+'€' };
+                            return { label: s.nombre, pct: Math.round(+(s.ingresos||0)/maxIng*100), color: '#f59e0b', num: (+(s.ingresos||0)).toFixed(0)+'€' };
                         }),
                         list: [
-                            { label: 'Ticket medio global', val: (+(kpi.ticket_medio||0)).toFixed(0)+'€' },
+                            { label: 'Ticket medio global', val: ticketMedio.toFixed(0)+'€' },
                             { label: '% sobre total mensual', val: mes.ingresos_mes > 0 ? Math.round(hoy.ingresos_hoy/mes.ingresos_mes*100)+'%' : '—' },
                             { label: 'Citas este mes', val: +(mes.citas_mes||0) },
                         ]
@@ -5980,11 +6386,11 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
 
             function buildLineChart(meses, field, unit) {
                 const W = 500,
-                    H = 130,
+                    H = 150,
                     PAD = {
                         t: 12,
                         r: 10,
-                        b: 30,
+                        b: 42,
                         l: 42
                     };
                 const vals = meses.map(m => +m[field]);
@@ -6429,11 +6835,6 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
             const API = './api/cancel-by-barber.php';
             const SLOTS_API = './api/slots.php';
 
-            const ALL_SLOTS = [
-                '09:00', '09:30', '10:00', '10:30', '11:00', '11:30',
-                '12:00', '12:30', '13:00', '13:30',
-                '16:00', '16:30', '17:00', '17:30', '18:00', '18:30', '19:00', '19:30',
-            ];
 
             let crState = {
                 token: null,
@@ -6525,10 +6926,9 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
                     return;
                 }
 
-                // Domingo bloqueado
                 const dt = new Date(fecha + 'T00:00:00');
-                if (dt.getDay() === 0) {
-                    grid.innerHTML = '<div class="cr-slots-loading" style="color:#d42b2b;">Los domingos estamos cerrados</div>';
+                if (!(window._OPEN_DAYS || [1,2,3,4,5,6]).includes(dt.getDay())) {
+                    grid.innerHTML = '<div class="cr-slots-loading" style="color:#d42b2b;">Día cerrado según la configuración de horario</div>';
                     return;
                 }
 
@@ -6547,9 +6947,7 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
                     const now = new Date();
                     const isToday = fecha === now.toISOString().slice(0, 10);
                     const currentHHMM = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
-                    const esSabado = dt.getDay() === 6;
-
-                    const slotsFiltrados = ALL_SLOTS.filter(s => !esSabado || s < '14:00');
+                    const slotsFiltrados = window._ALL_SLOTS || [];
 
                     grid.innerHTML = slotsFiltrados.map(s => {
                         const taken = ocupadas.includes(s);
@@ -6720,10 +7118,6 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
             const SH_API = './api/blocked-slots.php';
             const SLOTS_API = './api/slots.php';
 
-            // Todos los slots del día
-            const MORNING_SLOTS = ['09:00', '09:30', '10:00', '10:30', '11:00', '11:30', '12:00', '12:30', '13:00', '13:30'];
-            const AFTERNOON_SLOTS = ['16:00', '16:30', '17:00', '17:30', '18:00', '18:30', '19:00', '19:30'];
-            const ALL_SLOTS = [...MORNING_SLOTS, ...AFTERNOON_SLOTS];
 
             // Estado
             let shFecha = '';
@@ -6756,7 +7150,173 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
                 };
             })();
 
+            // ══ HORARIO DEL NEGOCIO ═══════════════════════════════════════
+            const HN_API = './api/horario-negocio.php';
+
+            function hnShowStatus(ok, msg) {
+                const el = document.getElementById('hn-status');
+                if (!el) return;
+                el.className = 'cfg-status visible ' + (ok ? 'ok' : 'err');
+                el.textContent = (ok ? '✓ ' : '✕ ') + msg;
+                setTimeout(() => el.classList.remove('visible'), 3500);
+            }
+
+            function hnGenPreviewSlots(inicioStr, finStr, intervalo) {
+                const slots = [];
+                if (!inicioStr || !finStr || !intervalo) return slots;
+                const [hI, mI] = inicioStr.split(':').map(Number);
+                const [hF, mF] = finStr.split(':').map(Number);
+                const minIni = hI * 60 + mI, minFin = hF * 60 + mF;
+                if (minIni >= minFin || intervalo <= 0) return slots;
+                for (let t = minIni; t < minFin; t += intervalo) {
+                    slots.push(String(Math.floor(t / 60)).padStart(2, '0') + ':' + String(t % 60).padStart(2, '0'));
+                }
+                return slots;
+            }
+
+            window.hnUpdatePreview = function() {
+                const intervalo = parseInt(
+                    document.querySelector('#hn-interval-btns .hn-int-btn.selected')?.dataset.val || '30', 10
+                );
+                const mananaOn = document.getElementById('hn-manana-activo')?.checked;
+                const tardeOn  = document.getElementById('hn-tarde-activo')?.checked;
+                const manSlots = mananaOn
+                    ? hnGenPreviewSlots(
+                        document.getElementById('hn-manana-inicio')?.value,
+                        document.getElementById('hn-manana-fin')?.value,
+                        intervalo)
+                    : [];
+                const tarSlots = tardeOn
+                    ? hnGenPreviewSlots(
+                        document.getElementById('hn-tarde-inicio')?.value,
+                        document.getElementById('hn-tarde-fin')?.value,
+                        intervalo)
+                    : [];
+                const all = [...manSlots, ...tarSlots];
+                const preview = document.getElementById('hn-preview-slots');
+                if (!preview) return;
+                if (!all.length) {
+                    preview.innerHTML = '<span style="color:#4a4a58;font-size:.75rem;font-style:italic;">Sin horarios configurados</span>';
+                    return;
+                }
+                preview.innerHTML = all.map(s => `<div class="hn-preview-slot">${s}</div>`).join('');
+            };
+
+            window.hnToggleDay = function(btn) {
+                btn.classList.toggle('active');
+            };
+
+            window.hnTogglePeriod = function(period) {
+                const chk  = document.getElementById(`hn-${period}-activo`);
+                const body = document.getElementById(`hn-${period}-body`);
+                if (body) body.classList.toggle('disabled', !chk?.checked);
+                hnUpdatePreview();
+            };
+
+            window.hnSelectInterval = function(btn) {
+                document.querySelectorAll('.hn-int-btn').forEach(b => b.classList.remove('selected'));
+                btn.classList.add('selected');
+                hnUpdatePreview();
+            };
+
+            async function hnLoad() {
+                try {
+                    const r = await fetch(HN_API);
+                    const j = await r.json();
+                    if (!j.ok) return;
+                    const d = j.data;
+
+                    const manActivo = d.horario_manana_activo === '1';
+                    const tarActivo = d.horario_tarde_activo  === '1';
+
+                    const mAct = document.getElementById('hn-manana-activo');
+                    const tAct = document.getElementById('hn-tarde-activo');
+                    if (mAct) mAct.checked = manActivo;
+                    if (tAct) tAct.checked = tarActivo;
+
+                    const mIni = document.getElementById('hn-manana-inicio');
+                    const mFin = document.getElementById('hn-manana-fin');
+                    const tIni = document.getElementById('hn-tarde-inicio');
+                    const tFin = document.getElementById('hn-tarde-fin');
+                    if (mIni) mIni.value = d.horario_manana_inicio || '09:00';
+                    if (mFin) mFin.value = d.horario_manana_fin    || '14:00';
+                    if (tIni) tIni.value = d.horario_tarde_inicio  || '16:00';
+                    if (tFin) tFin.value = d.horario_tarde_fin     || '20:00';
+
+                    const mBody = document.getElementById('hn-manana-body');
+                    const tBody = document.getElementById('hn-tarde-body');
+                    if (mBody) mBody.classList.toggle('disabled', !manActivo);
+                    if (tBody) tBody.classList.toggle('disabled', !tarActivo);
+
+                    const intervalo = d.horario_intervalo || '30';
+                    document.querySelectorAll('.hn-int-btn').forEach(b => {
+                        b.classList.toggle('selected', b.dataset.val === intervalo);
+                    });
+
+                    // Días de apertura
+                    const diasAbiertos = (d.horario_dias_abiertos || '1,2,3,4,5,6')
+                        .split(',').map(Number);
+                    document.querySelectorAll('.hn-day-btn').forEach(b => {
+                        b.classList.toggle('active', diasAbiertos.includes(+b.dataset.day));
+                    });
+
+                    hnUpdatePreview();
+                } catch (e) {
+                    console.error('hnLoad', e);
+                }
+            }
+
+            window.hnSave = async function() {
+                const btn = document.getElementById('hn-save-btn');
+                if (btn) { btn.disabled = true; btn.textContent = 'Guardando…'; }
+
+                const intervalo = document.querySelector('#hn-interval-btns .hn-int-btn.selected')?.dataset.val || '30';
+                const diasAbiertos = Array.from(document.querySelectorAll('.hn-day-btn.active'))
+                    .map(b => b.dataset.day).join(',') || '1,2,3,4,5,6';
+
+                const body = {
+                    accion:                  'guardar',
+                    horario_manana_activo:   document.getElementById('hn-manana-activo')?.checked ? '1' : '0',
+                    horario_manana_inicio:   document.getElementById('hn-manana-inicio')?.value || '09:00',
+                    horario_manana_fin:      document.getElementById('hn-manana-fin')?.value    || '14:00',
+                    horario_tarde_activo:    document.getElementById('hn-tarde-activo')?.checked ? '1' : '0',
+                    horario_tarde_inicio:    document.getElementById('hn-tarde-inicio')?.value  || '16:00',
+                    horario_tarde_fin:       document.getElementById('hn-tarde-fin')?.value     || '20:00',
+                    horario_intervalo:       intervalo,
+                    horario_dias_abiertos:   diasAbiertos,
+                };
+
+                try {
+                    const r = await fetch(HN_API, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(body),
+                    });
+                    const j = await r.json();
+                    if (j.ok) {
+                        // Recargar slots globales
+                        const rs = await fetch(HN_API + '?slots=1');
+                        const js = await rs.json();
+                        if (js.ok) {
+                            window._MORNING_SLOTS   = js.data.manana        || [];
+                            window._AFTERNOON_SLOTS = js.data.tarde         || [];
+                            window._ALL_SLOTS       = js.data.todos         || [];
+                            window._OPEN_DAYS       = js.data.dias_abiertos || [1,2,3,4,5,6];
+                        }
+                        hnShowStatus(true, 'Horario guardado correctamente.');
+                        if (shFecha) shLoad();
+                    } else {
+                        hnShowStatus(false, j.error || 'Error al guardar.');
+                    }
+                } catch (e) {
+                    hnShowStatus(false, 'Error de conexión.');
+                } finally {
+                    if (btn) { btn.disabled = false; btn.textContent = 'Guardar horario'; }
+                }
+            };
+
             function shOnTabOpen() {
+                hnLoad();
                 // Si no hay fecha seleccionada, poner hoy
                 const input = document.getElementById('sh-fecha-input');
                 if (input && !input.value) {
@@ -6782,7 +7342,10 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
             window.shSetToday = function() {
                 const today = new Date().toISOString().slice(0, 10);
                 const input = document.getElementById('sh-fecha-input');
-                if (input) input.value = today;
+                if (input) {
+                    if (input._adp) input._adp._setValue(today);
+                    else input.value = today;
+                }
                 shFecha = today;
                 shPendingBlock.clear();
                 shPendingUnblock.clear();
@@ -6884,21 +7447,18 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
                 if (container) container.style.display = 'block';
                 if (empty) empty.style.display = 'none';
 
-                // Filtrar por sábado
                 const dt = new Date(shFecha + 'T00:00:00');
-                const esSabado = dt.getDay() === 6;
-                const esDomingo = dt.getDay() === 0;
+                const diaCerrado = !(window._OPEN_DAYS || [1,2,3,4,5,6]).includes(dt.getDay());
 
-                const morningSlots = MORNING_SLOTS.filter(s => !esSabado || s < '14:00');
-                const afternoonSlots = esSabado || esDomingo ? [] : AFTERNOON_SLOTS;
+                const morningSlots   = diaCerrado ? [] : (window._MORNING_SLOTS  || []);
+                const afternoonSlots = diaCerrado ? [] : (window._AFTERNOON_SLOTS || []);
 
                 shRenderGrid('sh-grid-morning', morningSlots);
                 shRenderGrid('sh-grid-afternoon', afternoonSlots);
 
-                // Si es domingo, mostrar mensaje especial
-                if (esDomingo) {
+                if (diaCerrado) {
                     const grid = document.getElementById('sh-grid-morning');
-                    if (grid) grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:1rem;color:#7a7880;font-size:.8rem;">Cerrado los domingos.</div>';
+                    if (grid) grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:1rem;color:#7a7880;font-size:.8rem;">Día cerrado según la configuración de horario.</div>';
                 }
             }
 
@@ -6973,9 +7533,7 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
 
             // ── Bloquear todos los libres ─────────────────────────────
             window.shBlockAll = function() {
-                const dt = new Date(shFecha + 'T00:00:00');
-                const esSabado = dt.getDay() === 6;
-                const slots = ALL_SLOTS.filter(s => !esSabado || s < '14:00');
+                const slots = window._ALL_SLOTS || [];
 
                 slots.forEach(slot => {
                     if (!shBlockedSlots.has(slot) && !shReservedSlots.has(slot)) {
@@ -7412,7 +7970,8 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
 
         try {
             const secretEl = document.getElementById('rm-cron-url');
-            const url = secretEl ? secretEl.textContent.trim() : API_TRIGGER;
+            const base = secretEl ? secretEl.textContent.trim() : API_TRIGGER;
+            const url  = base + (base.includes('?') ? '&' : '?') + 'force=1';
             const res  = await fetch(url);
             const json = await res.json();
 
@@ -7467,6 +8026,123 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
     }
 
 })();
+    </script>
+
+    <!-- Admin Date Picker -->
+    <script>
+    (function () {
+        const MONTHS_ES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+        const DAYS_ES = ['L','M','X','J','V','S','D'];
+
+        class AdminDatePicker {
+            constructor(input, opts = {}) {
+                this.input = input;
+                this.allowPast = opts.allowPast !== false;
+                this.onPick = opts.onPick || null;
+                const init = input.value ? new Date(input.value + 'T00:00:00') : new Date();
+                this.vy = init.getFullYear();
+                this.vm = init.getMonth();
+                this.sel = input.value || null;
+                this._build();
+            }
+
+            _build() {
+                const wrap = document.createElement('div');
+                wrap.className = 'adp-wrap';
+                this.input.parentNode.insertBefore(wrap, this.input);
+                wrap.appendChild(this.input);
+                this.input.style.cssText = 'position:absolute;opacity:0;width:0;height:0;pointer-events:none;';
+                this.input._adp = this;
+
+                this.btn = document.createElement('button');
+                this.btn.type = 'button';
+                this.btn.className = 'adp-trigger';
+                this.btn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><span class="adp-trigger-text"></span>';
+                wrap.appendChild(this.btn);
+                this._refreshBtn();
+
+                this.pop = document.createElement('div');
+                this.pop.className = 'adp-popover';
+                wrap.appendChild(this.pop);
+                this._renderPop();
+
+                this.btn.addEventListener('click', e => { e.stopPropagation(); this.pop.classList.toggle('open'); });
+                document.addEventListener('click', () => this.pop.classList.remove('open'));
+                this.pop.addEventListener('click', e => e.stopPropagation());
+            }
+
+            _refreshBtn() {
+                const s = this.btn.querySelector('.adp-trigger-text');
+                if (this.sel) {
+                    const [y, m, d] = this.sel.split('-');
+                    s.textContent = parseInt(d) + ' ' + MONTHS_ES[parseInt(m) - 1] + ' ' + y;
+                } else {
+                    s.textContent = 'Seleccionar fecha';
+                }
+            }
+
+            _renderPop() {
+                const today = new Date(); today.setHours(0, 0, 0, 0);
+                const first = new Date(this.vy, this.vm, 1);
+                const last = new Date(this.vy, this.vm + 1, 0);
+                let dow = first.getDay(); dow = dow === 0 ? 6 : dow - 1;
+
+                let h = '<div class="adp-hdr"><div class="adp-title">' + MONTHS_ES[this.vm] + ' ' + this.vy + '</div>';
+                h += '<div class="adp-nav"><button data-d="-1">‹</button><button data-d="1">›</button></div></div>';
+                h += '<div class="adp-labels">' + DAYS_ES.map(d => '<div class="adp-dlabel">' + d + '</div>').join('') + '</div>';
+                h += '<div class="adp-grid">';
+                for (let i = 0; i < dow; i++) h += '<div class="adp-cell adp-empty"></div>';
+                for (let d = 1; d <= last.getDate(); d++) {
+                    const dt = new Date(this.vy, this.vm, d);
+                    const ds = this.vy + '-' + String(this.vm + 1).padStart(2, '0') + '-' + String(d).padStart(2, '0');
+                    let c = 'adp-cell';
+                    if (!this.allowPast && dt < today) c += ' adp-dis';
+                    if (dt.getTime() === today.getTime()) c += ' adp-today';
+                    if (this.sel === ds) c += ' adp-sel';
+                    const pick = (this.allowPast || dt >= today) ? ' data-pick="' + ds + '"' : '';
+                    h += '<div class="' + c + '"' + pick + '>' + d + '</div>';
+                }
+                h += '</div>';
+                this.pop.innerHTML = h;
+
+                this.pop.querySelectorAll('[data-d]').forEach(b => b.addEventListener('click', e => { e.stopPropagation(); this._nav(+b.dataset.d); }));
+                this.pop.querySelectorAll('[data-pick]').forEach(b => b.addEventListener('click', () => this._pick(b.dataset.pick)));
+            }
+
+            _nav(d) {
+                this.vm += d;
+                if (this.vm > 11) { this.vm = 0; this.vy++; }
+                else if (this.vm < 0) { this.vm = 11; this.vy--; }
+                this._renderPop();
+            }
+
+            _pick(ds) {
+                this.sel = ds; this.input.value = ds;
+                this._refreshBtn(); this._renderPop();
+                this.pop.classList.remove('open');
+                if (this.onPick) this.onPick(ds);
+                else this.input.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+
+            _setValue(ds) {
+                this.sel = ds; this.input.value = ds;
+                this.vy = parseInt(ds.split('-')[0]);
+                this.vm = parseInt(ds.split('-')[1]) - 1;
+                this._refreshBtn(); this._renderPop();
+            }
+        }
+
+        function initPickers() {
+            const fc = document.getElementById('fecha-custom-input');
+            if (fc) new AdminDatePicker(fc, { allowPast: true });
+
+            const sh = document.getElementById('sh-fecha-input');
+            if (sh) new AdminDatePicker(sh, { allowPast: false, onPick: () => { if (window.shOnFechaChange) shOnFechaChange(); } });
+        }
+
+        if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initPickers);
+        else initPickers();
+    })();
     </script>
 </body>
 

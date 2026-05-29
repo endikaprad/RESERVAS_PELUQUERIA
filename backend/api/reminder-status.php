@@ -115,7 +115,6 @@ try {
             SELECT resultado, COUNT(DISTINCT reserva_id) AS cnt
             FROM reminder_log
             WHERE enviado_en >= ?
-              AND COALESCE(cliente_nombre, '') != ''
             GROUP BY resultado
         ");
         $s->execute([$hace7]);

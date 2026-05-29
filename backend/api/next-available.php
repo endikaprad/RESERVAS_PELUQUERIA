@@ -8,25 +8,21 @@
 
 require_once __DIR__ . '/helpers.php';
 
-const TODOS_LOS_SLOTS = [
-    '09:00','09:30','10:00','10:30','11:00','11:30',
-    '12:00','12:30','13:00','13:30',
-    '16:00','16:30','17:00','17:30','18:00','18:30','19:00','19:30',
-];
-
-function slotsParaDia(int $diaSemana): array {
-    if ($diaSemana === 0) return [];
-    if ($diaSemana === 6) {
-        return array_filter(TODOS_LOS_SLOTS, fn($t) => $t < '14:00');
-    }
-    return TODOS_LOS_SLOTS;
-}
-
 try {
     $db   = getDB();
     $now  = new DateTime('now');
     $hoy  = $now->format('Y-m-d');
     $horaActual = $now->format('H:i');
+
+    // Cargar horario configurado una vez
+    $horCfg       = getHorarioCfg($db);
+    $intervalo    = max(1, (int)$horCfg['horario_intervalo']);
+    $diasAbiertos = array_map('intval', explode(',', $horCfg['horario_dias_abiertos']));
+    $slotsMan     = $horCfg['horario_manana_activo'] === '1'
+        ? generarSlots($horCfg['horario_manana_inicio'], $horCfg['horario_manana_fin'], $intervalo) : [];
+    $slotsTar     = $horCfg['horario_tarde_activo'] === '1'
+        ? generarSlots($horCfg['horario_tarde_inicio'], $horCfg['horario_tarde_fin'], $intervalo) : [];
+    $todosSlotsGlobal = array_values(array_merge($slotsMan, $slotsTar));
 
     // Cargar todos los días bloqueados de los próximos 14 días
     $stmt = $db->prepare(
@@ -41,7 +37,7 @@ try {
         $dt      = (new DateTime($hoy))->modify("+{$offset} days");
         $fecha   = $dt->format('Y-m-d');
         $diaSem  = (int)$dt->format('w');
-        $slots   = slotsParaDia($diaSem);
+        $slots   = in_array($diaSem, $diasAbiertos, true) ? $todosSlotsGlobal : [];
 
         if (empty($slots)) continue;
 

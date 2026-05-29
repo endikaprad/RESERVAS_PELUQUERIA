@@ -9,11 +9,12 @@ const API_BASE = './backend/api';
 let SERVICES = [];
 let BARBERS  = [];
 
-const TIME_SLOTS = [
+let TIME_SLOTS = [
     '09:00','09:30','10:00','10:30','11:00','11:30',
     '12:00','12:30','13:00','13:30',
     '16:00','16:30','17:00','17:30','18:00','18:30','19:00','19:30',
 ];
+let OPEN_DAYS = [1, 2, 3, 4, 5, 6]; // lunes-sábado por defecto
 
 // ===== PHONE PREFIX DATA =====
 const PHONE_COUNTRIES = [
@@ -74,12 +75,18 @@ let blockedDaysAbortController = null;
 async function loadInitialData() {
     showStepLoading(true);
     try {
-        const [resSvc, resBar] = await Promise.all([
+        const [resSvc, resBar, resHor] = await Promise.all([
             fetch(`${API_BASE}/servicios.php`),
             fetch(`${API_BASE}/barberos.php`),
+            fetch(`${API_BASE}/horario-negocio.php?slots=1`),
         ]);
         const jsonSvc = await resSvc.json();
         const jsonBar = await resBar.json();
+        const jsonHor = await resHor.json();
+        if (jsonHor.ok) {
+            if (Array.isArray(jsonHor.data.todos))        TIME_SLOTS = jsonHor.data.todos;
+            if (Array.isArray(jsonHor.data.dias_abiertos)) OPEN_DAYS  = jsonHor.data.dias_abiertos;
+        }
 
         if (jsonSvc.ok) {
             SERVICES = jsonSvc.data.map(s => ({
@@ -531,10 +538,10 @@ function _renderCalGrid(year, month) {
 
     for (let d = 1; d <= daysInMonth; d++) {
         const date      = new Date(year, month, d);
-        const isToday   = date.getTime() === today.getTime();
-        const isPast    = date < today;
-        const isSunday  = date.getDay() === 0;
-        const isBlocked = isDateBlocked(year, month, d);
+        const isToday     = date.getTime() === today.getTime();
+        const isPast      = date < today;
+        const isClosedDay = !OPEN_DAYS.includes(date.getDay());
+        const isBlocked   = isDateBlocked(year, month, d);
 
         const selDate    = booking.date;
         const isSelected = selDate &&
@@ -542,10 +549,10 @@ function _renderCalGrid(year, month) {
             selDate.getMonth()    === month &&
             selDate.getFullYear() === year;
 
-        const disabled = isPast || isSunday || isBlocked;
+        const disabled = isPast || isClosedDay || isBlocked;
 
         let cls = 'cal-cell';
-        if (isPast || isSunday) cls += ' disabled';
+        if (isPast || isClosedDay) cls += ' disabled';
         if (isBlocked)          cls += ' blocked';
         if (isToday && !isBlocked) cls += ' today';
         if (isSelected && !isBlocked) cls += ' selected';
@@ -585,7 +592,7 @@ function selectDate(y, m, d) {
     if (isDateBlocked(y, m, d)) return;
     const date = new Date(y, m, d);
     const today = new Date(); today.setHours(0, 0, 0, 0);
-    if (date < today || date.getDay() === 0) return;
+    if (date < today || !OPEN_DAYS.includes(date.getDay())) return;
 
     booking.date     = new Date(y, m, d);
     booking.time     = null;
@@ -660,10 +667,7 @@ function renderTimeSlots() {
     const now         = new Date();
     const isToday     = booking.date && booking.date.toDateString() === now.toDateString();
     const currentHHMM = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
-    const esSabado    = booking.date && booking.date.getDay() === 6;
-
     wrap.innerHTML = TIME_SLOTS
-        .filter(t => !esSabado || t < '14:00')
         .map(t => {
             const taken    = takenSlots.includes(t);
             const pastTime = isToday && t <= currentHHMM;

@@ -34,15 +34,34 @@ try {
     $periodo = in_array($periodoRaw, $periodoAllowed) ? $periodoRaw : 'todo';
 
     $dateFrom = null;
-    $dateTo   = $hoy;
+    $dateTo   = null;
     $now = new DateTime('now', $tz);
     switch ($periodo) {
-        case 'hoy':       $dateFrom = $hoy; break;
-        case 'semana':    $dateFrom = (clone $now)->modify('-6 days')->format('Y-m-d'); break;
-        case 'mes':       $dateFrom = date('Y-m-01'); break;
-        case 'trimestre': $dateFrom = (clone $now)->modify('-3 months')->format('Y-m-d'); break;
-        case 'año':       $dateFrom = (clone $now)->modify('-1 year +1 day')->format('Y-m-d'); break;
-        default:          $dateFrom = null; // todo el tiempo
+        case 'hoy':
+            $dateFrom = $hoy;
+            $dateTo   = $hoy;
+            break;
+        case 'semana':
+            // Semana ISO actual: lunes a domingo
+            $weekDay  = (int)$now->format('N'); // 1=Lun, 7=Dom
+            $dateFrom = (clone $now)->modify('-' . ($weekDay - 1) . ' days')->format('Y-m-d');
+            $dateTo   = (clone $now)->modify('+' . (7 - $weekDay) . ' days')->format('Y-m-d');
+            break;
+        case 'mes':
+            $dateFrom = date('Y-m-01');
+            $dateTo   = date('Y-m-t');
+            break;
+        case 'trimestre':
+            $dateFrom = (clone $now)->modify('-3 months')->format('Y-m-d');
+            $dateTo   = $hoy;
+            break;
+        case 'año':
+            $dateFrom = date('Y-01-01');
+            $dateTo   = date('Y-12-31');
+            break;
+        default:
+            $dateFrom = null;
+            $dateTo   = null;
     }
     $wherePeriod = $dateFrom
         ? " AND r.fecha BETWEEN " . $db->quote($dateFrom) . " AND " . $db->quote($dateTo)
@@ -170,8 +189,23 @@ try {
     } elseif ($granularity === 'week') {
         $map = [];
         foreach ($rawPeriodos as $r) $map[$r['periodo_key']] = $r;
-        foreach ($rawPeriodos as $r) {
-            $mesesCompletos[] = ['mes'=>$r['periodo_key'],'label'=>'Sem '.$r['label_hint'],'citas'=>(int)$r['citas'],'ingresos'=>(float)$r['ingresos']];
+        // Generate all weeks in range, filling gaps with 0
+        $cur = new DateTime($dateFrom, $tz);
+        // Move to Monday of the start week
+        $dow = (int)$cur->format('N');
+        if ($dow > 1) $cur->modify('-' . ($dow - 1) . ' days');
+        $endDt = new DateTime($dateTo, $tz);
+        while ($cur <= $endDt) {
+            $isoKey = $cur->format('o-\WW');
+            $lbl = 'Sem ' . $cur->format('d/m');
+            $found = $map[$isoKey] ?? null;
+            $mesesCompletos[] = [
+                'mes'      => $isoKey,
+                'label'    => $found ? 'Sem ' . $found['label_hint'] : $lbl,
+                'citas'    => $found ? (int)$found['citas']    : 0,
+                'ingresos' => $found ? (float)$found['ingresos'] : 0.0,
+            ];
+            $cur->modify('+1 week');
         }
         if (empty($mesesCompletos)) {
             $mesesCompletos[] = ['mes'=>date('Y-m'),'label'=>'—','citas'=>0,'ingresos'=>0.0];
@@ -260,7 +294,7 @@ try {
 
     // ── 10. Reservas — heatmap ────────────────────────────────
     $hmFrom = $dateFrom ?? date('Y-m-d', strtotime('-30 days'));
-    $hmTo   = $dateTo;
+    $hmTo   = $dateTo   ?? date('Y-m-d', strtotime('+30 days'));
     $stmt = $db->query("
         SELECT DATE_FORMAT(fecha,'%Y-%m-%d') AS dia, COUNT(*) AS total
         FROM reservas
