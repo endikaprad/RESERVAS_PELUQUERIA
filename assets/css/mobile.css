@@ -14,7 +14,7 @@
 
     /* ===== NAVBAR ===== */
     .navbar {
-        padding: 1rem 1.25rem;
+        padding: 0 1.25rem;
         height: 60px;
         z-index: 100;
     }
@@ -28,28 +28,57 @@
         letter-spacing: 0.18em;
     }
 
-    /* Hamburger */
+    /* ── Hamburger ── */
     .hamburger {
         display: flex !important;
         position: relative;
-        z-index: 1000;
+        z-index: 1100;
+        width: 40px;
+        height: 40px;
+        padding: 0;
+        background: transparent;
+        border: none;
+        cursor: pointer;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        gap: 5px;
     }
 
     .hamburger span {
-        transition: transform 0.3s ease, opacity 0.3s ease !important;
+        display: block;
+        width: 22px;
+        height: 1.5px;
+        background: var(--color-text);
+        border-radius: 2px;
+        transform-origin: center;
+        transition: transform 0.38s cubic-bezier(0.23, 1, 0.32, 1),
+                    opacity   0.25s ease,
+                    background 0.3s ease !important;
+    }
+
+    /* Estado abierto — hamburger se convierte en X dorada */
+    .hamburger.is-open span:nth-child(1) {
+        transform: rotate(45deg) translate(4.5px, 4.5px) !important;
+        background: var(--color-gold) !important;
+    }
+    .hamburger.is-open span:nth-child(2) {
+        opacity: 0 !important;
+        transform: scaleX(0) !important;
+    }
+    .hamburger.is-open span:nth-child(3) {
+        transform: rotate(-45deg) translate(4.5px, -4.5px) !important;
+        background: var(--color-gold) !important;
     }
 
     /* Menú oculto por defecto */
-    .nav-links:not(.open) {
+    .nav-links:not(.open):not(.closing) {
         display: none;
     }
 
     /* ── OVERLAY ABIERTO ── */
-    /* El JS sobreescribe display/position/etc inline.
-     Aquí definimos el aspecto visual de los links */
-
-    /* Overlay — pantalla completa con animación */
-    .nav-links.open {
+    .nav-links.open,
+    .nav-links.closing {
         display: flex !important;
         flex-direction: column;
         position: fixed;
@@ -59,8 +88,9 @@
         bottom: 0;
         width: 100vw;
         height: 100dvh;
-        z-index: 500;
-        background: #0a0900;
+        z-index: 1000;
+        background: radial-gradient(ellipse at 50% 0%, rgba(201,168,76,0.06) 0%, transparent 55%),
+                    linear-gradient(180deg, #0d0b10 0%, #09080f 60%);
         justify-content: center;
         align-items: center;
         gap: 0;
@@ -68,121 +98,155 @@
         margin: 0;
         border: none;
         border-radius: 0;
-        overflow-y: auto;
-        animation: menuSlideIn 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        overflow: hidden;
     }
 
-    @keyframes menuSlideIn {
-        from {
-            clip-path: inset(0 0 100% 0);
-            opacity: 0.4;
-        }
-
-        to {
-            clip-path: inset(0 0 0% 0);
-            opacity: 1;
-        }
+    .nav-links.open {
+        animation: mobileMenuIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
     }
 
-    /* Decoración: línea dorada sutil en la parte superior */
-    .nav-links.open::before {
+    .nav-links.closing {
+        animation: mobileMenuOut 0.35s cubic-bezier(0.4, 0, 1, 1) forwards;
+    }
+
+    @keyframes mobileMenuIn {
+        from { clip-path: inset(0 0 100% 0 round 0 0 28px 28px); opacity: 0.6; }
+        to   { clip-path: inset(0 0 0%   0 round 0);              opacity: 1;   }
+    }
+
+    @keyframes mobileMenuOut {
+        from { clip-path: inset(0 0 0%   0 round 0);              opacity: 1;   }
+        to   { clip-path: inset(0 0 100% 0 round 0 0 28px 28px); opacity: 0;   }
+    }
+
+    /* Línea dorada superior */
+    .nav-links.open::before,
+    .nav-links.closing::before {
         content: '';
         position: absolute;
         top: 0;
         left: 0;
         right: 0;
         height: 1px;
-        background: linear-gradient(90deg, transparent, var(--color-gold-dim), transparent);
+        background: linear-gradient(90deg, transparent 5%, var(--color-gold-dim) 40%, var(--color-gold) 50%, var(--color-gold-dim) 60%, transparent 95%);
+        opacity: 0.6;
     }
 
-    /* Decoración: texto de marca translúcido de fondo */
-    .nav-links.open::after {
+    /* Marca de agua PRADO */
+    .nav-links.open::after,
+    .nav-links.closing::after {
         content: 'PRADO';
         position: absolute;
-        bottom: 2rem;
+        bottom: 1.5rem;
         left: 50%;
         transform: translateX(-50%);
         font-family: var(--font-display);
-        font-size: 5rem;
+        font-size: clamp(4rem, 18vw, 6rem);
         font-weight: 900;
-        color: rgba(201, 168, 76, 0.04);
-        letter-spacing: 0.3em;
+        font-style: italic;
+        color: transparent;
+        -webkit-text-stroke: 1px rgba(201, 168, 76, 0.07);
+        letter-spacing: 0.25em;
         pointer-events: none;
         white-space: nowrap;
         user-select: none;
     }
 
-    /* Links dentro del overlay */
-    .nav-links.open a {
+    /* ── Links dentro del overlay ── */
+    .nav-links.open a,
+    .nav-links.closing a {
         position: relative;
         display: block !important;
         width: 100%;
         text-align: center;
         font-family: var(--font-display) !important;
-        font-size: 1.6rem !important;
+        font-size: clamp(1.5rem, 6vw, 1.9rem) !important;
         font-weight: 700 !important;
         font-style: italic;
-        letter-spacing: 0.02em !important;
+        letter-spacing: 0.01em !important;
         text-transform: none !important;
-        color: rgba(240, 236, 227, 0.35) !important;
-        padding: 0.85rem 2rem !important;
+        color: rgba(240, 236, 227, 0.28) !important;
+        padding: 0.8rem 2rem !important;
         border: none !important;
         border-radius: 0 !important;
         background: transparent !important;
-        transition: color 0.25s ease, transform 0.25s ease !important;
+        transition: color 0.3s ease, letter-spacing 0.3s ease !important;
+        overflow: hidden;
+    }
+
+    /* Subrayado dorado animado en hover */
+    .nav-links.open a::before {
+        content: '';
+        position: absolute !important;
+        bottom: 0.6rem;
+        left: 50%;
+        transform: translateX(-50%) scaleX(0) !important;
+        width: 32px;
+        height: 1px;
+        background: var(--color-gold);
+        opacity: 0;
+        transition: transform 0.3s cubic-bezier(0.23,1,0.32,1), opacity 0.3s ease !important;
+    }
+
+    .nav-links.open a:hover::before {
+        transform: translateX(-50%) scaleX(1) !important;
+        opacity: 0.9;
     }
 
     .nav-links.open a:hover {
-        color: var(--color-gold) !important;
-        transform: scale(1.04) !important;
+        color: rgba(240, 236, 227, 0.92) !important;
+        letter-spacing: 0.04em !important;
         background: transparent !important;
     }
 
     .nav-links.open a.active {
         color: var(--color-text) !important;
-        font-style: italic;
     }
 
     /* Línea decorativa bajo el link activo */
     .nav-links.open a.active::after {
         content: '';
         display: block !important;
-        width: 24px;
+        width: 20px;
         height: 1px;
         background: var(--color-gold);
-        margin: 0.2rem auto 0;
+        margin: 0.15rem auto 0;
         opacity: 0.8;
         position: static !important;
         transform: none !important;
     }
 
-    /* Botón reservar: diferente, destacado */
-    .nav-links.open a.nav-cta {
+    /* ── Botón RESERVAR ── */
+    .nav-links.open a.nav-cta,
+    .nav-links.closing a.nav-cta {
         font-family: var(--font-body) !important;
-        font-size: 0.72rem !important;
-        font-weight: 500 !important;
+        font-size: 0.7rem !important;
+        font-weight: 600 !important;
         font-style: normal !important;
-        letter-spacing: 0.2em !important;
+        letter-spacing: 0.22em !important;
         text-transform: uppercase !important;
         color: var(--color-gold) !important;
-        border: 1px solid var(--color-gold-dim) !important;
-        border-radius: var(--radius-sm) !important;
-        padding: 0.85rem 2.5rem !important;
-        margin-top: 1.5rem !important;
+        border: 1px solid rgba(201,168,76,0.45) !important;
+        border-radius: 3px !important;
+        padding: 0.9rem 2.75rem !important;
+        margin-top: 1.75rem !important;
         width: auto !important;
         display: inline-block !important;
-        transition: background 0.25s ease, color 0.25s ease, border-color 0.25s ease, transform 0.25s ease !important;
+        box-shadow: 0 0 0 0 rgba(201,168,76,0);
+        transition: background 0.3s ease, color 0.3s ease, border-color 0.3s ease,
+                    box-shadow 0.3s ease, transform 0.3s cubic-bezier(0.23,1,0.32,1) !important;
     }
+
+    .nav-links.open a.nav-cta::before { display: none !important; }
+    .nav-links.open a.nav-cta::after  { display: none !important; }
 
     .nav-links.open a.nav-cta:hover {
-        background: var(--color-gold) !important;
-        color: #000 !important;
+        background: rgba(201,168,76,0.1) !important;
+        color: var(--color-gold-light) !important;
         border-color: var(--color-gold) !important;
+        box-shadow: 0 0 24px rgba(201,168,76,0.18), inset 0 0 18px rgba(201,168,76,0.06) !important;
         transform: translateY(-2px) !important;
-    }
-
-    .nav-links.open a.nav-cta::after {
-        display: none !important;
+        letter-spacing: 0.26em !important;
     }
 
     /* ===== HERO — INDEX ===== */

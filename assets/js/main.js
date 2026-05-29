@@ -20,40 +20,50 @@ if (navbar) {
 }
 
 if (hamburger && navLinks) {
+    let menuClosingTimer = null;
+
+    function openMenu() {
+        clearTimeout(menuClosingTimer);
+        navLinks.classList.remove('closing');
+        navLinks.classList.add('open');
+        hamburger.classList.add('is-open');
+        document.body.style.overflow = 'hidden';
+
+        navLinks.querySelectorAll('a').forEach((a, i) => {
+            a.style.opacity   = '0';
+            a.style.transform = 'translateY(22px)';
+            a.style.transition = 'none';
+            requestAnimationFrame(() => requestAnimationFrame(() => {
+                const delay = 0.18 + i * 0.08;
+                a.style.transition = `opacity 0.45s cubic-bezier(0.23,1,0.32,1) ${delay}s, transform 0.45s cubic-bezier(0.23,1,0.32,1) ${delay}s`;
+                a.style.opacity   = '1';
+                a.style.transform = 'translateY(0)';
+            }));
+        });
+    }
+
+    function closeMenu() {
+        navLinks.querySelectorAll('a').forEach(a => { a.style.cssText = ''; });
+        navLinks.classList.remove('open');
+        navLinks.classList.add('closing');
+        hamburger.classList.remove('is-open');
+        document.body.style.overflow = '';
+
+        menuClosingTimer = setTimeout(() => {
+            navLinks.classList.remove('closing');
+        }, 380);
+    }
+
     hamburger.addEventListener('click', () => {
-        const isOpen = navLinks.classList.toggle('open');
-
-        hamburger.querySelectorAll('span')[0].style.transform = isOpen ? 'rotate(45deg) translate(4px, 4px)'   : '';
-        hamburger.querySelectorAll('span')[1].style.opacity   = isOpen ? '0' : '';
-        hamburger.querySelectorAll('span')[2].style.transform = isOpen ? 'rotate(-45deg) translate(4px, -4px)' : '';
-        document.body.style.overflow = isOpen ? 'hidden' : '';
-
-        if (isOpen) {
-            navLinks.querySelectorAll('a').forEach((a, i) => {
-                a.style.opacity    = '0';
-                a.style.transform  = 'translateY(18px)';
-                a.style.transition = 'none';
-                requestAnimationFrame(() => requestAnimationFrame(() => {
-                    a.style.transition = `opacity 0.4s ease ${i * 0.07}s, transform 0.4s ease ${i * 0.07}s`;
-                    a.style.opacity    = '1';
-                    a.style.transform  = 'translateY(0)';
-                }));
-            });
+        if (navLinks.classList.contains('open')) {
+            closeMenu();
         } else {
-            navLinks.querySelectorAll('a').forEach(a => { a.style.cssText = ''; });
+            openMenu();
         }
     });
 
     navLinks.querySelectorAll('a').forEach(link => {
-        link.addEventListener('click', () => {
-            navLinks.classList.remove('open');
-            navLinks.querySelectorAll('a').forEach(a => { a.style.cssText = ''; });
-            hamburger.querySelectorAll('span').forEach(s => {
-                s.style.transform = '';
-                s.style.opacity   = '';
-            });
-            document.body.style.overflow = '';
-        });
+        link.addEventListener('click', closeMenu);
     });
 }
 
@@ -195,17 +205,27 @@ function initMagneticButtons() {
     const grid = document.getElementById('home-services-grid');
     if (!grid) return;
 
-    const FEATURED = ['Corte Clásico', 'Arreglo de Barba', 'Corte + Barba', 'Sesión Premium'];
-    const delays   = ['reveal-delay-1', 'reveal-delay-2', 'reveal-delay-3', 'reveal-delay-4'];
+    const delays = ['reveal-delay-1', 'reveal-delay-2', 'reveal-delay-3', 'reveal-delay-4'];
 
     try {
         const res  = await fetch(`${window.API_BASE}/servicios.php`);
         const json = await res.json();
-        if (!json.ok) return;
+        if (!json.ok || !json.data.length) return;
 
-        // Mantener el orden definido en FEATURED
-        const map      = Object.fromEntries(json.data.map(s => [s.nombre, s]));
-        const selected = FEATURED.map(n => map[n]).filter(Boolean);
+        const activos = json.data.filter(s => !s.activo || s.activo == 1 || s.activo === true);
+
+        // Seleccionar uno por categoría para variedad, hasta 4 en total
+        const orden = ['cortes', 'barba', 'packs'];
+        const selected = [];
+        orden.forEach(cat => {
+            const match = activos.find(s => (s.categoria || '').toLowerCase() === cat && !selected.includes(s));
+            if (match) selected.push(match);
+        });
+        // Rellenar hasta 4 con los restantes si faltan categorías
+        activos.forEach(s => {
+            if (selected.length < 4 && !selected.includes(s)) selected.push(s);
+        });
+
         if (!selected.length) return;
 
         grid.innerHTML = selected.map((s, i) => {

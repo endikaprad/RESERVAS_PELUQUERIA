@@ -22,9 +22,10 @@
         </div>
 
         <!-- Tabs -->
-        <div class="rd-tabs">
+        <div class="rd-tabs" id="rd-tabs-bar">
             <button class="rd-tab active" id="rd-tab-reserva" onclick="rdSwitchTab('reserva')">Reserva</button>
             <button class="rd-tab" id="rd-tab-cliente" onclick="rdSwitchTab('cliente')">Perfil cliente</button>
+            <div class="rd-tab-indicator" id="rd-tab-indicator"></div>
         </div>
 
         <!-- TAB: RESERVA ────────────────────────────────────── -->
@@ -323,11 +324,14 @@
     .rdb-cancelada  { background:rgba(107,114,128,.12);border:1px solid rgba(107,114,128,.3);color:#9ca3af; }
     .rdb-reprogramar_barbero { background:rgba(201,168,76,.12);border:1px solid rgba(201,168,76,.3);color:#c9a84c; }
     .rdb-reprogramar_cliente { background:rgba(37,80,160,.12);border:1px solid rgba(37,80,160,.35);color:#6b9fff; }
-    .rd-tabs { display:flex;flex-shrink:0;border-bottom:1px solid #252530; }
-    .rd-tab { flex:1;padding:.75rem 1rem;background:transparent;border:none;font-family:'DM Sans',sans-serif;font-size:.72rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#7a7880;cursor:pointer;border-bottom:2px solid transparent;transition:all .2s; }
+    .rd-tabs { display:flex;flex-shrink:0;border-bottom:1px solid #252530;position:relative; }
+    .rd-tab { flex:1;padding:.75rem 1rem;background:transparent;border:none;font-family:'DM Sans',sans-serif;font-size:.72rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#7a7880;cursor:pointer;border-bottom:2px solid transparent;transition:color .25s,background .25s; }
     .rd-tab:hover { color:#f0ece3; }
-    .rd-tab.active { color:#d42b2b;border-bottom-color:#d42b2b;background:rgba(212,43,43,.04); }
+    .rd-tab.active { color:#d42b2b;background:rgba(212,43,43,.04); }
+    .rd-tab-indicator { position:absolute;bottom:-1px;height:2px;background:#d42b2b;transition:left .28s cubic-bezier(.4,0,.2,1),width .28s cubic-bezier(.4,0,.2,1); }
+    @keyframes rdPaneIn { from { opacity:0;transform:translateY(6px); } to { opacity:1;transform:translateY(0); } }
     .rd-body { flex:1;overflow-y:auto;padding:1.25rem 1.5rem; }
+    .rd-body.rd-pane-entering { animation:rdPaneIn .22s cubic-bezier(.4,0,.2,1) both; }
     .rd-body::-webkit-scrollbar { width:4px; }
     .rd-body::-webkit-scrollbar-thumb { background:#252530;border-radius:2px; }
     .rd-section { margin-bottom:1.5rem; }
@@ -498,14 +502,44 @@
         reprogramar_barbero: '⇄ Prop. barbero', reprogramar_cliente: '⇄ Prop. cliente',
     };
 
+    // ── Mover indicador deslizante de pestaña ─────────────────
+    function rdMoveIndicator(activeBtn) {
+        const indicator = document.getElementById('rd-tab-indicator');
+        if (!indicator) return;
+        indicator.style.left  = activeBtn.offsetLeft + 'px';
+        indicator.style.width = activeBtn.offsetWidth + 'px';
+    }
+
     // ── Cambiar tab ───────────────────────────────────────────
     window.rdSwitchTab = function (tab) {
-        document.getElementById('rd-tab-reserva').classList.toggle('active', tab === 'reserva');
-        document.getElementById('rd-tab-cliente').classList.toggle('active', tab === 'cliente');
-        document.getElementById('rd-pane-reserva').style.display = tab === 'reserva' ? '' : 'none';
-        document.getElementById('rd-pane-cliente').style.display = tab === 'cliente' ? '' : 'none';
+        const btnR = document.getElementById('rd-tab-reserva');
+        const btnC = document.getElementById('rd-tab-cliente');
+        const paneR = document.getElementById('rd-pane-reserva');
+        const paneC = document.getElementById('rd-pane-cliente');
+
+        btnR.classList.toggle('active', tab === 'reserva');
+        btnC.classList.toggle('active', tab === 'cliente');
+        rdMoveIndicator(tab === 'reserva' ? btnR : btnC);
+
+        const incoming = tab === 'reserva' ? paneR : paneC;
+        const outgoing = tab === 'reserva' ? paneC : paneR;
+
+        outgoing.style.display = 'none';
+        outgoing.classList.remove('rd-pane-entering');
+        incoming.style.display = '';
+        incoming.classList.remove('rd-pane-entering');
+        // fuerza reflow para que la animación arranque desde cero
+        void incoming.offsetWidth;
+        incoming.classList.add('rd-pane-entering');
+
         if (tab === 'cliente' && !statsLoaded) loadClientStats();
     };
+
+    // ── Posicionar indicador al abrir el panel ────────────────
+    function rdInitIndicator() {
+        const activeBtn = document.getElementById('rd-tab-reserva');
+        if (activeBtn) rdMoveIndicator(activeBtn);
+    }
 
     // ── Cargar estadísticas del cliente por TELÉFONO ──────────
     async function loadClientStats() {
@@ -1046,6 +1080,7 @@
         document.getElementById('rd-overlay').classList.add('open');
         document.getElementById('rd-drawer').classList.add('open');
         document.body.style.overflow = 'hidden';
+        requestAnimationFrame(rdInitIndicator);
     };
 
     window.closeRD = function () {
