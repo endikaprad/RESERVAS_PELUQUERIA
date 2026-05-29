@@ -3,10 +3,24 @@
 //  PRADO BARBER CO. — Panel de administración (Mobile-First)
 // ============================================================
 
-define('ADMIN_USER', 'endika');
-define('ADMIN_PASS', 'PradoBarber2026');
+require_once __DIR__ . '/config.php';
+
+if (!defined('ADMIN_USER') || !defined('ADMIN_PASS')) {
+    die('Error de configuración: credenciales de administrador no definidas.');
+}
 
 session_start();
+
+// Expirar sesión tras 30 minutos de inactividad
+if (isset($_SESSION['admin'])) {
+    $timeout = 1800;
+    if (isset($_SESSION['last_activity']) && (time() - $_SESSION['last_activity']) > $timeout) {
+        session_destroy();
+        header('Location: ' . $_SERVER['PHP_SELF']);
+        exit;
+    }
+    $_SESSION['last_activity'] = time();
+}
 
 if (isset($_POST['logout'])) {
     session_destroy();
@@ -15,8 +29,9 @@ if (isset($_POST['logout'])) {
 }
 
 if (isset($_POST['user']) && isset($_POST['pass'])) {
-    if ($_POST['user'] === ADMIN_USER && $_POST['pass'] === ADMIN_PASS) {
+    if ($_POST['user'] === ADMIN_USER && password_verify($_POST['pass'], ADMIN_PASS)) {
         $_SESSION['admin'] = true;
+        $_SESSION['last_activity'] = time();
     } else {
         $loginError = true;
     }

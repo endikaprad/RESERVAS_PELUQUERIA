@@ -92,5 +92,6 @@ try {
     jsonOk(['barbero' => null, 'etiqueta' => 'Sin disponibilidad']);
 
 } catch (PDOException $e) {
-    jsonError('Error de base de datos: ' . $e->getMessage(), 500);
+    error_log('next-available.php PDO: ' . $e->getMessage());
+    jsonError('Error interno del servidor', 500);
 }

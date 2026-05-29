@@ -1,8 +1,13 @@
 <?php
 // ============================================================
 //  DIAGNÓSTICO — /backend/api/test-email.php
-//  ⚠ BORRAR ESTE ARCHIVO después de las pruebas
-//  Accede a: https://pradopeluqueria.infinityfree.me/backend/api/test-email.php
+//  Solo accesible desde localhost
+// ============================================================
+if (!in_array($_SERVER['REMOTE_ADDR'] ?? '', ['127.0.0.1', '::1'], true)) {
+    http_response_code(403);
+    echo json_encode(['ok' => false, 'error' => 'Acceso denegado']);
+    exit;
+}
 // ============================================================
 
 require_once __DIR__ . '/../config.php';

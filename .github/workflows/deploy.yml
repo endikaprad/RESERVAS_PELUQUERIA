@@ -20,6 +20,9 @@ jobs:
           DB_USER: ${{ secrets.DB_USER }}
           DB_PASS: ${{ secrets.DB_PASS }}
           BREVO_API_KEY: ${{ secrets.BREVO_API_KEY }}
+          ADMIN_USER: ${{ secrets.ADMIN_USER }}
+          ADMIN_PASS_HASH: ${{ secrets.ADMIN_PASS_HASH }}
+          FRONTEND_URL: ${{ secrets.FRONTEND_URL }}
         run: |
           cat > backend/config.php << PHPEOF
           <?php
@@ -29,6 +32,9 @@ jobs:
           define('DB_PASS',        '${DB_PASS}');
           define('DB_CHARSET',     'utf8mb4');
           define('BREVO_API_KEY',  '${BREVO_API_KEY}');
+          define('ADMIN_USER',     '${ADMIN_USER}');
+          define('ADMIN_PASS',     '${ADMIN_PASS_HASH}');
+          define('FRONTEND_URL',   '${FRONTEND_URL}');
           date_default_timezone_set('Europe/Madrid');
           function getDB(): PDO {
               static \$pdo = null;

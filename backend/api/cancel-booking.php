@@ -274,7 +274,8 @@ try {
 </html>";
     exit;
 } catch (PDOException $e) {
-    mostrarPagina('error', 'Error de base de datos', htmlspecialchars($e->getMessage()));
+    error_log('cancel-booking.php PDO: ' . $e->getMessage());
+    mostrarPagina('error', 'Error interno', 'Ha ocurrido un error. Por favor intenta de nuevo más tarde.');
 }
 
 // ── Envío via Brevo API ──────────────────────────────────────

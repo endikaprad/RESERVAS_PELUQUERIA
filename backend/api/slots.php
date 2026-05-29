@@ -150,7 +150,9 @@ try {
     ]);
 
 } catch (PDOException $e) {
-    slots_err('Error de base de datos: ' . $e->getMessage(), 500);
+    error_log('slots.php PDO: ' . $e->getMessage());
+    slots_err('Error interno del servidor', 500);
 } catch (Exception $e) {
-    slots_err('Error: ' . $e->getMessage(), 500);
+    error_log('slots.php: ' . $e->getMessage());
+    slots_err('Error interno del servidor', 500);
 }

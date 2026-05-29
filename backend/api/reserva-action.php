@@ -172,7 +172,8 @@ try {
     }
 
 } catch (PDOException $e) {
-    mostrarPagina('error', 'Error de base de datos', htmlspecialchars($e->getMessage()), $fromAdmin);
+    error_log('reserva-action.php PDO: ' . $e->getMessage());
+    mostrarPagina('error', 'Error interno', 'Ha ocurrido un error. Por favor intenta de nuevo más tarde.', $fromAdmin);
 }
 
 function sendBrevo(string $toEmail, string $toName, string $subject, string $html): bool {

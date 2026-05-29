@@ -6,8 +6,12 @@
 require_once __DIR__ . '/../config.php';
 
 // ── CORS ────────────────────────────────────────────────────
-// Permite llamadas desde el frontend (ajusta el origen en prod)
-header('Access-Control-Allow-Origin: *');
+$allowed = defined('FRONTEND_URL') ? FRONTEND_URL : 'https://pradopeluqueria.infinityfree.me';
+$origin  = $_SERVER['HTTP_ORIGIN'] ?? '';
+if ($origin === $allowed) {
+    header('Access-Control-Allow-Origin: ' . $allowed);
+    header('Vary: Origin');
+}
 header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type');
 header('Content-Type: application/json; charset=utf-8');

@@ -24,10 +24,11 @@ $notas    = trim($body['notas']    ?? '');
 if (!$servicio || !$barbero || !$fecha || !$hora || !$nombre || !$telefono || !$email) {
     jsonError('Faltan campos obligatorios');
 }
-if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $fecha)) {
+$fechaDt = DateTime::createFromFormat('Y-m-d', $fecha);
+if (!$fechaDt || $fechaDt->format('Y-m-d') !== $fecha) {
     jsonError('Formato de fecha inválido (esperado YYYY-MM-DD)');
 }
-if (!preg_match('/^\d{2}:\d{2}$/', $hora)) {
+if (!preg_match('/^([01]\d|2[0-3]):[0-5]\d$/', $hora)) {
     jsonError('Formato de hora inválido (esperado HH:MM)');
 }
 if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
@@ -352,10 +353,11 @@ try {
     ]);
 
 } catch (PDOException $e) {
+    error_log('booking.php PDO: ' . $e->getMessage());
     if ($e->getCode() === '23000') {
         jsonError('Ese horario ya está reservado. Por favor elige otro.', 409);
     }
-    jsonError('Error de base de datos: ' . $e->getMessage(), 500);
+    jsonError('Error interno del servidor', 500);
 }
 
 function sendBrevo(string $toEmail, string $toName, string $subject, string $html): bool {
