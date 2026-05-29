@@ -112,9 +112,10 @@ try {
     try {
         $hace7 = (new DateTime('now', $tz))->modify('-7 days')->format('Y-m-d H:i:s');
         $s = $db->prepare("
-            SELECT resultado, COUNT(*) AS cnt
+            SELECT resultado, COUNT(DISTINCT reserva_id) AS cnt
             FROM reminder_log
             WHERE enviado_en >= ?
+              AND COALESCE(cliente_nombre, '') != ''
             GROUP BY resultado
         ");
         $s->execute([$hace7]);

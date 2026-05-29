@@ -209,8 +209,9 @@ function initMagneticButtons() {
         if (!selected.length) return;
 
         grid.innerHTML = selected.map((s, i) => {
-            const precio   = Number.isInteger(s.precio) ? s.precio : s.precio.toFixed(2).replace('.', ',');
-            const duracion = `${s.duracion} minutos`;
+            const precio   = parseFloat(s.precio).toFixed(0);
+            const mins     = parseInt(s.duracion, 10);
+            const duracion = isNaN(mins) ? s.duracion : `${mins} minutos`;
             return `
             <div class="service-card reveal ${delays[i] || ''}">
                 <div class="service-card-body">

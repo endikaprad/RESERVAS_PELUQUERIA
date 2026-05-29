@@ -1989,8 +1989,255 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
             padding: 1.25rem 1.4rem;
             position: relative;
             overflow: hidden;
-            transition: transform .25s, border-color .25s, box-shadow .25s;
-            cursor: default;
+            transition: transform .25s cubic-bezier(.16,1,.3,1), border-color .25s, box-shadow .25s;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .kpi-card:active {
+            transform: scale(.97) !important;
+        }
+
+        /* ── KPI DETAIL MODAL ── */
+        .kpi-detail-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,.72);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            z-index: 1500;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+            opacity: 0;
+            transition: opacity .25s;
+        }
+        .kpi-detail-overlay.open { opacity: 1; }
+
+        .kpi-detail-modal {
+            background: #111119;
+            border: 1px solid #2a2a38;
+            border-radius: 20px;
+            width: 100%;
+            max-width: 440px;
+            overflow: hidden;
+            transform: translateY(24px) scale(.95);
+            opacity: 0;
+            transition: transform .5s cubic-bezier(.16,1,.3,1), opacity .3s;
+            box-shadow: 0 32px 80px rgba(0,0,0,.6), 0 0 0 1px rgba(255,255,255,.04);
+        }
+        .kpi-detail-overlay.open .kpi-detail-modal {
+            transform: translateY(0) scale(1);
+            opacity: 1;
+        }
+        .kpi-detail-modal.closing {
+            transform: translateY(16px) scale(.96);
+            opacity: 0;
+            transition: transform .3s cubic-bezier(.4,0,1,1), opacity .2s;
+        }
+
+        .kdm-header {
+            padding: 1.6rem 1.75rem 1.3rem;
+            border-bottom: 1px solid #1e1e2c;
+            display: flex;
+            align-items: flex-start;
+            gap: 1.1rem;
+        }
+        .kdm-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .kdm-icon svg { width: 22px; height: 22px; fill: currentColor; }
+        .kdm-title-group { flex: 1; min-width: 0; }
+        .kdm-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #f0ece3;
+            line-height: 1.2;
+        }
+        .kdm-subtitle {
+            font-size: .7rem;
+            letter-spacing: .14em;
+            text-transform: uppercase;
+            color: #7a7880;
+            margin-top: .25rem;
+        }
+        .kdm-close {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: transparent;
+            border: 1px solid #252530;
+            color: #7a7880;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: .85rem;
+            transition: border-color .2s, color .2s, transform .2s;
+            flex-shrink: 0;
+        }
+        .kdm-close:hover { border-color: #d42b2b; color: #d42b2b; transform: scale(1.08); }
+        .kdm-close:active { transform: scale(.92); }
+
+        .kdm-value-hero {
+            padding: 1.5rem 1.75rem;
+            border-bottom: 1px solid #1e1e2c;
+            display: flex;
+            align-items: baseline;
+            gap: .5rem;
+        }
+        .kdm-value-num {
+            font-family: 'Playfair Display', serif;
+            font-size: 3rem;
+            font-weight: 700;
+            line-height: 1;
+        }
+        .kdm-value-suffix {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.5rem;
+            font-weight: 700;
+            opacity: .7;
+        }
+
+        .kdm-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            border-bottom: 1px solid #1e1e2c;
+        }
+        .kdm-cell {
+            padding: 1.1rem 1.4rem;
+            border-right: 1px solid #1e1e2c;
+        }
+        .kdm-cell:last-child,
+        .kdm-cell:nth-child(2n) { border-right: none; }
+        .kdm-cell-label {
+            font-size: .6rem;
+            letter-spacing: .14em;
+            text-transform: uppercase;
+            color: #7a7880;
+            margin-bottom: .35rem;
+        }
+        .kdm-cell-value {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.35rem;
+            font-weight: 700;
+        }
+        .kdm-cell-sub {
+            font-size: .7rem;
+            color: #7a7880;
+            margin-top: .15rem;
+        }
+
+        .kdm-bar-section {
+            padding: 1.2rem 1.75rem;
+            border-bottom: 1px solid #1e1e2c;
+        }
+        .kdm-bar-row {
+            display: flex;
+            align-items: center;
+            gap: .75rem;
+            margin-bottom: .6rem;
+        }
+        .kdm-bar-row:last-child { margin-bottom: 0; }
+        .kdm-bar-label {
+            font-size: .72rem;
+            color: #a0a0b0;
+            width: 80px;
+            flex-shrink: 0;
+        }
+        .kdm-bar-track {
+            flex: 1;
+            height: 6px;
+            background: #1c1c26;
+            border-radius: 3px;
+            overflow: hidden;
+        }
+        .kdm-bar-fill {
+            height: 100%;
+            border-radius: 3px;
+            width: 0;
+            transition: width 1s cubic-bezier(.16,1,.3,1);
+        }
+        .kdm-bar-num {
+            font-size: .72rem;
+            font-weight: 600;
+            width: 36px;
+            text-align: right;
+            flex-shrink: 0;
+        }
+
+        .kdm-list {
+            padding: 1rem 1.75rem;
+            border-bottom: 1px solid #1e1e2c;
+            display: flex;
+            flex-direction: column;
+            gap: .55rem;
+        }
+        .kdm-list-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: .82rem;
+        }
+        .kdm-list-label { color: #c0c0d0; }
+        .kdm-list-val { font-weight: 600; color: #f0ece3; }
+
+        .kdm-footer {
+            padding: 1rem 1.75rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .kdm-footer-note {
+            font-size: .68rem;
+            color: #7a7880;
+        }
+        .kdm-footer-btn {
+            padding: .45rem 1.1rem;
+            background: transparent;
+            border: 1px solid #252530;
+            border-radius: 6px;
+            color: #7a7880;
+            font-family: 'DM Sans', sans-serif;
+            font-size: .68rem;
+            letter-spacing: .1em;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: border-color .2s, color .2s, transform .15s;
+        }
+        .kdm-footer-btn:hover { border-color: #d42b2b; color: #d42b2b; }
+        .kdm-footer-btn:active { transform: scale(.96); }
+
+        .kdm-progress-section {
+            padding: 1.2rem 1.75rem;
+            border-bottom: 1px solid #1e1e2c;
+        }
+        .kdm-progress-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: .68rem;
+            color: #7a7880;
+            margin-bottom: .5rem;
+        }
+        .kdm-progress-track {
+            height: 8px;
+            background: #1c1c26;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .kdm-progress-fill {
+            height: 100%;
+            border-radius: 4px;
+            width: 0;
+            transition: width 1.2s cubic-bezier(.16,1,.3,1) .15s;
         }
 
         .kpi-card::before {
@@ -3144,6 +3391,14 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
             background: linear-gradient(135deg, #d42b2b, #a81e1e);
             color: #fff;
             box-shadow: 0 2px 12px rgba(212,43,43,.4);
+        }
+        @media (max-width: 480px) {
+            .stats-period-btn {
+                min-width: 0;
+                padding: .45rem .25rem;
+                font-size: .56rem;
+                letter-spacing: .04em;
+            }
         }
         .stats-period-loading {
             opacity: .5;
@@ -5288,12 +5543,12 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
                 const iconCitasHoy = `<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M20 3h-1V1h-2v2H7V1H5v2H4c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 18H4V8h16v13zm-7-5H9v-2h4v2zm4-4H9v-2h8v2z"/></svg>`;
                 const iconIngresosHoy = `<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M21 18v1c0 1.1-.9 2-2 2H5c-1.11 0-2-.9-2-2V5c0-1.1.89-2 2-2h14c1.1 0 2 .9 2 2v1h-9c-1.11 0-2 .9-2 2v8c0 1.1.89 2 2 2h9zm-9-2h10V8H12v8zm4-2.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>`;
                 const iconCitesMes = `<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M17 12h-5v5h5v-5zM16 1v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2h-1V1h-2zm3 18H5V8h14v11z"/></svg>`;
-                html += kpiCard('Reservas totales', kpi.total_reservas || 0, '#d42b2b', iconReservas, '');
-                html += kpiCard('Ingresos totales', kpi.ingresos_totales || 0, '#c9a84c', iconIngTot, ' €');
-                html += kpiCard('Clientes únicos', kpi.clientes_unicos || 0, '#2550a0', iconClientes, '');
-                html += kpiCard('Citas hoy', hoy.citas_hoy || 0, '#22c55e', iconCitasHoy, '');
-                html += kpiCard('Ingresos hoy', hoy.ingresos_hoy || 0, '#f59e0b', iconIngresosHoy, ' €');
-                html += kpiCard('Citas este mes', mes.citas_mes || 0, '#a78bfa', iconCitesMes, '');
+                html += kpiCard('Reservas totales', kpi.total_reservas || 0, '#d42b2b', iconReservas, '', 'reservas_totales');
+                html += kpiCard('Ingresos totales', kpi.ingresos_totales || 0, '#c9a84c', iconIngTot, ' €', 'ingresos_totales');
+                html += kpiCard('Clientes únicos', kpi.clientes_unicos || 0, '#2550a0', iconClientes, '', 'clientes_unicos');
+                html += kpiCard('Citas hoy', hoy.citas_hoy || 0, '#22c55e', iconCitasHoy, '', 'citas_hoy');
+                html += kpiCard('Ingresos hoy', hoy.ingresos_hoy || 0, '#f59e0b', iconIngresosHoy, ' €', 'ingresos_hoy');
+                html += kpiCard('Citas este mes', mes.citas_mes || 0, '#a78bfa', iconCitesMes, '', 'citas_mes');
                 html += '</div>';
 
                 // Barra de estado de reservas — contextualizada bajo el grupo de KPIs
@@ -5400,8 +5655,10 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
 
                 document.getElementById('stats-content').innerHTML = html;
                 window._statsBarberos = barbsAll;
+                window._statsData = d;
+                window._statsPeriodo = periodo;
 
-                // Animate
+                // Animate + click
                 setTimeout(() => {
                     document.querySelectorAll('.kpi-card').forEach((card, i) => {
                         setTimeout(() => {
@@ -5409,6 +5666,9 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
                             const valEl = card.querySelector('.kpi-value');
                             animNum(valEl, parseFloat(card.dataset.target || 0), parseInt(card.dataset.dec || 0), card.dataset.suffix || '');
                         }, i * 80);
+                        if (card.dataset.kpi) {
+                            card.addEventListener('click', () => openKpiDetail(card.dataset.kpi));
+                        }
                     });
                 }, 50);
                 setTimeout(() => {
@@ -5418,11 +5678,269 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
                 }, 100);
             }
 
-            function kpiCard(label, value, color, icon, suffix) {
-                return `<div class="kpi-card" style="--kpi-accent:${color}" data-target="${+value}" data-dec="0" data-suffix="${suffix}"><div class="kpi-badge">${icon}</div><div class="kpi-label">${label}</div><div class="kpi-value">0${suffix}</div><div class="kpi-card-accent-bar"></div></div>`;
+            function kpiCard(label, value, color, icon, suffix, kpiKey) {
+                return `<div class="kpi-card" style="--kpi-accent:${color}" data-target="${+value}" data-dec="0" data-suffix="${suffix}" data-kpi="${kpiKey||''}" data-color="${color}">${icon ? `<div class="kpi-badge">${icon}</div>` : ''}<div class="kpi-label">${label}</div><div class="kpi-value">0${suffix}</div><div class="kpi-card-accent-bar"></div></div>`;
             }
             function kpiCardWithSub(label, value, color, icon, suffix, subHtml) {
                 return `<div class="kpi-card" style="--kpi-accent:${color}" data-target="${+value}" data-dec="0" data-suffix="${suffix}"><div class="kpi-badge">${icon}</div><div class="kpi-label">${label}</div><div class="kpi-value">0${suffix}</div>${subHtml}<div class="kpi-card-accent-bar"></div></div>`;
+            }
+
+            // ── KPI DETAIL MODAL ─────────────────────────────────────────
+            function openKpiDetail(kpiKey) {
+                const d = window._statsData || {};
+                const kpi = d.kpi || {};
+                const hoy = d.hoy || {};
+                const mes = d.mes || {};
+                const svcs = d.servicios_top || [];
+                const barbs = window._statsBarberos || [];
+                const periodo = window._statsPeriodo || 'todo';
+                const totalRes = +(kpi.total_reservas || 0);
+                const acept = +(kpi.aceptadas || 0);
+                const pend  = +(kpi.pendientes || 0);
+                const dene  = +(kpi.denegadas || 0);
+                const canc  = Math.max(totalRes - acept - pend - dene, 0);
+                const acPct = totalRes > 0 ? Math.round(acept / totalRes * 100) : 0;
+                const dePct = totalRes > 0 ? Math.round(dene  / totalRes * 100) : 0;
+                const caPct = totalRes > 0 ? Math.round(canc  / totalRes * 100) : 0;
+                const pePct = totalRes > 0 ? Math.round(pend  / totalRes * 100) : 0;
+
+                const configs = {
+                    reservas_totales: {
+                        title: 'Reservas totales',
+                        subtitle: 'Historial completo del período',
+                        color: '#d42b2b',
+                        value: totalRes,
+                        suffix: '',
+                        icon: `<svg viewBox="0 0 24 24" width="22" height="22" fill="#d42b2b"><path d="M19 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2zm-7 3a1 1 0 1 1 0 2 1 1 0 0 1 0-2zm-5 0a1 1 0 1 1 0 2 1 1 0 0 1 0-2zm10 0a1 1 0 1 1 0 2 1 1 0 0 1 0-2zM7 11h10v2H7zm0 4h7v2H7z"/></svg>`,
+                        cells: [
+                            { label: 'Aceptadas', value: acept, color: '#22c55e' },
+                            { label: 'Pendientes', value: pend, color: '#f59e0b' },
+                            { label: 'Denegadas', value: dene, color: '#d42b2b' },
+                            { label: 'Canceladas', value: canc, color: '#6b7280' },
+                        ],
+                        bars: [
+                            { label: 'Aceptadas', pct: acPct, color: '#22c55e', num: acPct+'%' },
+                            { label: 'Pendientes', pct: pePct, color: '#f59e0b', num: pePct+'%' },
+                            { label: 'Denegadas', pct: dePct, color: '#d42b2b', num: dePct+'%' },
+                            { label: 'Canceladas', pct: caPct, color: '#6b7280', num: caPct+'%' },
+                        ],
+                        list: [
+                            { label: 'Ticket medio', val: (+(kpi.ticket_medio||0)).toFixed(0)+'€' },
+                            { label: 'Tasa conversión', val: (+(d.tasa_conversion||0)).toFixed(1)+'%' },
+                            { label: 'Ingresos generados', val: (+(kpi.ingresos_totales||0)).toFixed(0)+'€' },
+                        ]
+                    },
+                    ingresos_totales: {
+                        title: 'Ingresos totales',
+                        subtitle: 'Facturación acumulada del período',
+                        color: '#c9a84c',
+                        value: +(kpi.ingresos_totales||0),
+                        suffix: ' €',
+                        icon: `<svg viewBox="0 0 24 24" width="22" height="22" fill="#c9a84c"><path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/></svg>`,
+                        cells: [
+                            { label: 'Ticket medio', value: (+(kpi.ticket_medio||0)).toFixed(0)+'€', color: '#c9a84c' },
+                            { label: 'Reservas pagadas', value: acept, color: '#22c55e' },
+                            { label: 'Ingresos hoy', value: (+(hoy.ingresos_hoy||0)).toFixed(0)+'€', color: '#f59e0b' },
+                            { label: 'Ingresos mes', value: (+(mes.ingresos_mes||0)).toFixed(0)+'€', color: '#a78bfa' },
+                        ],
+                        bars: svcs.slice(0,4).map(s => {
+                            const maxIng = Math.max(...svcs.map(x=>+(x.ingresos||0)),1);
+                            return { label: s.nombre.split(' ').slice(0,2).join(' '), pct: Math.round(+(s.ingresos||0)/maxIng*100), color: '#c9a84c', num: (+(s.ingresos||0)).toFixed(0)+'€' };
+                        }),
+                        list: [
+                            { label: 'Mejor servicio', val: svcs[0] ? svcs[0].nombre : '—' },
+                            { label: 'Tasa conversión', val: (+(d.tasa_conversion||0)).toFixed(1)+'%' },
+                            { label: 'Total reservas', val: totalRes },
+                        ]
+                    },
+                    clientes_unicos: {
+                        title: 'Clientes únicos',
+                        subtitle: 'Base de clientes del período',
+                        color: '#5b7fd4',
+                        value: +(kpi.clientes_unicos||0),
+                        suffix: '',
+                        icon: `<svg viewBox="0 0 24 24" width="22" height="22" fill="#5b7fd4"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>`,
+                        cells: [
+                            { label: 'Total clientes', value: +(kpi.clientes_unicos||0), color: '#5b7fd4' },
+                            { label: 'Reservas totales', value: totalRes, color: '#d42b2b' },
+                            { label: 'Media por cliente', value: totalRes > 0 ? (totalRes/(+(kpi.clientes_unicos||1))).toFixed(1) : '0', color: '#c9a84c' },
+                            { label: 'Ticket medio', value: (+(kpi.ticket_medio||0)).toFixed(0)+'€', color: '#22c55e' },
+                        ],
+                        bars: barbs.filter(b=>b.total_citas>0).slice(0,4).map(b => {
+                            const maxC = Math.max(...barbs.map(x=>+(x.total_citas||0)),1);
+                            return { label: b.nombre.split(' ')[0], pct: Math.round(+(b.total_citas||0)/maxC*100), color: '#5b7fd4', num: b.total_citas+' citas' };
+                        }),
+                        list: [
+                            { label: 'Tasa aceptación', val: acPct+'%' },
+                            { label: 'Ingresos totales', val: (+(kpi.ingresos_totales||0)).toFixed(0)+'€' },
+                            { label: 'Período analizado', val: { hoy:'Hoy',semana:'Esta semana',mes:'Este mes',trimestre:'Trimestre',año:'Este año',todo:'Todo el tiempo' }[periodo]||periodo },
+                        ]
+                    },
+                    citas_hoy: {
+                        title: 'Citas hoy',
+                        subtitle: new Date().toLocaleDateString('es-ES',{weekday:'long',day:'numeric',month:'long'}),
+                        color: '#22c55e',
+                        value: +(hoy.citas_hoy||0),
+                        suffix: '',
+                        icon: `<svg viewBox="0 0 24 24" width="22" height="22" fill="#22c55e"><path d="M20 3h-1V1h-2v2H7V1H5v2H4c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 18H4V8h16v13zm-7-5H9v-2h4v2zm4-4H9v-2h8v2z"/></svg>`,
+                        cells: [
+                            { label: 'Citas hoy', value: +(hoy.citas_hoy||0), color: '#22c55e' },
+                            { label: 'Ingresos hoy', value: (+(hoy.ingresos_hoy||0)).toFixed(0)+'€', color: '#c9a84c' },
+                            { label: 'Citas este mes', value: +(mes.citas_mes||0), color: '#a78bfa' },
+                            { label: 'Pendientes', value: pend, color: '#f59e0b' },
+                        ],
+                        bars: barbs.filter(b=>b.total_citas>0).slice(0,4).map(b => {
+                            const maxC = Math.max(...barbs.map(x=>+(x.total_citas||0)),1);
+                            return { label: b.nombre.split(' ')[0], pct: Math.round(+(b.total_citas||0)/maxC*100), color: '#22c55e', num: b.total_citas };
+                        }),
+                        list: [
+                            { label: 'Ingresos estimados hoy', val: (+(hoy.ingresos_hoy||0)).toFixed(0)+'€' },
+                            { label: 'Ticket medio', val: (+(kpi.ticket_medio||0)).toFixed(0)+'€' },
+                            { label: 'Total mes en curso', val: +(mes.citas_mes||0)+' citas' },
+                        ]
+                    },
+                    ingresos_hoy: {
+                        title: 'Ingresos hoy',
+                        subtitle: new Date().toLocaleDateString('es-ES',{weekday:'long',day:'numeric',month:'long'}),
+                        color: '#f59e0b',
+                        value: +(hoy.ingresos_hoy||0),
+                        suffix: ' €',
+                        icon: `<svg viewBox="0 0 24 24" width="22" height="22" fill="#f59e0b"><path d="M21 18v1c0 1.1-.9 2-2 2H5c-1.11 0-2-.9-2-2V5c0-1.1.89-2 2-2h14c1.1 0 2 .9 2 2v1h-9c-1.11 0-2 .9-2 2v8c0 1.1.89 2 2 2h9zm-9-2h10V8H12v8zm4-2.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>`,
+                        cells: [
+                            { label: 'Ingresos hoy', value: (+(hoy.ingresos_hoy||0)).toFixed(0)+'€', color: '#f59e0b' },
+                            { label: 'Citas hoy', value: +(hoy.citas_hoy||0), color: '#22c55e' },
+                            { label: 'Ingresos mes', value: (+(mes.ingresos_mes||0)).toFixed(0)+'€', color: '#a78bfa' },
+                            { label: 'Ingresos totales', value: (+(kpi.ingresos_totales||0)).toFixed(0)+'€', color: '#c9a84c' },
+                        ],
+                        bars: svcs.slice(0,4).map(s => {
+                            const maxIng = Math.max(...svcs.map(x=>+(x.ingresos||0)),1);
+                            return { label: s.nombre.split(' ').slice(0,2).join(' '), pct: Math.round(+(s.ingresos||0)/maxIng*100), color: '#f59e0b', num: (+(s.ingresos||0)).toFixed(0)+'€' };
+                        }),
+                        list: [
+                            { label: 'Ticket medio global', val: (+(kpi.ticket_medio||0)).toFixed(0)+'€' },
+                            { label: '% sobre total mensual', val: mes.ingresos_mes > 0 ? Math.round(hoy.ingresos_hoy/mes.ingresos_mes*100)+'%' : '—' },
+                            { label: 'Citas este mes', val: +(mes.citas_mes||0) },
+                        ]
+                    },
+                    citas_mes: {
+                        title: 'Citas este mes',
+                        subtitle: new Date().toLocaleDateString('es-ES',{month:'long',year:'numeric'}),
+                        color: '#a78bfa',
+                        value: +(mes.citas_mes||0),
+                        suffix: '',
+                        icon: `<svg viewBox="0 0 24 24" width="22" height="22" fill="#a78bfa"><path d="M17 12h-5v5h5v-5zM16 1v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2h-1V1h-2zm3 18H5V8h14v11z"/></svg>`,
+                        cells: [
+                            { label: 'Citas mes', value: +(mes.citas_mes||0), color: '#a78bfa' },
+                            { label: 'Ingresos mes', value: (+(mes.ingresos_mes||0)).toFixed(0)+'€', color: '#c9a84c' },
+                            { label: 'Citas hoy', value: +(hoy.citas_hoy||0), color: '#22c55e' },
+                            { label: 'Total acumulado', value: totalRes, color: '#d42b2b' },
+                        ],
+                        bars: barbs.filter(b=>b.total_citas>0).slice(0,4).map(b => {
+                            const maxC = Math.max(...barbs.map(x=>+(x.total_citas||0)),1);
+                            return { label: b.nombre.split(' ')[0], pct: Math.round(+(b.total_citas||0)/maxC*100), color: '#a78bfa', num: b.total_citas };
+                        }),
+                        list: [
+                            { label: 'Ingresos del mes', val: (+(mes.ingresos_mes||0)).toFixed(0)+'€' },
+                            { label: 'Media diaria estimada', val: mes.citas_mes > 0 ? (mes.citas_mes/new Date().getDate()).toFixed(1)+'/día' : '—' },
+                            { label: 'Tasa aceptación global', val: acPct+'%' },
+                        ]
+                    }
+                };
+
+                const cfg = configs[kpiKey];
+                if (!cfg) return;
+
+                const overlay = document.createElement('div');
+                overlay.className = 'kpi-detail-overlay';
+
+                const accentAlpha = cfg.color + '22';
+                const accentBorder = cfg.color + '40';
+
+                let cellsHtml = '';
+                if (cfg.cells) {
+                    cellsHtml = `<div class="kdm-grid">` + cfg.cells.map(c =>
+                        `<div class="kdm-cell">
+                            <div class="kdm-cell-label">${c.label}</div>
+                            <div class="kdm-cell-value" style="color:${c.color};">${c.value}</div>
+                        </div>`
+                    ).join('') + `</div>`;
+                }
+
+                let barsHtml = '';
+                if (cfg.bars && cfg.bars.length) {
+                    barsHtml = `<div class="kdm-bar-section">
+                        <div style="font-size:.6rem;letter-spacing:.14em;text-transform:uppercase;color:#7a7880;margin-bottom:.75rem;">Distribución</div>
+                        ${cfg.bars.map(b => `
+                            <div class="kdm-bar-row">
+                                <span class="kdm-bar-label">${b.label}</span>
+                                <div class="kdm-bar-track">
+                                    <div class="kdm-bar-fill" style="background:${b.color};" data-pct="${b.pct}"></div>
+                                </div>
+                                <span class="kdm-bar-num" style="color:${b.color};">${b.num}</span>
+                            </div>`).join('')}
+                    </div>`;
+                }
+
+                let listHtml = '';
+                if (cfg.list && cfg.list.length) {
+                    listHtml = `<div class="kdm-list">
+                        ${cfg.list.map(item => `
+                            <div class="kdm-list-item">
+                                <span class="kdm-list-label">${item.label}</span>
+                                <span class="kdm-list-val">${item.val}</span>
+                            </div>`).join('')}
+                    </div>`;
+                }
+
+                overlay.innerHTML = `
+                    <div class="kpi-detail-modal">
+                        <div class="kdm-header">
+                            <div class="kdm-icon" style="background:${accentAlpha};border:1px solid ${accentBorder};">${cfg.icon}</div>
+                            <div class="kdm-title-group">
+                                <div class="kdm-title">${cfg.title}</div>
+                                <div class="kdm-subtitle">${cfg.subtitle}</div>
+                            </div>
+                            <button class="kdm-close" id="kdm-close-btn">✕</button>
+                        </div>
+                        <div class="kdm-value-hero">
+                            <span class="kdm-value-num" style="color:${cfg.color};">${(+cfg.value).toLocaleString('es-ES')}</span>
+                            ${cfg.suffix ? `<span class="kdm-value-suffix" style="color:${cfg.color};">${cfg.suffix.trim()}</span>` : ''}
+                        </div>
+                        ${cellsHtml}
+                        ${barsHtml}
+                        ${listHtml}
+                        <div class="kdm-footer">
+                            <span class="kdm-footer-note">Prado Barber Co. · Panel Admin</span>
+                            <button class="kdm-footer-btn" id="kdm-close-footer">Cerrar</button>
+                        </div>
+                    </div>`;
+
+                document.body.appendChild(overlay);
+                document.body.style.overflow = 'hidden';
+
+                const closeModal = () => {
+                    const modal = overlay.querySelector('.kpi-detail-modal');
+                    overlay.style.opacity = '0';
+                    modal.classList.add('closing');
+                    setTimeout(() => { overlay.remove(); document.body.style.overflow = ''; }, 350);
+                };
+
+                requestAnimationFrame(() => {
+                    overlay.classList.add('open');
+                    setTimeout(() => {
+                        overlay.querySelectorAll('.kdm-bar-fill').forEach(el => {
+                            el.style.width = el.dataset.pct + '%';
+                        });
+                    }, 200);
+                });
+
+                overlay.addEventListener('click', e => { if (e.target === overlay) closeModal(); });
+                overlay.querySelector('#kdm-close-btn').addEventListener('click', closeModal);
+                overlay.querySelector('#kdm-close-footer').addEventListener('click', closeModal);
+
+                document.addEventListener('keydown', function escHandler(e) {
+                    if (e.key === 'Escape') { closeModal(); document.removeEventListener('keydown', escHandler); }
+                });
             }
 
             // ── Bar chart con altura correcta ────────────────────────────
@@ -5436,6 +5954,9 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
                 const barMaxH = 120;
                 const padBottom = 48;
                 const padTop = 28;
+                const minSlots = 7;
+                const slots = Math.max(items.length, minSlots);
+                const maxItemPct = Math.floor(100 / slots);
 
                 let html = `<div style="display:flex;align-items:flex-end;gap:6px;height:${chartH}px;padding:${padTop}px 0 ${padBottom}px;position:relative;box-sizing:border-box;">`;
                 html += `<div style="position:absolute;bottom:${padBottom}px;left:0;right:0;height:1px;background:rgba(245,240,232,0.06);"></div>`;
@@ -5445,7 +5966,7 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
                     const h = Math.max(Math.round(item.value / maxV * barMaxH), 3);
                     const showLabel = (i % showEvery === 0) || (i === items.length - 1);
                     html += `
-        <div style="flex:1;display:flex;flex-direction:column;align-items:center;position:relative;height:100%;justify-content:flex-end;">
+        <div style="flex:1;max-width:${maxItemPct}%;display:flex;flex-direction:column;align-items:center;position:relative;height:100%;justify-content:flex-end;">
             <div style="font-size:.7rem;color:#a0a0b0;font-weight:500;margin-bottom:4px;line-height:1;">${item.value || ''}</div>
             <div style="width:80%;border-radius:4px 4px 0 0;background:${color};height:${h}px;min-height:3px;transition:height .4s;"
                  onmouseenter="showTip(event,'','${item.tip||item.value}')" onmouseleave="hideTip()"></div>
@@ -5530,8 +6051,8 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
             ${seg(pendientes, '#f59e0b', o2, 0.25)}
             ${seg(denegadas,  '#d42b2b', o3, 0.4)}
             ${seg(Math.max(canceladas,0), '#6b7280', o4, 0.55)}
-            <text x="${cx}" y="${cy - 10}" text-anchor="middle" font-family="'Playfair Display',serif" font-size="26" font-weight="700" fill="#22c55e">${tasa}%</text>
-            <text x="${cx}" y="${cy + 10}" text-anchor="middle" font-family="'DM Sans',sans-serif" font-size="8" fill="#7a7880" letter-spacing="1.5">ACEPTADAS</text>
+            <text x="${cx}" y="${cy - 6}" text-anchor="middle" dominant-baseline="middle" font-family="'Playfair Display',serif" font-size="26" font-weight="700" fill="#22c55e">${tasa}%</text>
+            <text x="${cx}" y="${cy + 13}" text-anchor="middle" dominant-baseline="middle" font-family="'DM Sans',sans-serif" font-size="8" fill="#7a7880" letter-spacing="1.5">ACEPTADAS</text>
           </svg>`;
 
                 return `
