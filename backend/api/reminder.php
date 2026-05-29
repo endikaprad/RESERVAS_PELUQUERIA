@@ -5,13 +5,14 @@
 //  Envía recordatorios por email 24 horas antes de cada cita.
 //
 //  EJECUCIÓN:
-//    Cron job (cada hora):
-//      0 * * * * php /ruta/a/backend/api/reminder.php >> /tmp/reminder.log 2>&1
+//    Cron job diario a las 9:00 AM (hora Madrid):
+//      0 9 * * * php /ruta/a/backend/api/reminder.php >> /tmp/reminder.log 2>&1
 //
 //  O bien llamada HTTP (protegida por token):
 //    GET /backend/api/reminder.php?secret=TU_SECRET_TOKEN
 //
 //  LÓGICA:
+//    - Solo ejecuta entre las 9:00 y 9:59 (hora Madrid) — si se llama fuera de esa franja, sale sin enviar
 //    - Busca reservas con estado 'aceptada' cuya fecha sea MAÑANA
 //    - Que no tengan recordatorio ya enviado
 //    - Envía email al cliente con los detalles y enlace de cancelación
@@ -68,6 +69,22 @@ try {
     $db = getDB();
     $tz = new DateTimeZone('Europe/Madrid');
 
+    // ── Guardia de hora: solo enviar a las 9:00 AM ────────────
+    // Permite saltarla con ?force=1 (solo desde CLI o con el secret ya validado)
+    $ahora      = new DateTime('now', $tz);
+    $horaActual = (int) $ahora->format('G');
+    $forzar     = (php_sapi_name() === 'cli')
+                    ? in_array('--force', $argv ?? [])
+                    : isset($_GET['force']);
+
+    if (!$forzar && $horaActual !== 9) {
+        logMsg("Fuera de la ventana de envío (hora actual: {$horaActual}h). Se ejecuta solo a las 9:00 AM.");
+        $resultado['ok']    = true;
+        $resultado['info']  = "Nada enviado — fuera de la ventana de las 9 h (hora: {$horaActual})";
+        outputResult($resultado);
+        exit;
+    }
+
     // ── Migración: crear tabla de log si no existe ────────────
     $db->exec("
         CREATE TABLE IF NOT EXISTS reminder_log (
@@ -92,7 +109,6 @@ try {
     }
 
     // ── Calcular "mañana" en zona horaria Madrid ──────────────
-    $ahora   = new DateTime('now', $tz);
     $manana  = (clone $ahora)->modify('+1 day')->format('Y-m-d');
 
     logMsg("Buscando citas para mañana: {$manana}");

@@ -108,3 +108,15 @@ ALTER TABLE reservas MODIFY COLUMN estado
 -- Migración: marcar si el recordatorio ya fue enviado
 ALTER TABLE reservas
   ADD COLUMN IF NOT EXISTS recordatorio_enviado TINYINT(1) NOT NULL DEFAULT 0 AFTER ronda_negociacion;
+
+-- Migración: categoría y orden en servicios y barberos
+ALTER TABLE servicios
+  ADD COLUMN IF NOT EXISTS categoria VARCHAR(30) NOT NULL DEFAULT 'cortes' AFTER precio,
+  ADD COLUMN IF NOT EXISTS orden     SMALLINT    NOT NULL DEFAULT 0        AFTER categoria,
+  ADD COLUMN IF NOT EXISTS activo    TINYINT(1)  NOT NULL DEFAULT 1        AFTER orden;
+
+ALTER TABLE barberos
+  ADD COLUMN IF NOT EXISTS orden   SMALLINT   NOT NULL DEFAULT 0 AFTER iniciales,
+  ADD COLUMN IF NOT EXISTS activo  TINYINT(1) NOT NULL DEFAULT 1 AFTER orden;
+
+-- Categorías válidas: cortes | barba | packs

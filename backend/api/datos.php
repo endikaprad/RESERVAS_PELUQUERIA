@@ -39,20 +39,24 @@ function respErr(string $msg, int $code = 400): never {
     exit;
 }
 
-// ── Asegurar columnas 'activo' ────────────────────────────────
-function ensureActivo(PDO $db): void {
-    foreach (['barberos', 'servicios'] as $tabla) {
-        try {
-            $db->exec("ALTER TABLE {$tabla} ADD COLUMN activo TINYINT(1) NOT NULL DEFAULT 1");
-        } catch (PDOException $e) {
-            // Ya existe — ignorar
-        }
+const CATEGORIAS_VALIDAS = ['cortes', 'barba', 'packs'];
+
+function ensureColumns(PDO $db): void {
+    $migraciones = [
+        "ALTER TABLE barberos  ADD COLUMN activo  TINYINT(1) NOT NULL DEFAULT 1   AFTER iniciales",
+        "ALTER TABLE barberos  ADD COLUMN orden   SMALLINT   NOT NULL DEFAULT 0   AFTER activo",
+        "ALTER TABLE servicios ADD COLUMN activo  TINYINT(1) NOT NULL DEFAULT 1",
+        "ALTER TABLE servicios ADD COLUMN categoria VARCHAR(30) NOT NULL DEFAULT 'cortes'",
+        "ALTER TABLE servicios ADD COLUMN orden   SMALLINT   NOT NULL DEFAULT 0",
+    ];
+    foreach ($migraciones as $sql) {
+        try { $db->exec($sql); } catch (PDOException $e) { /* ya existe */ }
     }
 }
 
 try {
     $db = getDB();
-    ensureActivo($db);
+    ensureColumns($db);
 
     // ══════════ GET ════════════════════════════════════════════
     if ($_SERVER['REQUEST_METHOD'] === 'GET') {
@@ -60,16 +64,16 @@ try {
 
         if ($tipo === 'barberos') {
             $rows = $db->query(
-                "SELECT id, nombre, especialidad, iniciales, activo
-                 FROM barberos ORDER BY nombre ASC"
+                "SELECT id, nombre, especialidad, iniciales, activo, orden
+                 FROM barberos ORDER BY orden ASC, nombre ASC"
             )->fetchAll(PDO::FETCH_ASSOC);
             respOk($rows);
         }
 
         if ($tipo === 'servicios') {
             $rows = $db->query(
-                "SELECT id, nombre, duracion, precio, activo
-                 FROM servicios ORDER BY precio ASC"
+                "SELECT id, nombre, duracion, precio, activo, categoria, orden
+                 FROM servicios ORDER BY categoria ASC, orden ASC, precio ASC"
             )->fetchAll(PDO::FETCH_ASSOC);
             foreach ($rows as &$r) $r['precio'] = (float)$r['precio'];
             respOk($rows);
@@ -95,16 +99,17 @@ try {
         $id = strtolower(preg_replace('/[^a-zA-Z0-9]/', '', $nombre));
         if (!$id) respErr('Nombre no válido para generar ID');
 
-        // Evitar ID duplicado
         $exists = $db->prepare("SELECT COUNT(*) FROM barberos WHERE id = ?");
         $exists->execute([$id]);
         if ((int)$exists->fetchColumn() > 0) $id .= '-' . substr(time(), -4);
 
+        $maxOrden = (int)$db->query("SELECT COALESCE(MAX(orden),0) FROM barberos")->fetchColumn();
+
         $stmt = $db->prepare(
-            "INSERT INTO barberos (id, nombre, especialidad, iniciales, activo)
-             VALUES (?, ?, ?, ?, 1)"
+            "INSERT INTO barberos (id, nombre, especialidad, iniciales, activo, orden)
+             VALUES (?, ?, ?, ?, 1, ?)"
         );
-        $stmt->execute([$id, $nombre, $especialidad, $iniciales]);
+        $stmt->execute([$id, $nombre, $especialidad, $iniciales, $maxOrden + 1]);
         respOk(['id' => $id, 'nombre' => $nombre]);
     }
 
@@ -132,61 +137,77 @@ try {
 
         $row = $db->prepare("SELECT activo FROM barberos WHERE id = ?");
         $row->execute([$id]);
-        $activo = (int)$row->fetchColumn();
-        respOk(['id' => $id, 'activo' => $activo]);
+        respOk(['id' => $id, 'activo' => (int)$row->fetchColumn()]);
     }
 
     if ($accion === 'barbero_eliminar') {
         $id = trim($body['id'] ?? '');
         if (!$id) respErr('id es obligatorio');
 
-        // Comprobar si tiene reservas asociadas
         $check = $db->prepare("SELECT COUNT(*) FROM reservas WHERE barbero_id = ?");
         $check->execute([$id]);
-        if ((int)$check->fetchColumn() > 0) {
+        if ((int)$check->fetchColumn() > 0)
             respErr('No se puede eliminar: este barbero tiene reservas registradas. Desactívalo en su lugar.');
-        }
 
         $stmt = $db->prepare("DELETE FROM barberos WHERE id = ?");
         $stmt->execute([$id]);
         respOk(['id' => $id, 'eliminado' => true]);
     }
 
+    if ($accion === 'barbero_reordenar') {
+        $ids = $body['ids'] ?? [];
+        if (!is_array($ids) || empty($ids)) respErr('ids requerido');
+
+        $upd = $db->prepare("UPDATE barberos SET orden=? WHERE id=?");
+        foreach ($ids as $i => $id) {
+            $upd->execute([$i, trim($id)]);
+        }
+        respOk(['reordenados' => count($ids)]);
+    }
+
     // ── SERVICIOS ────────────────────────────────────────────
 
     if ($accion === 'servicio_crear') {
-        $nombre   = trim($body['nombre']   ?? '');
-        $duracion = trim($body['duracion'] ?? '');
-        $precio   = (float)($body['precio'] ?? 0);
+        $nombre    = trim($body['nombre']    ?? '');
+        $duracion  = trim($body['duracion']  ?? '');
+        $precio    = (float)($body['precio'] ?? 0);
+        $categoria = trim($body['categoria'] ?? 'cortes');
 
         if (!$nombre || !$duracion || $precio <= 0) respErr('nombre, duracion y precio son obligatorios');
+        if (!in_array($categoria, CATEGORIAS_VALIDAS)) respErr('categoría no válida');
 
         $id = strtolower(preg_replace('/[^a-zA-Z0-9\-]/', '', str_replace(' ', '-', $nombre)));
         $exists = $db->prepare("SELECT COUNT(*) FROM servicios WHERE id = ?");
         $exists->execute([$id]);
         if ((int)$exists->fetchColumn() > 0) $id .= '-' . substr(time(), -4);
 
+        $maxStmt = $db->prepare("SELECT COALESCE(MAX(orden),0) FROM servicios WHERE categoria=?");
+        $maxStmt->execute([$categoria]);
+        $maxOrden = (int)$maxStmt->fetchColumn();
+
         $stmt = $db->prepare(
-            "INSERT INTO servicios (id, nombre, duracion, precio, activo)
-             VALUES (?, ?, ?, ?, 1)"
+            "INSERT INTO servicios (id, nombre, duracion, precio, activo, categoria, orden)
+             VALUES (?, ?, ?, ?, 1, ?, ?)"
         );
-        $stmt->execute([$id, $nombre, $duracion, $precio]);
+        $stmt->execute([$id, $nombre, $duracion, $precio, $categoria, $maxOrden + 1]);
         respOk(['id' => $id, 'nombre' => $nombre]);
     }
 
     if ($accion === 'servicio_editar') {
-        $id       = trim($body['id']       ?? '');
-        $nombre   = trim($body['nombre']   ?? '');
-        $duracion = trim($body['duracion'] ?? '');
-        $precio   = (float)($body['precio'] ?? 0);
+        $id        = trim($body['id']        ?? '');
+        $nombre    = trim($body['nombre']    ?? '');
+        $duracion  = trim($body['duracion']  ?? '');
+        $precio    = (float)($body['precio'] ?? 0);
+        $categoria = trim($body['categoria'] ?? 'cortes');
 
         if (!$id || !$nombre || !$duracion || $precio <= 0)
             respErr('id, nombre, duracion y precio son obligatorios');
+        if (!in_array($categoria, CATEGORIAS_VALIDAS)) respErr('categoría no válida');
 
         $stmt = $db->prepare(
-            "UPDATE servicios SET nombre=?, duracion=?, precio=? WHERE id=?"
+            "UPDATE servicios SET nombre=?, duracion=?, precio=?, categoria=? WHERE id=?"
         );
-        $stmt->execute([$nombre, $duracion, $precio, $id]);
+        $stmt->execute([$nombre, $duracion, $precio, $categoria, $id]);
         respOk(['id' => $id]);
     }
 
@@ -199,28 +220,39 @@ try {
 
         $row = $db->prepare("SELECT activo FROM servicios WHERE id = ?");
         $row->execute([$id]);
-        $activo = (int)$row->fetchColumn();
-        respOk(['id' => $id, 'activo' => $activo]);
+        respOk(['id' => $id, 'activo' => (int)$row->fetchColumn()]);
     }
 
     if ($accion === 'servicio_eliminar') {
         $id = trim($body['id'] ?? '');
         if (!$id) respErr('id es obligatorio');
 
-        // Comprobar si tiene reservas asociadas
         $check = $db->prepare("SELECT COUNT(*) FROM reservas WHERE servicio_id = ?");
         $check->execute([$id]);
-        if ((int)$check->fetchColumn() > 0) {
+        if ((int)$check->fetchColumn() > 0)
             respErr('No se puede eliminar: este servicio tiene reservas registradas. Desactívalo en su lugar.');
-        }
 
         $stmt = $db->prepare("DELETE FROM servicios WHERE id = ?");
         $stmt->execute([$id]);
         respOk(['id' => $id, 'eliminado' => true]);
     }
 
+    if ($accion === 'servicio_reordenar') {
+        $categoria = trim($body['categoria'] ?? '');
+        $ids       = $body['ids'] ?? [];
+        if (!in_array($categoria, CATEGORIAS_VALIDAS)) respErr('categoría no válida');
+        if (!is_array($ids) || empty($ids)) respErr('ids requerido');
+
+        $upd = $db->prepare("UPDATE servicios SET orden=? WHERE id=? AND categoria=?");
+        foreach ($ids as $i => $id) {
+            $upd->execute([$i, trim($id), $categoria]);
+        }
+        respOk(['reordenados' => count($ids)]);
+    }
+
     respErr('Acción no reconocida: ' . $accion);
 
 } catch (PDOException $e) {
-    respErr('Error de base de datos: ' . $e->getMessage(), 500);
+    error_log('datos.php PDO: ' . $e->getMessage());
+    respErr('Error interno del servidor', 500);
 }

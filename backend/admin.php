@@ -182,7 +182,6 @@ if (!isset($_SESSION['admin'])) {
     exit;
 }
 
-require_once __DIR__ . '/config.php';
 $db = getDB();
 
 if (isset($_GET['accion']) && isset($_GET['token'])) {
@@ -277,8 +276,8 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
     <link rel="icon" type="image/png" href="../img/admin.png">
     <meta name="theme-color" content="#111119">
 
-    <script src="admin-datos.js?v=1" defer></script>
-    <script src="admin-reserva-detail.js?v=1" defer></script>
+    <script src="../assets/js/admin-datos.js?v=1" defer></script>
+    <script src="../assets/js/admin-reserva-detail.js?v=1" defer></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,700&family=DM+Sans:wght@300;400;500&display=swap');
 
@@ -844,12 +843,6 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
             font-size: 2.5rem;
             margin-bottom: .75rem;
             opacity: .3;
-        }
-
-        .reservas-cards {
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
         }
 
         .table-desktop {
@@ -2938,6 +2931,63 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
             font-size: .8rem;
         }
 
+        .datos-drag-handle {
+            cursor: grab;
+            color: #3d3d4d;
+            font-size: 1rem;
+            line-height: 1;
+            flex-shrink: 0;
+            padding: 0 2px;
+            user-select: none;
+            transition: color .15s;
+        }
+        .datos-item:hover .datos-drag-handle { color: #7a7880; }
+        .datos-item.dragging { opacity: .45; border-style: dashed; }
+        .datos-item.drag-over { border-color: #c9a84c; background: rgba(201,168,76,.06); }
+
+        .datos-item-avatar--precio {
+            font-size: .65rem;
+            font-family: 'DM Sans', sans-serif;
+            font-weight: 700;
+            color: #c9a84c;
+            border-color: rgba(201,168,76,.25);
+            background: rgba(201,168,76,.08);
+        }
+
+        .datos-categoria { margin-bottom: 1.25rem; }
+        .datos-categoria-label {
+            font-size: .62rem;
+            font-weight: 700;
+            letter-spacing: .12em;
+            text-transform: uppercase;
+            color: #52525b;
+            margin-bottom: .5rem;
+            padding-left: .25rem;
+        }
+        .datos-categoria-list {
+            display: flex;
+            flex-direction: column;
+            gap: .4rem;
+            min-height: 2px;
+        }
+
+        .datos-field select {
+            width: 100%;
+            background: #18181f;
+            border: 1px solid #2f2f3c;
+            border-radius: 7px;
+            color: #f0ece3;
+            font-family: 'DM Sans', sans-serif;
+            font-size: .85rem;
+            padding: .55rem .75rem;
+            outline: none;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' fill='none'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%237a7880' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right .75rem center;
+        }
+        .datos-field select:focus { border-color: #c9a84c; }
+
         .datos-modal-overlay {
             position: fixed;
             inset: 0;
@@ -4331,19 +4381,14 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
 
                 <!-- ── Barberos ── -->
                 <div class="cfg-section-label">Barberos</div>
-                <div id="barberos-list" class="datos-list"></div>
-
-                <button class="datos-add-btn" onclick="abrirFormBarbero(null)">
+                <div id="barberos-list"></div>
+                <button class="datos-add-btn" style="margin-top:.25rem;" onclick="abrirFormBarbero(null)">
                     + Añadir barbero
                 </button>
 
                 <!-- ── Servicios ── -->
                 <div class="cfg-section-label" style="margin-top:1.75rem;">Servicios</div>
-                <div id="servicios-list" class="datos-list"></div>
-
-                <button class="datos-add-btn" onclick="abrirFormServicio(null)">
-                    + Añadir servicio
-                </button>
+                <div id="servicios-list"></div>
 
                 <div class="cfg-status" id="datos-status"></div>
             </div>
