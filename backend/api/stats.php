@@ -28,6 +28,29 @@ try {
     $hoy = date('Y-m-d');
     $tz  = new DateTimeZone('Europe/Madrid');
 
+    // ── Periodo filter ────────────────────────────────────────
+    $periodoRaw = $_GET['periodo'] ?? 'todo';
+    $periodoAllowed = ['hoy','semana','mes','trimestre','año','todo'];
+    $periodo = in_array($periodoRaw, $periodoAllowed) ? $periodoRaw : 'todo';
+
+    $dateFrom = null;
+    $dateTo   = $hoy;
+    $now = new DateTime('now', $tz);
+    switch ($periodo) {
+        case 'hoy':       $dateFrom = $hoy; break;
+        case 'semana':    $dateFrom = (clone $now)->modify('-6 days')->format('Y-m-d'); break;
+        case 'mes':       $dateFrom = date('Y-m-01'); break;
+        case 'trimestre': $dateFrom = (clone $now)->modify('-3 months')->format('Y-m-d'); break;
+        case 'año':       $dateFrom = (clone $now)->modify('-1 year +1 day')->format('Y-m-d'); break;
+        default:          $dateFrom = null; // todo el tiempo
+    }
+    $wherePeriod = $dateFrom
+        ? " AND r.fecha BETWEEN " . $db->quote($dateFrom) . " AND " . $db->quote($dateTo)
+        : '';
+    $wherePeriodR = $dateFrom
+        ? " AND fecha BETWEEN " . $db->quote($dateFrom) . " AND " . $db->quote($dateTo)
+        : '';
+
     // ── 1. KPIs globales ─────────────────────────────────────
     $kpi = $db->query("
         SELECT
@@ -39,6 +62,7 @@ try {
             COUNT(DISTINCT r.cliente_telefono) AS clientes_unicos
         FROM reservas r
         JOIN servicios s ON s.id = r.servicio_id
+        WHERE 1=1 $wherePeriod
     ")->fetch();
 
     // ── 2. KPIs de hoy ───────────────────────────────────────
@@ -77,35 +101,92 @@ try {
     // Alias de compatibilidad: citas_mes = solo aceptadas
     $mesStats['citas_mes'] = (int)$mesStats['citas_mes_aceptadas'];
 
-    // ── 4. Ingresos de los últimos 12 meses (por mes) ─────────
-    $stmt = $db->query("
-        SELECT
-            DATE_FORMAT(r.fecha, '%Y-%m') AS mes,
-            COUNT(*) AS citas,
-            SUM(CASE WHEN r.estado = 'aceptada' THEN s.precio ELSE 0 END) AS ingresos
-        FROM reservas r
-        JOIN servicios s ON s.id = r.servicio_id
-        WHERE r.fecha >= DATE_SUB(CURDATE(), INTERVAL 12 MONTH)
-        GROUP BY mes
-        ORDER BY mes ASC
-    ");
-    $ingresosPorMes = $stmt->fetchAll();
+    // ── 4. Evolución (granularidad según periodo) ─────────────
+    // Para hoy/semana: por día; mes/trimestre: por semana; año/todo: por mes
+    if (in_array($periodo, ['hoy','semana'])) {
+        $granularity = 'day';
+        $fmt = '%Y-%m-%d';
+        $intervals = ($periodo === 'hoy') ? 1 : 7;
+    } elseif (in_array($periodo, ['mes','trimestre'])) {
+        $granularity = 'week';
+        $fmt = '%x-W%v'; // ISO year + week
+        $intervals = ($periodo === 'mes') ? 5 : 13;
+    } else {
+        $granularity = 'month';
+        $fmt = '%Y-%m';
+        $intervals = 12;
+    }
 
-    // Rellenar meses sin datos
+    $intervalSQL = $dateFrom
+        ? "r.fecha BETWEEN " . $db->quote($dateFrom) . " AND " . $db->quote($dateTo)
+        : "r.fecha >= DATE_SUB(CURDATE(), INTERVAL 12 MONTH)";
+
+    if ($granularity === 'day') {
+        $stmt = $db->query("
+            SELECT DATE_FORMAT(r.fecha,'%Y-%m-%d') AS periodo_key,
+                   COUNT(*) AS citas,
+                   SUM(CASE WHEN r.estado='aceptada' THEN s.precio ELSE 0 END) AS ingresos
+            FROM reservas r JOIN servicios s ON s.id=r.servicio_id
+            WHERE $intervalSQL
+            GROUP BY periodo_key ORDER BY periodo_key ASC
+        ");
+    } elseif ($granularity === 'week') {
+        $stmt = $db->query("
+            SELECT DATE_FORMAT(r.fecha,'%x-W%v') AS periodo_key,
+                   MIN(DATE_FORMAT(r.fecha,'%d/%m')) AS label_hint,
+                   COUNT(*) AS citas,
+                   SUM(CASE WHEN r.estado='aceptada' THEN s.precio ELSE 0 END) AS ingresos
+            FROM reservas r JOIN servicios s ON s.id=r.servicio_id
+            WHERE $intervalSQL
+            GROUP BY periodo_key ORDER BY periodo_key ASC
+        ");
+    } else {
+        $stmt = $db->query("
+            SELECT DATE_FORMAT(r.fecha,'%Y-%m') AS periodo_key,
+                   COUNT(*) AS citas,
+                   SUM(CASE WHEN r.estado='aceptada' THEN s.precio ELSE 0 END) AS ingresos
+            FROM reservas r JOIN servicios s ON s.id=r.servicio_id
+            WHERE $intervalSQL
+            GROUP BY periodo_key ORDER BY periodo_key ASC
+        ");
+    }
+    $rawPeriodos = $stmt->fetchAll();
+
+    // Build complete series filling gaps
     $mesesCompletos = [];
-    for ($i = 11; $i >= 0; $i--) {
-        $dt  = new DateTime('now', $tz);
-        $dt->modify("-{$i} months");
-        $key = $dt->format('Y-m');
-        $lbl = strftime_compat($dt->format('n'), $dt->format('Y'));
-        $found = array_filter($ingresosPorMes, fn($r) => $r['mes'] === $key);
-        $found = array_values($found);
-        $mesesCompletos[] = [
-            'mes'      => $key,
-            'label'    => $lbl,
-            'citas'    => $found ? (int)$found[0]['citas']    : 0,
-            'ingresos' => $found ? (float)$found[0]['ingresos'] : 0,
-        ];
+    if ($granularity === 'day') {
+        $start = new DateTime($dateFrom ?? date('Y-m-d', strtotime('-11 months')), $tz);
+        $end   = new DateTime($dateTo, $tz);
+        $cur   = clone $start;
+        $map   = [];
+        foreach ($rawPeriodos as $r) $map[$r['periodo_key']] = $r;
+        while ($cur <= $end) {
+            $k   = $cur->format('Y-m-d');
+            $lbl = $cur->format('d/m');
+            $found = $map[$k] ?? null;
+            $mesesCompletos[] = ['mes'=>$k,'label'=>$lbl,'citas'=>$found?(int)$found['citas']:0,'ingresos'=>$found?(float)$found['ingresos']:0.0];
+            $cur->modify('+1 day');
+        }
+    } elseif ($granularity === 'week') {
+        $map = [];
+        foreach ($rawPeriodos as $r) $map[$r['periodo_key']] = $r;
+        foreach ($rawPeriodos as $r) {
+            $mesesCompletos[] = ['mes'=>$r['periodo_key'],'label'=>'Sem '.$r['label_hint'],'citas'=>(int)$r['citas'],'ingresos'=>(float)$r['ingresos']];
+        }
+        if (empty($mesesCompletos)) {
+            $mesesCompletos[] = ['mes'=>date('Y-m'),'label'=>'—','citas'=>0,'ingresos'=>0.0];
+        }
+    } else {
+        $map = [];
+        foreach ($rawPeriodos as $r) $map[$r['periodo_key']] = $r;
+        for ($i = $intervals - 1; $i >= 0; $i--) {
+            $dt  = new DateTime('now', $tz);
+            $dt->modify("-{$i} months");
+            $key = $dt->format('Y-m');
+            $lbl = strftime_compat($dt->format('n'), $dt->format('Y'));
+            $found = $map[$key] ?? null;
+            $mesesCompletos[] = ['mes'=>$key,'label'=>$lbl,'citas'=>$found?(int)$found['citas']:0,'ingresos'=>$found?(float)$found['ingresos']:0.0];
+        }
     }
 
     // ── 5. Servicios más reservados ───────────────────────────
@@ -118,6 +199,7 @@ try {
                SUM(CASE WHEN r.estado IN ('denegada','cancelada') THEN 1 ELSE 0 END) AS citas_perdidas
         FROM reservas r
         JOIN servicios s ON s.id = r.servicio_id
+        WHERE 1=1 $wherePeriod
         GROUP BY s.id, s.nombre, s.precio
         ORDER BY total DESC
         LIMIT 6
@@ -132,7 +214,7 @@ try {
                COALESCE(SUM(CASE WHEN r.estado = 'aceptada' THEN 1 ELSE 0 END), 0) AS aceptadas,
                COALESCE(SUM(CASE WHEN r.estado = 'pendiente' THEN 1 ELSE 0 END), 0) AS pendientes
         FROM barberos b
-        LEFT JOIN reservas r  ON r.barbero_id = b.id
+        LEFT JOIN reservas r  ON r.barbero_id = b.id AND 1=1 $wherePeriod
         LEFT JOIN servicios s ON s.id = r.servicio_id
         GROUP BY b.id, b.nombre, b.iniciales
         ORDER BY ingresos DESC, b.nombre ASC
@@ -143,7 +225,7 @@ try {
     $stmt = $db->query("
         SELECT DAYOFWEEK(fecha) AS dow, COUNT(*) AS total
         FROM reservas
-        WHERE estado != 'denegada'
+        WHERE estado != 'denegada' $wherePeriodR
         GROUP BY dow
         ORDER BY dow
     ");
@@ -163,7 +245,7 @@ try {
     $stmt = $db->query("
         SELECT TIME_FORMAT(hora, '%H:%i') AS hora_slot, COUNT(*) AS total
         FROM reservas
-        WHERE estado != 'denegada'
+        WHERE estado != 'denegada' $wherePeriodR
         GROUP BY hora_slot
         ORDER BY total DESC
         LIMIT 8
@@ -176,11 +258,13 @@ try {
         ? round((int)$kpi['aceptadas'] / $totalGestionadas * 100, 1)
         : 0;
 
-    // ── 10. Reservas de los últimos 30 días (heatmap) ────────
+    // ── 10. Reservas — heatmap ────────────────────────────────
+    $hmFrom = $dateFrom ?? date('Y-m-d', strtotime('-30 days'));
+    $hmTo   = $dateTo;
     $stmt = $db->query("
         SELECT DATE_FORMAT(fecha,'%Y-%m-%d') AS dia, COUNT(*) AS total
         FROM reservas
-        WHERE fecha >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
+        WHERE fecha BETWEEN " . $db->quote($hmFrom) . " AND " . $db->quote($hmTo) . "
           AND estado != 'denegada'
         GROUP BY dia
         ORDER BY dia ASC

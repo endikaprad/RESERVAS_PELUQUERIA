@@ -3106,6 +3106,161 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
             border-color: #d42b2b !important;
             color: #d42b2b !important;
         }
+
+        /* ── PERIOD SELECTOR ── */
+        .stats-period-bar {
+            display: flex;
+            gap: .3rem;
+            flex-wrap: wrap;
+            margin-bottom: 1.75rem;
+            padding: .3rem;
+            background: #0d0d14;
+            border-radius: 12px;
+            border: 1px solid #1c1c26;
+        }
+        .stats-period-btn {
+            flex: 1;
+            min-width: 52px;
+            padding: .5rem .6rem;
+            background: transparent;
+            border: none;
+            border-radius: 8px;
+            color: #7a7880;
+            font-family: 'DM Sans', sans-serif;
+            font-size: .68rem;
+            font-weight: 600;
+            letter-spacing: .08em;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: all .2s;
+            white-space: nowrap;
+            text-align: center;
+        }
+        .stats-period-btn:hover {
+            color: #f0ece3;
+            background: rgba(245,240,232,.06);
+        }
+        .stats-period-btn.active {
+            background: linear-gradient(135deg, #d42b2b, #a81e1e);
+            color: #fff;
+            box-shadow: 0 2px 12px rgba(212,43,43,.4);
+        }
+        .stats-period-loading {
+            opacity: .5;
+            pointer-events: none;
+        }
+
+        /* ── KPI PILLS ── */
+        .kpi-pills {
+            display: flex;
+            flex-wrap: wrap;
+            gap: .3rem;
+            margin-top: .55rem;
+        }
+        .kpi-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: .22rem;
+            padding: .2rem .52rem;
+            border-radius: 20px;
+            font-size: .62rem;
+            font-weight: 600;
+            letter-spacing: .03em;
+            line-height: 1.3;
+        }
+        .kpi-pill--ok {
+            background: rgba(34,197,94,.12);
+            border: 1px solid rgba(34,197,94,.28);
+            color: #4ade80;
+        }
+        .kpi-pill--denied {
+            background: rgba(248,113,113,.1);
+            border: 1px solid rgba(248,113,113,.25);
+            color: #f87171;
+        }
+        .kpi-pill--pending {
+            background: rgba(250,204,21,.1);
+            border: 1px solid rgba(250,204,21,.2);
+            color: #facc15;
+        }
+
+        /* ── STATS SECTION HEADER MEJORADO ── */
+        .stats-section-label {
+            font-size: .6rem;
+            letter-spacing: .22em;
+            text-transform: uppercase;
+            color: #d42b2b;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: .5rem;
+        }
+        .stats-section-label::before {
+            content: '';
+            width: 20px;
+            height: 1px;
+            background: #d42b2b;
+        }
+        .stats-section-label .period-badge {
+            margin-left: auto;
+            background: rgba(212,43,43,.1);
+            border: 1px solid rgba(212,43,43,.2);
+            color: #d42b2b;
+            padding: .15rem .5rem;
+            border-radius: 20px;
+            font-size: .58rem;
+            letter-spacing: .06em;
+            text-transform: uppercase;
+        }
+
+        /* ── KPI CARD EXTRA ── */
+        .kpi-card-accent-bar {
+            position: absolute;
+            bottom: 0; left: 0; right: 0;
+            height: 2px;
+            background: var(--kpi-accent, #d42b2b);
+            opacity: 0;
+            transition: opacity .3s;
+            border-radius: 0 0 14px 14px;
+        }
+        .kpi-card:hover .kpi-card-accent-bar { opacity: .4; }
+
+        /* ── DONUT LEGEND PILLS ── */
+        .donut-legend {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: .5rem;
+            width: 100%;
+        }
+        .donut-legend-item {
+            display: flex;
+            align-items: center;
+            gap: .5rem;
+            background: #0d0d14;
+            border: 1px solid #1c1c26;
+            border-radius: 8px;
+            padding: .65rem .85rem;
+        }
+        .donut-legend-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+        .donut-legend-info { flex: 1; }
+        .donut-legend-num {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.15rem;
+            font-weight: 700;
+            line-height: 1;
+        }
+        .donut-legend-lbl {
+            font-size: .58rem;
+            color: #7a7880;
+            letter-spacing: .08em;
+            text-transform: uppercase;
+            margin-top: .2rem;
+        }
     </style>
     <style id="cancel-reschedule-css">
         /* ── Panel lateral: Cancelar / Reprogramar ── */
@@ -4780,29 +4935,47 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
 
             const STATS_API = './api/stats.php';
             let statsLoaded = false;
+            let currentPeriodo = 'todo';
+            let isFetching = false;
 
             window.openStats = function() {
                 document.getElementById('stats-overlay').classList.add('open');
                 document.getElementById('stats-panel').classList.add('open');
                 document.body.style.overflow = 'hidden';
-                if (!statsLoaded) fetchStats();
+                if (!statsLoaded) fetchStats('todo');
             };
             window.closeStats = function() {
                 document.getElementById('stats-overlay').classList.remove('open');
                 document.getElementById('stats-panel').classList.remove('open');
                 document.body.style.overflow = '';
             };
+            window.changePeriodo = function(periodo) {
+                if (isFetching || periodo === currentPeriodo) return;
+                currentPeriodo = periodo;
+                document.querySelectorAll('.stats-period-btn').forEach(b => {
+                    b.classList.toggle('active', b.dataset.periodo === periodo);
+                });
+                fetchStats(periodo);
+            };
 
-            async function fetchStats() {
+            async function fetchStats(periodo) {
+                periodo = periodo || 'todo';
+                if (isFetching) return;
+                isFetching = true;
+                const content = document.getElementById('stats-content');
+                content.classList.add('stats-period-loading');
                 try {
-                    const r = await fetch(STATS_API);
+                    const r = await fetch(STATS_API + '?periodo=' + encodeURIComponent(periodo));
                     const j = await r.json();
                     if (!j.ok) throw new Error(j.error || 'Error al cargar');
                     statsLoaded = true;
-                    renderStats(j.data);
+                    renderStats(j.data, periodo);
                 } catch (e) {
-                    document.getElementById('stats-content').innerHTML =
+                    content.innerHTML =
                         `<div class="stats-loading" style="color:#d42b2b;"><div style="font-size:2rem;">⚠</div><span>${e.message}</span></div>`;
+                } finally {
+                    isFetching = false;
+                    content.classList.remove('stats-period-loading');
                 }
             }
 
@@ -4943,7 +5116,16 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
             }
 
             // ── RENDER STATS ─────────────────────────────────────────────
-            function renderStats(d) {
+            const PERIODO_LABELS = {
+                hoy: 'Hoy', semana: 'Esta semana', mes: 'Este mes',
+                trimestre: 'Trimestre', año: 'Este año', todo: 'Todo el tiempo'
+            };
+            function periodBtn(p, label, active) {
+                return `<button class="stats-period-btn${active === p ? ' active' : ''}" data-periodo="${p}" onclick="changePeriodo('${p}')">${label}</button>`;
+            }
+
+            function renderStats(d, periodo) {
+                periodo = periodo || 'todo';
                 const kpi = d.kpi || {};
                 const hoy = d.hoy || {};
                 const mes = d.mes || {};
@@ -4983,6 +5165,16 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
 
                 let html = '';
 
+                // Period selector
+                html += `<div class="stats-period-bar">
+                    ${periodBtn('hoy','Hoy',periodo)}
+                    ${periodBtn('semana','Semana',periodo)}
+                    ${periodBtn('mes','Mes',periodo)}
+                    ${periodBtn('trimestre','Trimestre',periodo)}
+                    ${periodBtn('año','Año',periodo)}
+                    ${periodBtn('todo','Todo',periodo)}
+                </div>`;
+
                 // KPIs
                 html += '<div class="stats-kpis">';
                 const iconReservas = `<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M19 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2zm-7 3a1 1 0 1 1 0 2 1 1 0 0 1 0-2zm-5 0a1 1 0 1 1 0 2 1 1 0 0 1 0-2zm10 0a1 1 0 1 1 0 2 1 1 0 0 1 0-2zM7 11h10v2H7zm0 4h7v2H7z"/></svg>`;
@@ -4995,18 +5187,29 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
                 html += kpiCard('Reservas totales', kpi.total_reservas || 0, '#d42b2b', iconReservas, '');
                 html += kpiCard('Ingresos totales', kpi.ingresos_totales || 0, '#c9a84c', iconIngTot, ' €');
                 html += kpiCard('Clientes únicos', kpi.clientes_unicos || 0, '#2550a0', iconClientes, '');
-                const subHoy = `<span style="color:#22c55e">✓ ${hoy.citas_hoy_aceptadas||0}</span> &nbsp;·&nbsp; <span style="color:#f87171">✗ ${hoy.citas_hoy_denegadas||0}</span> &nbsp;·&nbsp; <span style="color:#facc15">⏳ ${hoy.citas_hoy_pendientes||0}</span>`;
-                html += kpiCardWithSub('Citas hoy (aceptadas)', hoy.citas_hoy || 0, '#22c55e', iconCitasHoy, '', subHoy);
+                const subHoy = `<div class="kpi-pills">
+                    <span class="kpi-pill kpi-pill--ok">✓ ${hoy.citas_hoy_aceptadas||0} acept.</span>
+                    <span class="kpi-pill kpi-pill--denied">✗ ${hoy.citas_hoy_denegadas||0} denegadas</span>
+                    <span class="kpi-pill kpi-pill--pending">⏳ ${hoy.citas_hoy_pendientes||0} pend.</span>
+                </div>`;
+                html += kpiCardWithSub('Citas hoy', hoy.citas_hoy || 0, '#22c55e', iconCitasHoy, '', subHoy);
                 html += kpiCard('Ingresos hoy', hoy.ingresos_hoy || 0, '#f59e0b', iconIngresosHoy, ' €');
-                const subMes = `<span style="color:#22c55e">✓ ${mes.citas_mes_aceptadas||0}</span> &nbsp;·&nbsp; <span style="color:#f87171">✗ ${mes.citas_mes_denegadas||0}</span> &nbsp;·&nbsp; <span style="color:#facc15">⏳ ${mes.citas_mes_pendientes||0}</span>`;
-                html += kpiCardWithSub('Citas este mes (aceptadas)', mes.citas_mes || 0, '#a78bfa', iconCitesMes, '', subMes);
+                const subMes = `<div class="kpi-pills">
+                    <span class="kpi-pill kpi-pill--ok">✓ ${mes.citas_mes_aceptadas||0} acept.</span>
+                    <span class="kpi-pill kpi-pill--denied">✗ ${mes.citas_mes_denegadas||0} denegadas</span>
+                    <span class="kpi-pill kpi-pill--pending">⏳ ${mes.citas_mes_pendientes||0} pend.</span>
+                </div>`;
+                html += kpiCardWithSub('Citas este mes', mes.citas_mes || 0, '#a78bfa', iconCitesMes, '', subMes);
                 html += '</div>';
 
+                const periodoLbl = PERIODO_LABELS[periodo] || '';
+                const periodoBadge = `<span class="period-badge">${periodoLbl}</span>`;
+
                 // Monthly charts
-                html += '<div class="stats-section"><div class="stats-section-label">Evolución mensual — últimos 12 meses</div>';
+                html += `<div class="stats-section"><div class="stats-section-label">Evolución — ingresos &amp; citas ${periodoBadge}</div>`;
                 html += '<div class="stats-grid-2">';
-                html += '<div class="stats-card"><div class="stats-card-title">Ingresos por mes (€)</div>' + buildLineChart(meses, 'ingresos', '€') + '</div>';
-                html += '<div class="stats-card"><div class="stats-card-title">Citas por mes</div>' + buildBarChart(meses.map(m => ({
+                html += '<div class="stats-card"><div class="stats-card-title">Ingresos (€)</div>' + buildLineChart(meses, 'ingresos', '€') + '</div>';
+                html += '<div class="stats-card"><div class="stats-card-title">Citas</div>' + buildBarChart(meses.map(m => ({
                     label: m.label,
                     value: m.citas,
                     tip: m.citas + ' citas — ' + m.label
@@ -5014,14 +5217,14 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
                 html += '</div></div>';
 
                 // Barbers
-                html += '<div class="stats-section"><div class="stats-section-label">Rendimiento por barbero</div><div class="stats-grid-3">';
+                html += `<div class="stats-section"><div class="stats-section-label">Rendimiento por barbero ${periodoBadge}</div><div class="stats-grid-3">`;
                 barbsAll.forEach((b, i) => {
                     html += barberCard(b, maxBarbIng, i);
                 });
                 html += '</div></div>';
 
-                // Servicios + conversión  ← MEJORADO
-                html += '<div class="stats-section"><div class="stats-section-label">Servicios &amp; conversión</div>';
+                // Servicios + conversión
+                html += `<div class="stats-section"><div class="stats-section-label">Servicios &amp; conversión ${periodoBadge}</div>`;
                 html += '<div class="stats-grid-2">';
                 html += buildServicesCardV2(svcs, kpi);
                 html += '<div class="stats-card" style="display:flex;flex-direction:column;align-items:center;">';
@@ -5030,7 +5233,7 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
                 html += '</div></div></div>';
 
                 // Demand patterns
-                html += '<div class="stats-section"><div class="stats-section-label">Patrones de demanda</div><div class="stats-grid-2">';
+                html += `<div class="stats-section"><div class="stats-section-label">Patrones de demanda ${periodoBadge}</div><div class="stats-grid-2">`;
                 html += '<div class="stats-card"><div class="stats-card-title">Citas por día de la semana</div>' + buildBarChartTall(dow.map(d => ({
                     label: d.label,
                     value: d.count,
@@ -5070,10 +5273,10 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
             }
 
             function kpiCard(label, value, color, icon, suffix) {
-                return `<div class="kpi-card" style="--kpi-accent:${color}" data-target="${+value}" data-dec="0" data-suffix="${suffix}"><div class="kpi-badge">${icon}</div><div class="kpi-label">${label}</div><div class="kpi-value">0${suffix}</div></div>`;
+                return `<div class="kpi-card" style="--kpi-accent:${color}" data-target="${+value}" data-dec="0" data-suffix="${suffix}"><div class="kpi-badge">${icon}</div><div class="kpi-label">${label}</div><div class="kpi-value">0${suffix}</div><div class="kpi-card-accent-bar"></div></div>`;
             }
             function kpiCardWithSub(label, value, color, icon, suffix, subHtml) {
-                return `<div class="kpi-card" style="--kpi-accent:${color}" data-target="${+value}" data-dec="0" data-suffix="${suffix}"><div class="kpi-badge">${icon}</div><div class="kpi-label">${label}</div><div class="kpi-value">0${suffix}</div><div class="kpi-sub">${subHtml}</div></div>`;
+                return `<div class="kpi-card" style="--kpi-accent:${color}" data-target="${+value}" data-dec="0" data-suffix="${suffix}"><div class="kpi-badge">${icon}</div><div class="kpi-label">${label}</div><div class="kpi-value">0${suffix}</div>${subHtml}<div class="kpi-card-accent-bar"></div></div>`;
             }
 
             // ── Bar chart con altura correcta ────────────────────────────
@@ -5186,17 +5389,20 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
                 return `
           <div style="display:flex;flex-direction:column;align-items:center;gap:1.25rem;padding:.5rem 0;width:100%;">
             ${svgHtml}
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:.6rem;width:100%;">
-              ${convMeta(aceptadas, 'Aceptadas', '#22c55e')}
-              ${convMeta(pendientes,'Pendientes','#f59e0b')}
-              ${convMeta(denegadas, 'Denegadas', '#d42b2b')}
-              ${convMeta(total,     'Total',     '#f0ece3')}
+            <div class="donut-legend">
+              ${donutLegendItem(aceptadas,'Aceptadas','#22c55e')}
+              ${donutLegendItem(pendientes,'Pendientes','#f59e0b')}
+              ${donutLegendItem(denegadas,'Denegadas','#f87171')}
+              ${donutLegendItem(total,'Total','#f0ece3')}
             </div>
           </div>`;
             }
 
             function convMeta(num, lbl, col) {
                 return `<div class="conv-meta-item"><div class="conv-meta-num" style="color:${col};">${num}</div><div class="conv-meta-lbl">${lbl}</div></div>`;
+            }
+            function donutLegendItem(num, lbl, col) {
+                return `<div class="donut-legend-item"><div class="donut-legend-dot" style="background:${col};box-shadow:0 0 6px ${col}60;"></div><div class="donut-legend-info"><div class="donut-legend-num" style="color:${col};">${num}</div><div class="donut-legend-lbl">${lbl}</div></div></div>`;
             }
 
             // ── SERVICIOS MEJORADO (FIX 4) ───────────────────────────────
