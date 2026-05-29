@@ -6014,7 +6014,7 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
                 // Monthly charts
                 html += `<div class="stats-section"><div class="stats-section-label">Evolución — ingresos &amp; citas ${periodoBadge}</div>`;
                 html += '<div class="stats-grid-2">';
-                html += '<div class="stats-card"><div class="stats-card-title">Ingresos (€)</div>' + buildLineChart(meses, 'ingresos', '€') + '</div>';
+                html += '<div class="stats-card" style="padding-bottom:.5rem"><div class="stats-card-title">Ingresos (€)</div>' + buildLineChart(meses, 'ingresos', '€') + '</div>';
                 html += '<div class="stats-card"><div class="stats-card-title">Citas</div>' + buildBarChart(meses.map(m => ({
                     label: m.label,
                     value: m.citas,
@@ -6390,7 +6390,7 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
                     PAD = {
                         t: 12,
                         r: 10,
-                        b: 42,
+                        b: 28,
                         l: 42
                     };
                 const vals = meses.map(m => +m[field]);
