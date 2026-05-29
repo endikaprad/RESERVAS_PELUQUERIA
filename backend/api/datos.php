@@ -43,11 +43,13 @@ const CATEGORIAS_VALIDAS = ['cortes', 'barba', 'packs'];
 
 function ensureColumns(PDO $db): void {
     $migraciones = [
-        "ALTER TABLE barberos  ADD COLUMN activo  TINYINT(1) NOT NULL DEFAULT 1   AFTER iniciales",
-        "ALTER TABLE barberos  ADD COLUMN orden   SMALLINT   NOT NULL DEFAULT 0   AFTER activo",
-        "ALTER TABLE servicios ADD COLUMN activo  TINYINT(1) NOT NULL DEFAULT 1",
-        "ALTER TABLE servicios ADD COLUMN categoria VARCHAR(30) NOT NULL DEFAULT 'cortes'",
-        "ALTER TABLE servicios ADD COLUMN orden   SMALLINT   NOT NULL DEFAULT 0",
+        "ALTER TABLE barberos  ADD COLUMN activo      TINYINT(1) NOT NULL DEFAULT 1   AFTER iniciales",
+        "ALTER TABLE barberos  ADD COLUMN orden       SMALLINT   NOT NULL DEFAULT 0   AFTER activo",
+        "ALTER TABLE barberos  ADD COLUMN bio         TEXT       NULL",
+        "ALTER TABLE barberos  ADD COLUMN habilidades TEXT       NULL",
+        "ALTER TABLE servicios ADD COLUMN activo      TINYINT(1) NOT NULL DEFAULT 1",
+        "ALTER TABLE servicios ADD COLUMN categoria   VARCHAR(30) NOT NULL DEFAULT 'cortes'",
+        "ALTER TABLE servicios ADD COLUMN orden       SMALLINT   NOT NULL DEFAULT 0",
     ];
     foreach ($migraciones as $sql) {
         try { $db->exec($sql); } catch (PDOException $e) { /* ya existe */ }
@@ -64,7 +66,7 @@ try {
 
         if ($tipo === 'barberos') {
             $rows = $db->query(
-                "SELECT id, nombre, especialidad, iniciales, activo, orden
+                "SELECT id, nombre, especialidad, iniciales, activo, orden, bio, habilidades
                  FROM barberos ORDER BY orden ASC, nombre ASC"
             )->fetchAll(PDO::FETCH_ASSOC);
             respOk($rows);
@@ -92,6 +94,8 @@ try {
         $nombre       = trim($body['nombre']       ?? '');
         $especialidad = trim($body['especialidad'] ?? '');
         $iniciales    = strtoupper(trim($body['iniciales'] ?? ''));
+        $bio          = trim($body['bio']          ?? '') ?: null;
+        $habilidades  = trim($body['habilidades']  ?? '') ?: null;
 
         if (!$nombre || !$iniciales) respErr('nombre e iniciales son obligatorios');
         if (strlen($iniciales) > 5)  respErr('iniciales máximo 5 caracteres');
@@ -106,10 +110,10 @@ try {
         $maxOrden = (int)$db->query("SELECT COALESCE(MAX(orden),0) FROM barberos")->fetchColumn();
 
         $stmt = $db->prepare(
-            "INSERT INTO barberos (id, nombre, especialidad, iniciales, activo, orden)
-             VALUES (?, ?, ?, ?, 1, ?)"
+            "INSERT INTO barberos (id, nombre, especialidad, iniciales, activo, orden, bio, habilidades)
+             VALUES (?, ?, ?, ?, 1, ?, ?, ?)"
         );
-        $stmt->execute([$id, $nombre, $especialidad, $iniciales, $maxOrden + 1]);
+        $stmt->execute([$id, $nombre, $especialidad, $iniciales, $maxOrden + 1, $bio, $habilidades]);
         respOk(['id' => $id, 'nombre' => $nombre]);
     }
 
@@ -118,13 +122,15 @@ try {
         $nombre       = trim($body['nombre']       ?? '');
         $especialidad = trim($body['especialidad'] ?? '');
         $iniciales    = strtoupper(trim($body['iniciales'] ?? ''));
+        $bio          = trim($body['bio']          ?? '') ?: null;
+        $habilidades  = trim($body['habilidades']  ?? '') ?: null;
 
         if (!$id || !$nombre || !$iniciales) respErr('id, nombre e iniciales son obligatorios');
 
         $stmt = $db->prepare(
-            "UPDATE barberos SET nombre=?, especialidad=?, iniciales=? WHERE id=?"
+            "UPDATE barberos SET nombre=?, especialidad=?, iniciales=?, bio=?, habilidades=? WHERE id=?"
         );
-        $stmt->execute([$nombre, $especialidad, $iniciales, $id]);
+        $stmt->execute([$nombre, $especialidad, $iniciales, $bio, $habilidades, $id]);
         respOk(['id' => $id]);
     }
 

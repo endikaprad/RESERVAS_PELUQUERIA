@@ -57,10 +57,10 @@
                     background 0.3s ease !important;
     }
 
-    /* Estado abierto — hamburger se convierte en X dorada */
+    /* Estado abierto — hamburger se convierte en X roja */
     .hamburger.is-open span:nth-child(1) {
         transform: rotate(45deg) translate(4.5px, 4.5px) !important;
-        background: var(--color-gold) !important;
+        background: var(--red) !important;
     }
     .hamburger.is-open span:nth-child(2) {
         opacity: 0 !important;
@@ -68,7 +68,7 @@
     }
     .hamburger.is-open span:nth-child(3) {
         transform: rotate(-45deg) translate(4.5px, -4.5px) !important;
-        background: var(--color-gold) !important;
+        background: var(--red) !important;
     }
 
     /* Menú oculto por defecto */
@@ -89,7 +89,7 @@
         width: 100vw;
         height: 100dvh;
         z-index: 1000;
-        background: radial-gradient(ellipse at 50% 0%, rgba(201,168,76,0.06) 0%, transparent 55%),
+        background: radial-gradient(ellipse at 50% 0%, rgba(212,43,43,0.07) 0%, transparent 55%),
                     linear-gradient(180deg, #0d0b10 0%, #09080f 60%);
         justify-content: center;
         align-items: center;
@@ -128,8 +128,8 @@
         left: 0;
         right: 0;
         height: 1px;
-        background: linear-gradient(90deg, transparent 5%, var(--color-gold-dim) 40%, var(--color-gold) 50%, var(--color-gold-dim) 60%, transparent 95%);
-        opacity: 0.6;
+        background: linear-gradient(90deg, transparent 5%, rgba(212,43,43,0.4) 40%, var(--red) 50%, rgba(212,43,43,0.4) 60%, transparent 95%);
+        opacity: 0.7;
     }
 
     /* Marca de agua PRADO */
@@ -138,15 +138,16 @@
         content: 'PRADO';
         position: absolute;
         bottom: 1.5rem;
-        left: 50%;
-        transform: translateX(-50%);
+        left: 0;
+        right: 0;
+        text-align: center;
         font-family: var(--font-display);
         font-size: clamp(4rem, 18vw, 6rem);
         font-weight: 900;
         font-style: italic;
         color: transparent;
-        -webkit-text-stroke: 1px rgba(201, 168, 76, 0.07);
-        letter-spacing: 0.25em;
+        -webkit-text-stroke: 1px rgba(212, 43, 43, 0.1);
+        letter-spacing: 0.3em;
         pointer-events: none;
         white-space: nowrap;
         user-select: none;
@@ -174,7 +175,7 @@
         overflow: hidden;
     }
 
-    /* Subrayado dorado animado en hover */
+    /* Subrayado rojo animado en hover */
     .nav-links.open a::before {
         content: '';
         position: absolute !important;
@@ -183,7 +184,7 @@
         transform: translateX(-50%) scaleX(0) !important;
         width: 32px;
         height: 1px;
-        background: var(--color-gold);
+        background: var(--red);
         opacity: 0;
         transition: transform 0.3s cubic-bezier(0.23,1,0.32,1), opacity 0.3s ease !important;
     }
@@ -209,7 +210,7 @@
         display: block !important;
         width: 20px;
         height: 1px;
-        background: var(--color-gold);
+        background: var(--red);
         margin: 0.15rem auto 0;
         opacity: 0.8;
         position: static !important;
@@ -225,14 +226,14 @@
         font-style: normal !important;
         letter-spacing: 0.22em !important;
         text-transform: uppercase !important;
-        color: var(--color-gold) !important;
-        border: 1px solid rgba(201,168,76,0.45) !important;
+        color: var(--red) !important;
+        border: 1px solid rgba(212,43,43,0.45) !important;
         border-radius: 3px !important;
         padding: 0.9rem 2.75rem !important;
         margin-top: 1.75rem !important;
         width: auto !important;
         display: inline-block !important;
-        box-shadow: 0 0 0 0 rgba(201,168,76,0);
+        box-shadow: 0 0 0 0 rgba(212,43,43,0);
         transition: background 0.3s ease, color 0.3s ease, border-color 0.3s ease,
                     box-shadow 0.3s ease, transform 0.3s cubic-bezier(0.23,1,0.32,1) !important;
     }
@@ -241,11 +242,11 @@
     .nav-links.open a.nav-cta::after  { display: none !important; }
 
     .nav-links.open a.nav-cta:hover {
-        background: rgba(201,168,76,0.1) !important;
-        color: var(--color-gold-light) !important;
-        border-color: var(--color-gold) !important;
-        box-shadow: 0 0 24px rgba(201,168,76,0.18), inset 0 0 18px rgba(201,168,76,0.06) !important;
-        transform: translateY(-2px) !important;
+        background: rgba(212,43,43,0.12) !important;
+        color: #f07070 !important;
+        border-color: var(--red) !important;
+        box-shadow: 0 4px 24px rgba(212,43,43,0.3), inset 0 0 18px rgba(212,43,43,0.07) !important;
+        filter: brightness(1.08) !important;
         letter-spacing: 0.26em !important;
     }
 

@@ -25,7 +25,7 @@ try {
     $db = getDB();
 
     $stmt     = $db->query(
-        "SELECT id, nombre, especialidad, iniciales
+        "SELECT id, nombre, especialidad, iniciales, bio, habilidades
          FROM barberos
          WHERE activo = 1
          ORDER BY orden ASC, nombre ASC"

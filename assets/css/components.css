@@ -15,23 +15,22 @@
     letter-spacing: 0.18em;
     text-transform: uppercase;
     border-radius: var(--radius-sm);
-    transition: transform var(--spring-duration) var(--spring),
-                box-shadow var(--spring-duration) var(--spring),
-                background 0.2s ease,
-                border-color 0.2s ease,
-                color 0.2s ease;
+    transition: box-shadow 0.35s ease,
+                background 0.35s ease,
+                filter 0.35s ease,
+                border-color 0.25s ease,
+                color 0.25s ease;
     cursor: pointer;
     position: relative;
     overflow: hidden;
     border: none;
-    will-change: transform;
     -webkit-tap-highlight-color: transparent;
     user-select: none;
 }
 
 .btn:active {
-    transform: scale(0.97) !important;
-    transition-duration: 0.1s !important;
+    filter: brightness(0.9);
+    transition-duration: 0.08s;
 }
 
 /* Shimmer on hover */
@@ -55,8 +54,9 @@
 }
 
 .btn-primary:hover {
-    transform: translateY(-3px) scale(1.02);
-    box-shadow: 0 16px 40px rgba(212,43,43,0.45), inset 0 1px 0 rgba(255,255,255,0.12);
+    background: linear-gradient(135deg, #e03030 0%, var(--red) 100%);
+    box-shadow: 0 8px 32px rgba(212,43,43,0.55), 0 0 0 1px rgba(255,255,255,0.08), inset 0 1px 0 rgba(255,255,255,0.18);
+    filter: brightness(1.08);
 }
 
 /* ── OUTLINE: white border, red on hover ── */
@@ -80,8 +80,9 @@
 }
 
 .btn-blue:hover {
-    transform: translateY(-3px) scale(1.02);
-    box-shadow: 0 16px 40px rgba(37,80,160,0.45);
+    background: linear-gradient(135deg, #3060d0 0%, var(--blue-mid) 100%);
+    box-shadow: 0 8px 32px rgba(37,80,160,0.55), 0 0 0 1px rgba(255,255,255,0.08), inset 0 1px 0 rgba(255,255,255,0.18);
+    filter: brightness(1.1);
 }
 
 /* ── TRICOLOR: barber pole accent ── */
@@ -336,6 +337,20 @@
 
 .toast.show { transform: translateY(0); }
 .toast-icon { color: var(--red); font-size: 1.1rem; }
+
+/* ===== BUTTON RIPPLE ON CLICK ===== */
+.btn-ripple {
+    position: absolute;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.22);
+    pointer-events: none;
+    animation: btn-ripple-expand 0.55s cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
+}
+
+@keyframes btn-ripple-expand {
+    from { transform: scale(0); opacity: 1; }
+    to   { transform: scale(1); opacity: 0; }
+}
 
 /* ===== BARBER POLE STRIPE (decorative) ===== */
 .stripe-bar {

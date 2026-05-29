@@ -167,19 +167,10 @@
                 <div class="service-card reveal reveal-delay-3">
                     <div class="service-card-body">
                         <div class="service-card-header">
-                            <span class="service-name">Corte + Barba</span>
-                            <span class="service-price">24 €</span>
+                            <span class="service-name">Afeitado Navaja</span>
+                            <span class="service-price">20 €</span>
                         </div>
-                        <div class="service-duration">40 minutos</div>
-                    </div>
-                </div>
-                <div class="service-card reveal reveal-delay-4">
-                    <div class="service-card-body">
-                        <div class="service-card-header">
-                            <span class="service-name">Sesión Premium</span>
-                            <span class="service-price">45 €</span>
-                        </div>
-                        <div class="service-duration">60 minutos</div>
+                        <div class="service-duration">30 minutos</div>
                     </div>
                 </div>
             </div>
@@ -235,22 +226,19 @@
                 <h2 class="section-title">Nuestro equipo</h2>
                 <div class="gold-divider" style="margin:1.5rem auto;"></div>
             </div>
-            <div class="team-grid">
+            <div class="team-grid" id="home-team-grid">
                 <div class="team-card reveal reveal-delay-1">
-                    <div class="team-photo"><div
-                            class="team-photo-placeholder">EP</div></div>
+                    <div class="team-photo"><div class="team-photo-placeholder">EP</div></div>
                     <div class="team-name">Endika Prado</div>
                     <div class="team-role">Fundador · Master Barber</div>
                 </div>
                 <div class="team-card reveal reveal-delay-2">
-                    <div class="team-photo"><div
-                            class="team-photo-placeholder">MV</div></div>
+                    <div class="team-photo"><div class="team-photo-placeholder">MV</div></div>
                     <div class="team-name">Marcos Vila</div>
                     <div class="team-role">Barba & Navaja</div>
                 </div>
                 <div class="team-card reveal reveal-delay-3">
-                    <div class="team-photo"><div
-                            class="team-photo-placeholder">AR</div></div>
+                    <div class="team-photo"><div class="team-photo-placeholder">AR</div></div>
                     <div class="team-name">Alex Ramos</div>
                     <div class="team-role">Corte Clásico & Fade</div>
                 </div>
@@ -260,6 +248,28 @@
                     →</a>
             </div>
         </section>
+        <script>
+        (function loadHomeTeam() {
+            const delays = ['reveal reveal-delay-1','reveal reveal-delay-2','reveal reveal-delay-3','reveal reveal-delay-4'];
+            fetch('./backend/api/barberos.php')
+                .then(r => r.json())
+                .then(json => {
+                    if (!json.ok || !json.data.length) return;
+                    const grid = document.getElementById('home-team-grid');
+                    if (!grid) return;
+                    grid.innerHTML = json.data.map((b, i) => `
+                        <div class="team-card ${delays[i] || 'reveal'}">
+                            <div class="team-photo"><div class="team-photo-placeholder">${b.iniciales}</div></div>
+                            <div class="team-name">${b.nombre}</div>
+                            <div class="team-role">${b.especialidad || ''}</div>
+                        </div>`).join('');
+                    if (window._revealObserver) {
+                        grid.querySelectorAll('.reveal').forEach(el => window._revealObserver.observe(el));
+                    }
+                })
+                .catch(() => {});
+        })();
+        </script>
 
         <!-- TESTIMONIALS -->
         <section

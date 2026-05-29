@@ -393,7 +393,7 @@
                            placeholder="Ej: Carlos Ruiz" maxlength="80" />
                 </div>
                 <div class="datos-field">
-                    <label>Especialidad</label>
+                    <label>Especialidad <span style="color:#7a7880;font-weight:400;">(se muestra en la tarjeta)</span></label>
                     <input id="dm-especialidad" type="text"
                            value="${b ? esc(b.especialidad || '') : ''}"
                            placeholder="Ej: Fade &amp; corte clásico" maxlength="150" />
@@ -404,6 +404,20 @@
                            value="${b ? esc(b.iniciales) : ''}"
                            placeholder="Ej: CR" maxlength="5"
                            style="text-transform:uppercase;" />
+                </div>
+                <div class="datos-field">
+                    <label>Habilidades <span style="color:#7a7880;font-weight:400;">(separadas por coma)</span></label>
+                    <input id="dm-habilidades" type="text"
+                           value="${b ? esc(b.habilidades || '') : ''}"
+                           placeholder="Ej: Fade &amp; taper, Texturizado, Corte a tijera" />
+                </div>
+                <div class="datos-field">
+                    <label>Biografía <span style="color:#7a7880;font-weight:400;">(se muestra en página Equipo)</span></label>
+                    <textarea id="dm-bio" rows="4"
+                              placeholder="Describe la trayectoria y estilo del barbero…"
+                              style="width:100%;background:#18181f;border:1px solid #252530;border-radius:8px;padding:.85rem 1rem;color:#f0ece3;font-family:'DM Sans',sans-serif;font-size:.88rem;resize:vertical;transition:border-color .3s;"
+                              onfocus="this.style.borderColor='#c9a84c'" onblur="this.style.borderColor='#252530'"
+                    >${b ? esc(b.bio || '') : ''}</textarea>
                 </div>`;
         }
         abrirModal();
@@ -479,12 +493,14 @@
                 const nombre       = (document.getElementById('dm-nombre')?.value       || '').trim();
                 const especialidad = (document.getElementById('dm-especialidad')?.value || '').trim();
                 const iniciales    = (document.getElementById('dm-iniciales')?.value    || '').trim().toUpperCase();
+                const habilidades  = (document.getElementById('dm-habilidades')?.value  || '').trim();
+                const bio          = (document.getElementById('dm-bio')?.value           || '').trim();
 
                 if (!nombre || !iniciales) {
                     showStatus(false, 'Nombre e iniciales son obligatorios.');
                     return;
                 }
-                body = { accion: modalId ? 'barbero_editar' : 'barbero_crear', id: modalId, nombre, especialidad, iniciales };
+                body = { accion: modalId ? 'barbero_editar' : 'barbero_crear', id: modalId, nombre, especialidad, iniciales, habilidades, bio };
 
             } else {
                 const nombre    = (document.getElementById('dm-nombre')?.value    || '').trim();

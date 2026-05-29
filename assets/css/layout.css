@@ -217,24 +217,23 @@
     font-weight: 600 !important;
     letter-spacing: 0.18em !important;
     text-transform: uppercase !important;
-    transition: background 0.2s ease,
-                transform 0.4s var(--spring),
-                box-shadow 0.4s var(--spring) !important;
+    transition: background 0.35s ease,
+                box-shadow 0.35s ease,
+                filter 0.35s ease !important;
     box-shadow: var(--shadow-red) !important;
-    will-change: transform;
     user-select: none;
 }
 
 .nav-cta:hover {
     background: var(--red-dark) !important;
-    transform: translateY(-3px) scale(1.04) !important;
-    box-shadow: 0 16px 40px rgba(212,43,43,0.4) !important;
+    box-shadow: 0 6px 28px rgba(212,43,43,0.55), 0 0 0 1px rgba(255,255,255,0.06) !important;
+    filter: brightness(1.1) !important;
     color: #fff !important;
 }
 
 .nav-cta:active {
-    transform: scale(0.96) !important;
-    transition-duration: 0.1s !important;
+    filter: brightness(0.88) !important;
+    transition-duration: 0.08s !important;
 }
 
 .nav-cta::after { display: none !important; }

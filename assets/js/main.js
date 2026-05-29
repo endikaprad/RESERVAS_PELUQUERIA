@@ -169,33 +169,17 @@ document.addEventListener('DOMContentLoaded', loadNextAvailable);
 
 window.showToast = showToast;
 
-// ===== MAGNETIC BUTTONS (Emil Kowalski) =====
+// ===== SHIMMER RIPPLE ON CLICK =====
 function initMagneticButtons() {
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-    if (window.matchMedia('(hover: none)').matches) return;
-
-    const STRENGTH = 0.35;
-
     document.querySelectorAll('.btn-primary, .btn-blue, .nav-cta').forEach(btn => {
-        let raf = null;
-
-        btn.addEventListener('mousemove', e => {
-            cancelAnimationFrame(raf);
-            raf = requestAnimationFrame(() => {
-                const rect   = btn.getBoundingClientRect();
-                const cx     = rect.left + rect.width  / 2;
-                const cy     = rect.top  + rect.height / 2;
-                const dx     = (e.clientX - cx) * STRENGTH;
-                const dy     = (e.clientY - cy) * STRENGTH;
-                btn.style.transform = `translate(${dx}px, ${dy}px)`;
-                btn.style.transition = 'transform 0.15s ease';
-            });
-        });
-
-        btn.addEventListener('mouseleave', () => {
-            cancelAnimationFrame(raf);
-            btn.style.transform = '';
-            btn.style.transition = 'transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)';
+        btn.addEventListener('click', e => {
+            const ripple = document.createElement('span');
+            ripple.className = 'btn-ripple';
+            const rect = btn.getBoundingClientRect();
+            const size = Math.max(rect.width, rect.height) * 1.6;
+            ripple.style.cssText = `width:${size}px;height:${size}px;left:${e.clientX - rect.left - size/2}px;top:${e.clientY - rect.top - size/2}px`;
+            btn.appendChild(ripple);
+            ripple.addEventListener('animationend', () => ripple.remove());
         });
     });
 }
@@ -205,26 +189,16 @@ function initMagneticButtons() {
     const grid = document.getElementById('home-services-grid');
     if (!grid) return;
 
-    const delays = ['reveal-delay-1', 'reveal-delay-2', 'reveal-delay-3', 'reveal-delay-4'];
+    const delays  = ['reveal-delay-1', 'reveal-delay-2', 'reveal-delay-3'];
+    const FEATURED = ['Corte Clásico', 'Arreglo de Barba', 'Afeitado Navaja'];
 
     try {
         const res  = await fetch(`${window.API_BASE}/servicios.php`);
         const json = await res.json();
         if (!json.ok || !json.data.length) return;
 
-        const activos = json.data.filter(s => !s.activo || s.activo == 1 || s.activo === true);
-
-        // Seleccionar uno por categoría para variedad, hasta 4 en total
-        const orden = ['cortes', 'barba', 'packs'];
-        const selected = [];
-        orden.forEach(cat => {
-            const match = activos.find(s => (s.categoria || '').toLowerCase() === cat && !selected.includes(s));
-            if (match) selected.push(match);
-        });
-        // Rellenar hasta 4 con los restantes si faltan categorías
-        activos.forEach(s => {
-            if (selected.length < 4 && !selected.includes(s)) selected.push(s);
-        });
+        const map      = Object.fromEntries(json.data.map(s => [s.nombre, s]));
+        const selected = FEATURED.map(n => map[n]).filter(Boolean);
 
         if (!selected.length) return;
 
