@@ -28,7 +28,7 @@ try {
         "SELECT id, nombre, especialidad, iniciales
          FROM barberos
          WHERE activo = 1
-         ORDER BY nombre ASC"
+         ORDER BY orden ASC, nombre ASC"
     );
     $barberos = $stmt->fetchAll(PDO::FETCH_ASSOC);
 

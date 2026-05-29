@@ -67,7 +67,7 @@ function setActiveNavLink() {
 setActiveNavLink();
 
 // ===== SCROLL REVEAL =====
-const revealObserver = new IntersectionObserver((entries) => {
+const revealObserver = window._revealObserver = new IntersectionObserver((entries) => {
     entries.forEach(entry => {
         if (entry.isIntersecting) {
             entry.target.classList.add('revealed');
@@ -189,5 +189,45 @@ function initMagneticButtons() {
         });
     });
 }
+
+// ===== SERVICIOS DESTACADOS EN INICIO =====
+(async function loadHomeServices() {
+    const grid = document.getElementById('home-services-grid');
+    if (!grid) return;
+
+    const FEATURED = ['Corte Clásico', 'Arreglo de Barba', 'Corte + Barba', 'Sesión Premium'];
+    const delays   = ['reveal-delay-1', 'reveal-delay-2', 'reveal-delay-3', 'reveal-delay-4'];
+
+    try {
+        const res  = await fetch(`${window.API_BASE}/servicios.php`);
+        const json = await res.json();
+        if (!json.ok) return;
+
+        // Mantener el orden definido en FEATURED
+        const map      = Object.fromEntries(json.data.map(s => [s.nombre, s]));
+        const selected = FEATURED.map(n => map[n]).filter(Boolean);
+        if (!selected.length) return;
+
+        grid.innerHTML = selected.map((s, i) => {
+            const precio   = Number.isInteger(s.precio) ? s.precio : s.precio.toFixed(2).replace('.', ',');
+            const duracion = `${s.duracion} minutos`;
+            return `
+            <div class="service-card reveal ${delays[i] || ''}">
+                <div class="service-card-body">
+                    <div class="service-card-header">
+                        <span class="service-name">${s.nombre}</span>
+                        <span class="service-price">${precio} €</span>
+                    </div>
+                    <div class="service-duration">${duracion}</div>
+                </div>
+            </div>`;
+        }).join('');
+
+        // Re-aplicar observer de reveal a las nuevas tarjetas
+        if (window._revealObserver) {
+            grid.querySelectorAll('.reveal').forEach(el => window._revealObserver.observe(el));
+        }
+    } catch (_) { /* mantiene las tarjetas estáticas de fallback */ }
+})();
 
 document.addEventListener('DOMContentLoaded', initMagneticButtons);

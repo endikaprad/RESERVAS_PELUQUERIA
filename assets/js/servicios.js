@@ -61,7 +61,7 @@
                         <div class="svc-row-meta">
                             <div class="svc-row-duration">${s.duracion}</div>
                             <div class="svc-row-price">${parseFloat(s.precio).toFixed(0)} €</div>
-                            <a href="reservas.html"
+                            <a href="reservas.html?servicio=${s.id}"
                                class="btn ${esPremium ? 'btn-primary' : 'btn-outline'} svc-row-btn"
                                style="padding:.5rem 1rem; font-size:.7rem;">
                                 Reservar

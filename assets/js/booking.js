@@ -107,6 +107,17 @@ async function loadInitialData() {
     renderCalendar();
     renderTimeSlots();
     syncClientForm();
+
+    // Si llega desde servicios.html con ?servicio=ID, preseleccionar y saltar al paso 2
+    const params = new URLSearchParams(window.location.search);
+    const servicioParam = params.get('servicio');
+    if (servicioParam) {
+        const found = SERVICES.find(s => String(s.id) === String(servicioParam));
+        if (found) {
+            selectService(found.id);
+            goToStep(2);
+        }
+    }
 }
 
 function showStepLoading(show) {

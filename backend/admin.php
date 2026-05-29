@@ -3184,6 +3184,92 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
             color: #facc15;
         }
 
+        /* ── ESTADO SUMMARY (bajo KPI cards) ── */
+        .estado-summary {
+            display: flex;
+            align-items: stretch;
+            gap: 0;
+            background: #111119;
+            border: 1px solid #252530;
+            border-radius: 14px;
+            padding: 1.1rem 1.5rem;
+            margin-bottom: 2rem;
+            overflow: hidden;
+        }
+        .estado-summary__item {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            gap: .85rem;
+            min-width: 0;
+        }
+        .estado-summary__sep {
+            width: 1px;
+            background: #252530;
+            margin: 0 1.25rem;
+            flex-shrink: 0;
+        }
+        .estado-summary__icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            border: 1px solid transparent;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .estado-summary__data {
+            display: flex;
+            flex-direction: column;
+            gap: .1rem;
+            min-width: 48px;
+        }
+        .estado-summary__num {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.35rem;
+            font-weight: 700;
+            line-height: 1;
+        }
+        .estado-summary__lbl {
+            font-size: .6rem;
+            letter-spacing: .15em;
+            text-transform: uppercase;
+            color: #7a7880;
+        }
+        .estado-summary__track {
+            flex: 1;
+            height: 4px;
+            background: #1c1c26;
+            border-radius: 99px;
+            overflow: hidden;
+            min-width: 40px;
+        }
+        .estado-summary__fill {
+            height: 100%;
+            border-radius: 99px;
+            transition: width .8s cubic-bezier(.16,1,.3,1);
+        }
+        .estado-summary__pct {
+            font-size: .75rem;
+            font-weight: 500;
+            min-width: 34px;
+            text-align: right;
+            flex-shrink: 0;
+        }
+        @media (max-width: 640px) {
+            .estado-summary {
+                flex-direction: column;
+                gap: 1rem;
+                padding: 1.1rem 1.2rem;
+            }
+            .estado-summary__sep {
+                width: 100%;
+                height: 1px;
+                margin: 0;
+            }
+        }
+
         /* ── STATS SECTION HEADER MEJORADO ── */
         .stats-section-label {
             font-size: .6rem;
@@ -3226,40 +3312,58 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
         .kpi-card:hover .kpi-card-accent-bar { opacity: .4; }
 
         /* ── DONUT LEGEND PILLS ── */
+        .donut-layout {
+            display: flex;
+            align-items: center;
+            gap: 2rem;
+            width: 100%;
+            padding: .5rem 0;
+        }
+        .donut-svg-wrap {
+            flex-shrink: 0;
+            position: relative;
+        }
         .donut-legend {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: .5rem;
-            width: 100%;
+            gap: .75rem;
+            flex: 1;
+            min-width: 0;
         }
         .donut-legend-item {
             display: flex;
             align-items: center;
-            gap: .5rem;
+            gap: .75rem;
             background: #0d0d14;
             border: 1px solid #1c1c26;
-            border-radius: 8px;
-            padding: .65rem .85rem;
+            border-radius: 12px;
+            padding: 1rem 1.1rem;
+            transition: border-color .2s;
         }
+        .donut-legend-item:hover { border-color: #2e2e3e; }
         .donut-legend-dot {
-            width: 8px;
-            height: 8px;
+            width: 10px;
+            height: 10px;
             border-radius: 50%;
             flex-shrink: 0;
         }
-        .donut-legend-info { flex: 1; }
+        .donut-legend-info { flex: 1; min-width: 0; }
         .donut-legend-num {
             font-family: 'Playfair Display', serif;
-            font-size: 1.15rem;
+            font-size: 1.6rem;
             font-weight: 700;
             line-height: 1;
         }
         .donut-legend-lbl {
-            font-size: .58rem;
+            font-size: .6rem;
             color: #7a7880;
-            letter-spacing: .08em;
+            letter-spacing: .1em;
             text-transform: uppercase;
-            margin-top: .2rem;
+            margin-top: .3rem;
+        }
+        @media (max-width: 640px) {
+            .donut-layout { flex-direction: column; align-items: center; }
+            .donut-legend { grid-template-columns: 1fr 1fr; width: 100%; }
         }
     </style>
     <style id="cancel-reschedule-css">
@@ -5187,20 +5291,62 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
                 html += kpiCard('Reservas totales', kpi.total_reservas || 0, '#d42b2b', iconReservas, '');
                 html += kpiCard('Ingresos totales', kpi.ingresos_totales || 0, '#c9a84c', iconIngTot, ' €');
                 html += kpiCard('Clientes únicos', kpi.clientes_unicos || 0, '#2550a0', iconClientes, '');
-                const subHoy = `<div class="kpi-pills">
-                    <span class="kpi-pill kpi-pill--ok">✓ ${hoy.citas_hoy_aceptadas||0} acept.</span>
-                    <span class="kpi-pill kpi-pill--denied">✗ ${hoy.citas_hoy_denegadas||0} denegadas</span>
-                    <span class="kpi-pill kpi-pill--pending">⏳ ${hoy.citas_hoy_pendientes||0} pend.</span>
-                </div>`;
-                html += kpiCardWithSub('Citas hoy', hoy.citas_hoy || 0, '#22c55e', iconCitasHoy, '', subHoy);
+                html += kpiCard('Citas hoy', hoy.citas_hoy || 0, '#22c55e', iconCitasHoy, '');
                 html += kpiCard('Ingresos hoy', hoy.ingresos_hoy || 0, '#f59e0b', iconIngresosHoy, ' €');
-                const subMes = `<div class="kpi-pills">
-                    <span class="kpi-pill kpi-pill--ok">✓ ${mes.citas_mes_aceptadas||0} acept.</span>
-                    <span class="kpi-pill kpi-pill--denied">✗ ${mes.citas_mes_denegadas||0} denegadas</span>
-                    <span class="kpi-pill kpi-pill--pending">⏳ ${mes.citas_mes_pendientes||0} pend.</span>
-                </div>`;
-                html += kpiCardWithSub('Citas este mes', mes.citas_mes || 0, '#a78bfa', iconCitesMes, '', subMes);
+                html += kpiCard('Citas este mes', mes.citas_mes || 0, '#a78bfa', iconCitesMes, '');
                 html += '</div>';
+
+                // Barra de estado de reservas — contextualizada bajo el grupo de KPIs
+                const _totalRes   = +(kpi.total_reservas || 0);
+                const _acept      = +(kpi.aceptadas  || 0);
+                const _denegadas  = +(kpi.denegadas  || 0);
+                const _canceladas = Math.max(_totalRes - _acept - +(kpi.pendientes||0) - _denegadas, 0);
+                const _acPct = _totalRes > 0 ? Math.round(_acept      / _totalRes * 100) : 0;
+                const _dePct = _totalRes > 0 ? Math.round(_denegadas  / _totalRes * 100) : 0;
+                const _caPct = _totalRes > 0 ? Math.round(_canceladas / _totalRes * 100) : 0;
+                html += `<div class="estado-summary">
+                  <div class="estado-summary__item">
+                    <div class="estado-summary__icon" style="--es-clr:#22c55e;background:rgba(34,197,94,.1);border-color:rgba(34,197,94,.28);">
+                      <svg viewBox="0 0 24 24" width="15" height="15" fill="#22c55e"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                    </div>
+                    <div class="estado-summary__data">
+                      <span class="estado-summary__num" style="color:#22c55e;">${_acept}</span>
+                      <span class="estado-summary__lbl">Aceptadas</span>
+                    </div>
+                    <div class="estado-summary__track">
+                      <div class="estado-summary__fill" style="width:${_acPct}%;background:#22c55e;"></div>
+                    </div>
+                    <span class="estado-summary__pct" style="color:#22c55e;">${_acPct}%</span>
+                  </div>
+                  <div class="estado-summary__sep"></div>
+                  <div class="estado-summary__item">
+                    <div class="estado-summary__icon" style="background:rgba(248,113,113,.1);border-color:rgba(248,113,113,.28);">
+                      <svg viewBox="0 0 24 24" width="15" height="15" fill="#f87171"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+                    </div>
+                    <div class="estado-summary__data">
+                      <span class="estado-summary__num" style="color:#f87171;">${_denegadas}</span>
+                      <span class="estado-summary__lbl">Denegadas</span>
+                    </div>
+                    <div class="estado-summary__track">
+                      <div class="estado-summary__fill" style="width:${_dePct}%;background:#f87171;"></div>
+                    </div>
+                    <span class="estado-summary__pct" style="color:#f87171;">${_dePct}%</span>
+                  </div>
+                  <div class="estado-summary__sep"></div>
+                  <div class="estado-summary__item">
+                    <div class="estado-summary__icon" style="background:rgba(107,114,128,.1);border-color:rgba(107,114,128,.28);">
+                      <svg viewBox="0 0 24 24" width="15" height="15" fill="#9ca3af"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm5 11H7v-2h10v2z"/></svg>
+                    </div>
+                    <div class="estado-summary__data">
+                      <span class="estado-summary__num" style="color:#9ca3af;">${_canceladas}</span>
+                      <span class="estado-summary__lbl">Canceladas</span>
+                    </div>
+                    <div class="estado-summary__track">
+                      <div class="estado-summary__fill" style="width:${_caPct}%;background:#6b7280;"></div>
+                    </div>
+                    <span class="estado-summary__pct" style="color:#9ca3af;">${_caPct}%</span>
+                  </div>
+                </div>`;
 
                 const periodoLbl = PERIODO_LABELS[periodo] || '';
                 const periodoBadge = `<span class="period-badge">${periodoLbl}</span>`;
@@ -5375,20 +5521,22 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
                 const o3 = o2 + (total > 0 ? (pendientes / total) * circ : 0);
                 const o4 = o3 + (total > 0 ? (denegadas / total) * circ : 0);
 
+                // SVG más grande y con strokeW mayor para PC
+                const svgSize = 240;
                 const svgHtml = `
-          <svg viewBox="0 0 180 180" style="width:160px;height:160px;flex-shrink:0;">
-            <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#1c1c26" stroke-width="${strokeW}"/>
+          <svg viewBox="0 0 180 180" style="width:${svgSize}px;height:${svgSize}px;flex-shrink:0;display:block;">
+            <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#1a1a24" stroke-width="${strokeW + 4}"/>
             ${seg(aceptadas,  '#22c55e', o1, 0.1)}
             ${seg(pendientes, '#f59e0b', o2, 0.25)}
             ${seg(denegadas,  '#d42b2b', o3, 0.4)}
             ${seg(Math.max(canceladas,0), '#6b7280', o4, 0.55)}
-            <text x="${cx}" y="${cy-6}" text-anchor="middle" font-family="'Playfair Display',serif" font-size="20" font-weight="700" fill="#22c55e">${tasa}%</text>
-            <text x="${cx}" y="${cy+12}" text-anchor="middle" font-family="'DM Sans',sans-serif" font-size="8.5" fill="#7a7880" letter-spacing="1">ACEPTADAS</text>
+            <text x="${cx}" y="${cy - 10}" text-anchor="middle" font-family="'Playfair Display',serif" font-size="26" font-weight="700" fill="#22c55e">${tasa}%</text>
+            <text x="${cx}" y="${cy + 10}" text-anchor="middle" font-family="'DM Sans',sans-serif" font-size="8" fill="#7a7880" letter-spacing="1.5">ACEPTADAS</text>
           </svg>`;
 
                 return `
-          <div style="display:flex;flex-direction:column;align-items:center;gap:1.25rem;padding:.5rem 0;width:100%;">
-            ${svgHtml}
+          <div class="donut-layout">
+            <div class="donut-svg-wrap">${svgHtml}</div>
             <div class="donut-legend">
               ${donutLegendItem(aceptadas,'Aceptadas','#22c55e')}
               ${donutLegendItem(pendientes,'Pendientes','#f59e0b')}
