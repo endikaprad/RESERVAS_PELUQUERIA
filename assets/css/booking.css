@@ -156,16 +156,9 @@
 /* ===== BARBER SELECTOR ===== */
 .barber-select-grid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(4, 1fr);
     gap: 1rem;
     margin-bottom: 2.5rem;
-}
-
-/* Si el último elemento es el 1º de su fila (4º en grid de 3), lo centramos */
-.barber-select-grid .barber-option:last-child:nth-child(3n+1) {
-    grid-column: 1 / -1;
-    max-width: calc((100% - 2rem) / 3);
-    justify-self: center;
 }
 
 .barber-option {
@@ -273,6 +266,39 @@
     color: var(--color-muted);
     padding: 0.25rem 0;
 }
+
+/* Calendar month transition animations */
+@keyframes calSlideInRight {
+    from { opacity: 0; transform: translateX(40px); }
+    to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes calSlideInLeft {
+    from { opacity: 0; transform: translateX(-40px); }
+    to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes calSlideOutLeft {
+    from { opacity: 1; transform: translateX(0); }
+    to   { opacity: 0; transform: translateX(-40px); }
+}
+@keyframes calSlideOutRight {
+    from { opacity: 1; transform: translateX(0); }
+    to   { opacity: 0; transform: translateX(40px); }
+}
+@keyframes calFadeIn {
+    from { opacity: 0; transform: translateY(-6px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes calFadeOut {
+    from { opacity: 1; transform: translateY(0); }
+    to   { opacity: 0; transform: translateY(6px); }
+}
+
+.cal-slide-in-right  { animation: calSlideInRight  0.32s cubic-bezier(.25,.8,.25,1) both; }
+.cal-slide-in-left   { animation: calSlideInLeft   0.32s cubic-bezier(.25,.8,.25,1) both; }
+.cal-slide-out-left  { animation: calSlideOutLeft  0.20s cubic-bezier(.4,0,1,1)    both; }
+.cal-slide-out-right { animation: calSlideOutRight 0.20s cubic-bezier(.4,0,1,1)    both; }
+.cal-fade-in         { animation: calFadeIn        0.30s cubic-bezier(.25,.8,.25,1) both; }
+.cal-fade-out        { animation: calFadeOut       0.18s cubic-bezier(.4,0,1,1)    both; }
 
 .cal-grid {
     display: grid;

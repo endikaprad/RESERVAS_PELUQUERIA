@@ -706,13 +706,44 @@ function selectTime(t) {
 }
 
 async function calNav(dir) {
+    const grid = document.getElementById('cal-grid');
+    const title = document.getElementById('cal-title');
+
+    // Slide-out current month
+    if (grid) {
+        grid.classList.remove('cal-slide-in-left', 'cal-slide-in-right');
+        grid.classList.add(dir > 0 ? 'cal-slide-out-left' : 'cal-slide-out-right');
+    }
+    if (title) {
+        title.classList.remove('cal-fade-in');
+        title.classList.add('cal-fade-out');
+    }
+
+    await new Promise(r => setTimeout(r, 220));
+
     calendarDate.setMonth(calendarDate.getMonth() + dir);
     if (booking.date) {
         const sameMonth = booking.date.getMonth()    === calendarDate.getMonth() &&
                           booking.date.getFullYear() === calendarDate.getFullYear();
         if (!sameMonth) { booking.date = null; booking.time = null; renderTimeSlots(); }
     }
+
+    if (grid) {
+        grid.classList.remove('cal-slide-out-left', 'cal-slide-out-right');
+        grid.classList.add(dir > 0 ? 'cal-slide-in-right' : 'cal-slide-in-left');
+    }
+    if (title) {
+        title.classList.remove('cal-fade-out');
+        title.classList.add('cal-fade-in');
+    }
+
     await renderCalendar();
+
+    // Clean up animation classes after they finish
+    setTimeout(() => {
+        if (grid) grid.classList.remove('cal-slide-in-left', 'cal-slide-in-right');
+        if (title) title.classList.remove('cal-fade-in');
+    }, 350);
 }
 
 // ===== STEP 4: SUMMARY =====
