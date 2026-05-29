@@ -5,7 +5,7 @@
 (function initDatos() {
     'use strict';
 
-    const DATOS_API = '../api/datos.php';
+    const DATOS_API = './api/datos.php';
 
     const CATEGORIAS = [
         { id: 'cortes', label: 'Cortes' },
