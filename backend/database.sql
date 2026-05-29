@@ -120,3 +120,11 @@ ALTER TABLE barberos
   ADD COLUMN IF NOT EXISTS activo  TINYINT(1) NOT NULL DEFAULT 1 AFTER orden;
 
 -- Categorías válidas: cortes | barba | packs
+
+-- Asignación de categorías y orden de visualización
+UPDATE servicios SET categoria = 'cortes', orden = 1 WHERE id = 'corte';
+UPDATE servicios SET categoria = 'cortes', orden = 2 WHERE id = 'degradado';
+UPDATE servicios SET categoria = 'barba',  orden = 1 WHERE id = 'barba';
+UPDATE servicios SET categoria = 'barba',  orden = 2 WHERE id = 'afeitado';
+UPDATE servicios SET categoria = 'barba',  orden = 3 WHERE id = 'corte-barba';
+UPDATE servicios SET categoria = 'packs',  orden = 1 WHERE id = 'premium';

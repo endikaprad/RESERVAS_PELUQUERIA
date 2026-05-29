@@ -23,9 +23,17 @@
 
         todos.forEach(s => {
             const n = s.nombre.toLowerCase();
-            if (n.includes('barba') || n.includes('afeitado') || n.includes('navaja')) {
+            const cat = (s.categoria || '').toLowerCase();
+
+            if (cat === 'cortes') {
+                categorias['Cortes'].push(s);
+            } else if (cat === 'barba') {
                 categorias['Barba'].push(s);
-            } else if (n.includes('pack') || n.includes('+') || n.includes('premium') || n.includes('completo') || n.includes('sesión')) {
+            } else if (cat === 'packs') {
+                categorias['Packs combinados'].push(s);
+            } else if (n.includes('barba') || n.includes('afeitado') || n.includes('navaja') || (n.includes('corte') && n.includes('+'))) {
+                categorias['Barba'].push(s);
+            } else if (n.includes('pack') || n.includes('premium') || n.includes('completo') || n.includes('sesión')) {
                 categorias['Packs combinados'].push(s);
             } else if (n.includes('corte') || n.includes('degradado') || n.includes('fade') || n.includes('infantil') || n.includes('texturizado')) {
                 categorias['Cortes'].push(s);
