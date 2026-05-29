@@ -160,27 +160,40 @@ function normalizeTime(t) {
     const style = document.createElement('style');
     style.textContent = `
         .cal-cell.blocked {
-            background: rgba(212,43,43,0.13) !important;
-            color: rgba(240,236,227,0.25) !important;
+            background: rgba(212,43,43,0.07) !important;
+            color: rgba(240,236,227,0.18) !important;
             cursor: not-allowed !important;
             position: relative;
-            text-decoration: line-through;
+            text-decoration: none;
+            border: 1px solid rgba(212,43,43,0.18) !important;
+            overflow: hidden;
         }
         .cal-cell.blocked:hover {
-            border-color: transparent !important;
-            color: rgba(240,236,227,0.25) !important;
+            border-color: rgba(212,43,43,0.18) !important;
+            color: rgba(240,236,227,0.18) !important;
         }
-        .cal-cell.blocked::after {
+        .cal-cell.blocked::before {
             content: '';
             position: absolute;
-            inset: 4px;
-            border-radius: 50%;
+            inset: 0;
             background: repeating-linear-gradient(
-                -45deg,
-                rgba(212,43,43,0.3) 0px, rgba(212,43,43,0.3) 1px,
-                transparent 1px, transparent 4px
+                -55deg,
+                transparent 0px,
+                transparent 5px,
+                rgba(212,43,43,0.10) 5px,
+                rgba(212,43,43,0.10) 6px
             );
             pointer-events: none;
+        }
+        .cal-cell.blocked::after {
+            content: '✕';
+            position: absolute;
+            bottom: 2px;
+            right: 4px;
+            font-size: 0.48rem;
+            color: rgba(212,43,43,0.45);
+            pointer-events: none;
+            line-height: 1;
         }
         .cal-grid.loading .cal-cell:not(.disabled):not(.empty) {
             cursor: wait !important;

@@ -24,16 +24,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 try {
     $db = getDB();
 
-    // Migrar columnas opcionales si no existen aún
-    foreach ([
-        "ALTER TABLE barberos ADD COLUMN bio         TEXT NULL",
-        "ALTER TABLE barberos ADD COLUMN habilidades TEXT NULL",
-    ] as $sql) {
-        try { $db->exec($sql); } catch (PDOException $e) { /* ya existe */ }
-    }
-
     $stmt     = $db->query(
-        "SELECT id, nombre, especialidad, iniciales, bio, habilidades
+        "SELECT id, nombre, especialidad, iniciales
          FROM barberos
          WHERE activo = 1
          ORDER BY orden ASC, nombre ASC"

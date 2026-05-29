@@ -31,7 +31,7 @@
             <div class="nav-links">
                 <a href="index.html">Inicio</a>
                 <a href="servicios.html">Servicios</a>
-                <a href="equipo.html" class="active">Equipo</a>
+
                 <a href="galeria.html">Galería</a>
                 <a href="contacto.html">Contacto</a>
                 <a href="reservas.html" class="nav-cta">Reservar</a>
@@ -57,7 +57,23 @@
 
         <script>
         (function () {
-            const delays = ['reveal', 'reveal reveal-delay-1', 'reveal reveal-delay-2', 'reveal reveal-delay-3'];
+            // Bio y habilidades extendidas, indexadas por iniciales del barbero
+            const PROFILES = {
+                EP: {
+                    bio: 'Bilbaíno de corazón, Endika lleva más de 8 años perfeccionando el arte de la barbería. Formado en Madrid y con estancias en Londres y Ámsterdam, su especialidad son los degradados de alta precisión y el estilo que une tradición y modernidad.<br><br>Fundó Prado Barber Co. con una sola idea en mente: que cada cliente salga sintiéndose una versión mejorada de sí mismo.',
+                    skills: ['Degradados', 'Afeitado navaja', 'Diseño de líneas', 'Corte clásico', 'Tratamientos capilares'],
+                },
+                MV: {
+                    bio: 'Marcos es el maestro de la navaja en Prado. Con una habilidad innata para trabajar el vello facial, cada afeitado o arreglo de barba en sus manos se convierte en una experiencia relajante y un resultado impecable.<br><br>Fan del estilo barbero clásico americano de los años 50, Marcos mezcla técnica antigua con productos contemporáneos.',
+                    skills: ['Navaja recta', 'Barba esculpida', 'Afeitado húmedo', 'Masaje facial'],
+                },
+                AR: {
+                    bio: 'Alex llegó al mundo de la barbería desde el diseño gráfico, y eso se nota: cada corte es una composición visual. Su dominio del fade y del corte a tijera lo convierten en una opción perfecta para quien busca estilo limpio y personalizado.<br><br>Apasionado del skate y la cultura urbana, Alex aporta frescura y energía al equipo de Prado.',
+                    skills: ['Fade & taper', 'Texturizado', 'Corte a tijera', 'Estilo urbano'],
+                },
+            };
+
+            const delays = ['reveal', 'reveal reveal-delay-1', 'reveal reveal-delay-2'];
 
             fetch('./backend/api/barberos.php')
                 .then(r => r.json())
@@ -68,13 +84,11 @@
                         return;
                     }
                     container.innerHTML = json.data.map((b, i) => {
-                        const skills = b.habilidades
-                            ? b.habilidades.split(',').map(s => s.trim()).filter(Boolean)
-                            : [];
-                        const skillsHTML = skills.length
-                            ? skills.map(s => `<span class="skill-tag">${s}</span>`).join('')
+                        const p = PROFILES[b.iniciales] || {};
+                        const skillsHTML = p.skills
+                            ? p.skills.map(s => `<span class="skill-tag">${s}</span>`).join('')
                             : '';
-                        const bioHTML = b.bio || '';
+                        const bioHTML = p.bio || '';
                         const cls = delays[i] || 'reveal';
                         const firstName = b.nombre.split(' ')[0];
                         return `
@@ -82,7 +96,7 @@
                             <div class="barber-profile-photo">${b.iniciales}</div>
                             <div>
                                 <div class="barber-profile-name">${b.nombre}</div>
-                                <div class="barber-profile-role">${b.especialidad || ''}</div>
+                                <div class="barber-profile-role">${b.especialidad}</div>
                                 ${bioHTML ? `<p class="barber-profile-bio">${bioHTML}</p>` : ''}
                                 ${skillsHTML ? `<div class="barber-skills">${skillsHTML}</div>` : ''}
                                 <a href="reservas.html" class="btn btn-primary">Reservar con ${firstName}</a>
