@@ -156,9 +156,16 @@
 /* ===== BARBER SELECTOR ===== */
 .barber-select-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    grid-template-columns: repeat(3, 1fr);
     gap: 1rem;
     margin-bottom: 2.5rem;
+}
+
+/* Si el último elemento es el 1º de su fila (4º en grid de 3), lo centramos */
+.barber-select-grid .barber-option:last-child:nth-child(3n+1) {
+    grid-column: 1 / -1;
+    max-width: calc((100% - 2rem) / 3);
+    justify-self: center;
 }
 
 .barber-option {

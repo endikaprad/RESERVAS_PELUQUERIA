@@ -185,16 +185,6 @@ function normalizeTime(t) {
             );
             pointer-events: none;
         }
-        .cal-cell.blocked::after {
-            content: '✕';
-            position: absolute;
-            bottom: 2px;
-            right: 4px;
-            font-size: 0.48rem;
-            color: rgba(212,43,43,0.45);
-            pointer-events: none;
-            line-height: 1;
-        }
         .cal-grid.loading .cal-cell:not(.disabled):not(.empty) {
             cursor: wait !important;
             pointer-events: none;

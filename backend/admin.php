@@ -276,8 +276,8 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
     <link rel="icon" type="image/png" href="../img/admin.png">
     <meta name="theme-color" content="#111119">
 
-    <script src="../assets/js/admin-datos.js?v=1" defer></script>
-    <script src="../assets/js/admin-reserva-detail.js?v=1" defer></script>
+    <script src="../assets/js/admin-datos.js?v=<?= filemtime(__DIR__.'/../assets/js/admin-datos.js') ?>" defer></script>
+    <script src="../assets/js/admin-reserva-detail.js?v=<?= filemtime(__DIR__.'/../assets/js/admin-reserva-detail.js') ?>" defer></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,700&family=DM+Sans:wght@300;400;500&display=swap');
 
@@ -1194,6 +1194,18 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
             flex-shrink: 0;
             overflow: hidden;
             padding: 0 .55rem;
+            position: relative;
+        }
+
+        .cfg-tab-indicator {
+            position: absolute;
+            bottom: 0;
+            height: 2px;
+            background: #d42b2b;
+            border-radius: 2px 2px 0 0;
+            transition: left .35s cubic-bezier(.4,0,.2,1), width .35s cubic-bezier(.4,0,.2,1);
+            pointer-events: none;
+            box-shadow: 0 0 8px rgba(212,43,43,.5);
         }
 
         .cfg-tab {
@@ -1211,21 +1223,38 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
             color: #7a7880;
             cursor: pointer;
             border-bottom: 2px solid transparent;
-            transition: all .2s;
+            transition: color .25s ease, background .25s ease;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
             text-align: center;
+            position: relative;
+        }
+
+        .cfg-tab::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(ellipse at 50% 120%, rgba(212,43,43,.12) 0%, transparent 70%);
+            opacity: 0;
+            transition: opacity .25s ease;
         }
 
         .cfg-tab:hover {
-            color: #f0ece3;
+            color: #d0ccd8;
+        }
+
+        .cfg-tab:hover::before {
+            opacity: .5;
         }
 
         .cfg-tab.active {
             color: #d42b2b;
-            border-bottom-color: #d42b2b;
-            background: rgba(212, 43, 43, .04);
+            background: transparent;
+        }
+
+        .cfg-tab.active::before {
+            opacity: 1;
         }
 
         .cfg-body {
@@ -1245,10 +1274,20 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
 
         .cfg-pane {
             display: none;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: opacity .3s ease, transform .3s ease;
+            pointer-events: none;
+        }
+
+        .cfg-pane.visible {
+            display: block;
         }
 
         .cfg-pane.active {
-            display: block;
+            opacity: 1;
+            transform: translateY(0);
+            pointer-events: auto;
         }
 
         .cfg-section-label {
@@ -5027,16 +5066,17 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
             <div class="cfg-title">⚙ Configuración</div>
             <button class="cfg-close" onclick="closeCfg()">✕</button>
         </div>
-        <div class="cfg-tabs">
+        <div class="cfg-tabs" id="cfg-tabs">
             <button class="cfg-tab active" onclick="switchTab('auto')" title="Auto-aceptar">Auto</button>
             <button class="cfg-tab" onclick="switchTab('vac')">Vacaciones</button>
             <button class="cfg-tab" onclick="switchTab('horarios')">Horarios</button>
             <button class="cfg-tab" onclick="switchTab('datos')">Datos</button>
+            <span class="cfg-tab-indicator" id="cfg-tab-indicator"></span>
         </div>
         <div class="cfg-body">
 
             <!-- ── TAB: AUTO-ACEPTAR ── -->
-            <div class="cfg-pane active" id="pane-auto">
+            <div class="cfg-pane visible active" id="pane-auto">
                 <div class="cfg-section-label">Estado actual</div>
                 <div class="auto-estado-chip off" id="auto-chip">
                     <span id="auto-chip-dot">●</span>
@@ -5360,10 +5400,24 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
             let rangeMode = false;
             let rangeStart = null;
 
+            function initCfgIndicator() {
+                const activeBtn  = document.querySelector('.cfg-tab.active');
+                const indicator  = document.getElementById('cfg-tab-indicator');
+                const tabsEl     = document.getElementById('cfg-tabs');
+                if (!activeBtn || !indicator || !tabsEl) return;
+                const tabsRect = tabsEl.getBoundingClientRect();
+                const btnRect  = activeBtn.getBoundingClientRect();
+                indicator.style.transition = 'none';
+                indicator.style.left  = (btnRect.left - tabsRect.left) + 'px';
+                indicator.style.width = btnRect.width + 'px';
+                requestAnimationFrame(() => { indicator.style.transition = ''; });
+            }
+
             window.openCfg = function() {
                 document.getElementById('cfg-overlay').classList.add('open');
                 document.getElementById('cfg-panel').classList.add('open');
                 document.body.style.overflow = 'hidden';
+                requestAnimationFrame(initCfgIndicator);
                 loadCfg();
             };
             window.closeCfg = function() {
@@ -5372,12 +5426,40 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
                 document.body.style.overflow = '';
             };
             window.switchTab = function(tab) {
-                document.querySelectorAll('.cfg-tab').forEach(t => {
-                    t.classList.toggle('active', t.getAttribute('onclick').includes("'" + tab + "'"));
+                // Update tab buttons & move indicator
+                const tabs = document.querySelectorAll('.cfg-tab');
+                let activeBtn = null;
+                tabs.forEach(t => {
+                    const isActive = t.getAttribute('onclick').includes("'" + tab + "'");
+                    t.classList.toggle('active', isActive);
+                    if (isActive) activeBtn = t;
                 });
-                document.querySelectorAll('.cfg-pane').forEach(p => p.classList.remove('active'));
-                const pane = document.getElementById('pane-' + tab);
-                if (pane) pane.classList.add('active');
+                const indicator = document.getElementById('cfg-tab-indicator');
+                if (indicator && activeBtn) {
+                    const tabsEl = document.getElementById('cfg-tabs');
+                    const tabsRect = tabsEl.getBoundingClientRect();
+                    const btnRect  = activeBtn.getBoundingClientRect();
+                    indicator.style.left  = (btnRect.left - tabsRect.left) + 'px';
+                    indicator.style.width = btnRect.width + 'px';
+                }
+
+                // Animate pane transition
+                const currentPane = document.querySelector('.cfg-pane.active');
+                const nextPane    = document.getElementById('pane-' + tab);
+                if (!nextPane || currentPane === nextPane) return;
+
+                if (currentPane) {
+                    currentPane.classList.remove('active');
+                    currentPane.addEventListener('transitionend', function hide() {
+                        currentPane.classList.remove('visible');
+                        currentPane.removeEventListener('transitionend', hide);
+                    }, { once: true });
+                }
+
+                nextPane.classList.add('visible');
+                requestAnimationFrame(() => requestAnimationFrame(() => {
+                    nextPane.classList.add('active');
+                }));
             };
 
             async function loadCfg() {
@@ -7690,7 +7772,9 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
         tabBtn.textContent  = 'Avisos';
         tabBtn.title        = 'Recordatorios';
         tabBtn.setAttribute('onclick', "switchTab('recordatorios')");
-        tabsEl.appendChild(tabBtn);
+        const cfgIndicator = document.getElementById('cfg-tab-indicator');
+        if (cfgIndicator) tabsEl.insertBefore(tabBtn, cfgIndicator);
+        else tabsEl.appendChild(tabBtn);
 
         // 2. Añadir el panel de contenido
         const cfgBody = document.querySelector('.cfg-body');

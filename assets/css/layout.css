@@ -314,6 +314,30 @@ footer::before {
     line-height: 1.7;
 }
 
+.footer-social {
+    display: flex;
+    gap: 0.75rem;
+    margin-top: 1.25rem;
+    align-items: center;
+}
+
+.footer-social a {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.06);
+    color: var(--color-muted);
+    transition: background 0.2s, color 0.2s;
+}
+
+.footer-social a:hover {
+    background: var(--color-accent);
+    color: #fff;
+}
+
 /* Mini pole in footer */
 .footer-pole {
     display: flex; gap: 8px; margin-top: 1.5rem; align-items: center;
