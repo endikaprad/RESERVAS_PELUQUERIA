@@ -5334,6 +5334,12 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
           .hm3-nav{margin-left:0;}
           .hm3-calendar{flex-direction:column;gap:18px;}
           .hm3-month{min-width:0;padding-right:0;padding-bottom:0;}
+          .hm3-stats{grid-template-columns:repeat(2,1fr);gap:6px;margin-top:12px;}
+          .hm3-stat{padding:8px 6px;}
+          .hm3-snum{font-size:1.1rem;}
+          .hm3-slbl{font-size:9px;letter-spacing:.06em;}
+          .hm3-c{font-size:8px;}
+          .hm3-legend{flex-wrap:wrap;gap:4px;}
         }
         </style>
     <div class="hm3-top">

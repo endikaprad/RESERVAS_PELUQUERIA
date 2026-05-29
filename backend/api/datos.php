@@ -241,8 +241,10 @@ try {
             $db->prepare("UPDATE reservas SET estado = 'denegada' WHERE servicio_id = ? AND estado NOT IN ('denegada','cancelada')")->execute([$id]);
         }
 
+        $db->exec("SET FOREIGN_KEY_CHECKS=0");
         $stmt = $db->prepare("DELETE FROM servicios WHERE id = ?");
         $stmt->execute([$id]);
+        $db->exec("SET FOREIGN_KEY_CHECKS=1");
         respOk(['id' => $id, 'eliminado' => true]);
     }
 
