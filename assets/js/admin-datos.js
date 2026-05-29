@@ -328,9 +328,11 @@
         document.getElementById('confirm-eliminar-msg').innerHTML =
             `El servicio <strong style="color:#fff;">"${nombre}"</strong> tiene
             <strong style="color:#f0c060;">${numReservas} ${plural}</strong> registradas.<br>
-            ¿Deseas eliminarlo de todas formas?`;
+            ¿Deseas eliminarlo de todas formas? Las reservas asociadas quedarán <strong style="color:#e8a;">denegadas</strong>.`;
 
-        document.getElementById('confirm-eliminar-btn').onclick = async () => {
+        const btn = document.getElementById('confirm-eliminar-btn');
+        btn.replaceWith(btn.cloneNode(true)); // elimina listeners anteriores
+        document.getElementById('confirm-eliminar-btn').addEventListener('click', async () => {
             cerrarConfirmEliminar();
             try {
                 const res  = await apiPost({ accion: 'servicio_eliminar', id, forzar: true });
@@ -344,12 +346,19 @@
             } catch (e) {
                 showStatus(false, 'Error de conexión.');
             }
-        };
+        });
+
+        const box = document.getElementById('confirm-eliminar-box');
+        box.style.transition = 'none';
+        box.style.transform = 'translateY(16px) scale(.97)';
+        box.style.opacity = '0';
+        overlay.style.opacity = '0';
+        overlay.style.pointerEvents = 'none';
 
         requestAnimationFrame(() => {
+            box.style.transition = 'transform .3s cubic-bezier(.16,1,.3,1), opacity .3s';
             overlay.style.opacity = '1';
             overlay.style.pointerEvents = 'all';
-            const box = document.getElementById('confirm-eliminar-box');
             box.style.transform = 'translateY(0) scale(1)';
             box.style.opacity = '1';
         });

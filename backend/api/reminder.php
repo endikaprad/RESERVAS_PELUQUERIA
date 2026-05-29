@@ -88,14 +88,25 @@ try {
     // ── Migración: crear tabla de log si no existe ────────────
     $db->exec("
         CREATE TABLE IF NOT EXISTS reminder_log (
-            id          INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
-            reserva_id  INT UNSIGNED NOT NULL,
-            enviado_en  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            resultado   ENUM('ok','error') NOT NULL DEFAULT 'ok',
-            detalle     VARCHAR(300) NOT NULL DEFAULT '',
+            id              INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+            reserva_id      INT UNSIGNED NOT NULL,
+            enviado_en      DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            resultado       ENUM('ok','error') NOT NULL DEFAULT 'ok',
+            detalle         VARCHAR(300) NOT NULL DEFAULT '',
+            cliente_nombre  VARCHAR(120) NOT NULL DEFAULT '',
+            fecha_cita      DATE         DEFAULT NULL,
+            hora_cita       TIME         DEFAULT NULL,
             INDEX idx_reserva (reserva_id)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
     ");
+    // Migración para tablas ya existentes
+    foreach ([
+        "ALTER TABLE reminder_log ADD COLUMN cliente_nombre VARCHAR(120) NOT NULL DEFAULT ''",
+        "ALTER TABLE reminder_log ADD COLUMN fecha_cita DATE DEFAULT NULL",
+        "ALTER TABLE reminder_log ADD COLUMN hora_cita TIME DEFAULT NULL",
+    ] as $mig) {
+        try { $db->exec($mig); } catch (PDOException $e) { /* ya existe */ }
+    }
 
     // ── Migración: añadir columna recordatorio_enviado si no existe
     try {
@@ -169,7 +180,8 @@ try {
         "UPDATE reservas SET recordatorio_enviado = 1 WHERE id = ?"
     );
     $stmtLog = $db->prepare(
-        "INSERT INTO reminder_log (reserva_id, resultado, detalle) VALUES (?, ?, ?)"
+        "INSERT INTO reminder_log (reserva_id, resultado, detalle, cliente_nombre, fecha_cita, hora_cita)
+         VALUES (?, ?, ?, ?, ?, ?)"
     );
 
     $baseUrl = 'https://pradopeluqueria.infinityfree.me';
@@ -221,7 +233,7 @@ try {
 
         if ($enviado) {
             $stmtMarcado->execute([$r['id']]);
-            $stmtLog->execute([$r['id'], 'ok', 'Recordatorio enviado a ' . $r['cliente_email']]);
+            $stmtLog->execute([$r['id'], 'ok', 'Recordatorio enviado a ' . $r['cliente_email'], $r['cliente_nombre'], $r['fecha'], $r['hora']]);
             $resultado['enviados']++;
             $resultado['detalle'][] = [
                 'id'      => $r['id'],
@@ -233,7 +245,7 @@ try {
             ];
             logMsg("OK → #{$r['id']} {$r['cliente_nombre']} <{$r['cliente_email']}> — {$fechaFormateada} {$hora}");
         } else {
-            $stmtLog->execute([$r['id'], 'error', 'Fallo al enviar a ' . $r['cliente_email']]);
+            $stmtLog->execute([$r['id'], 'error', 'Fallo al enviar a ' . $r['cliente_email'], $r['cliente_nombre'], $r['fecha'], $r['hora']]);
             $resultado['errores']++;
             $resultado['detalle'][] = [
                 'id'      => $r['id'],

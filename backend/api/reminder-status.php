@@ -71,22 +71,34 @@ try {
     try {
         $db->exec("
             CREATE TABLE IF NOT EXISTS reminder_log (
-                id         INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
-                reserva_id INT UNSIGNED NOT NULL,
-                enviado_en DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                resultado  ENUM('ok','error') NOT NULL DEFAULT 'ok',
-                detalle    VARCHAR(300) NOT NULL DEFAULT '',
+                id              INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+                reserva_id      INT UNSIGNED NOT NULL,
+                enviado_en      DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                resultado       ENUM('ok','error') NOT NULL DEFAULT 'ok',
+                detalle         VARCHAR(300) NOT NULL DEFAULT '',
+                cliente_nombre  VARCHAR(120) NOT NULL DEFAULT '',
+                fecha_cita      DATE         DEFAULT NULL,
+                hora_cita       TIME         DEFAULT NULL,
                 INDEX idx_reserva (reserva_id)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
         ");
+        foreach ([
+            "ALTER TABLE reminder_log ADD COLUMN cliente_nombre VARCHAR(120) NOT NULL DEFAULT ''",
+            "ALTER TABLE reminder_log ADD COLUMN fecha_cita DATE DEFAULT NULL",
+            "ALTER TABLE reminder_log ADD COLUMN hora_cita TIME DEFAULT NULL",
+        ] as $mig) {
+            try { $db->exec($mig); } catch (PDOException $e) { /* ya existe */ }
+        }
 
         $logStmt = $db->query("
             SELECT rl.id, rl.reserva_id, rl.enviado_en, rl.resultado, rl.detalle,
-                   r.cliente_nombre, r.cliente_email,
-                   DATE_FORMAT(r.fecha,'%Y-%m-%d') AS fecha_cita,
-                   TIME_FORMAT(r.hora,'%H:%i')     AS hora_cita
+                   COALESCE(r.cliente_nombre, rl.cliente_nombre) AS cliente_nombre,
+                   r.cliente_email,
+                   COALESCE(DATE_FORMAT(r.fecha,'%Y-%m-%d'), DATE_FORMAT(rl.fecha_cita,'%Y-%m-%d')) AS fecha_cita,
+                   COALESCE(TIME_FORMAT(r.hora,'%H:%i'), TIME_FORMAT(rl.hora_cita,'%H:%i'))          AS hora_cita
             FROM reminder_log rl
             LEFT JOIN reservas r ON r.id = rl.reserva_id
+            WHERE COALESCE(r.cliente_nombre, rl.cliente_nombre) != ''
             ORDER BY rl.enviado_en DESC
             LIMIT 30
         ");

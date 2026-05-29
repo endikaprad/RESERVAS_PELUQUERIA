@@ -238,7 +238,7 @@ try {
         }
 
         if ($numReservas > 0 && $forzar) {
-            $db->prepare("UPDATE reservas SET servicio_id = NULL WHERE servicio_id = ?")->execute([$id]);
+            $db->prepare("UPDATE reservas SET estado = 'denegada' WHERE servicio_id = ? AND estado NOT IN ('denegada','cancelada')")->execute([$id]);
         }
 
         $stmt = $db->prepare("DELETE FROM servicios WHERE id = ?");

@@ -117,15 +117,15 @@ try {
     // ── 6. Barberos — rendimiento ─────────────────────────────
     $stmt = $db->query("
         SELECT b.nombre, b.iniciales,
-               COUNT(*) AS total_citas,
-               SUM(CASE WHEN r.estado = 'aceptada' THEN s.precio ELSE 0 END) AS ingresos,
-               SUM(CASE WHEN r.estado = 'aceptada' THEN 1 ELSE 0 END) AS aceptadas,
-               SUM(CASE WHEN r.estado = 'pendiente' THEN 1 ELSE 0 END) AS pendientes
-        FROM reservas r
-        JOIN barberos  b ON b.id = r.barbero_id
-        JOIN servicios s ON s.id = r.servicio_id
+               COUNT(r.id) AS total_citas,
+               COALESCE(SUM(CASE WHEN r.estado = 'aceptada' THEN s.precio ELSE 0 END), 0) AS ingresos,
+               COALESCE(SUM(CASE WHEN r.estado = 'aceptada' THEN 1 ELSE 0 END), 0) AS aceptadas,
+               COALESCE(SUM(CASE WHEN r.estado = 'pendiente' THEN 1 ELSE 0 END), 0) AS pendientes
+        FROM barberos b
+        LEFT JOIN reservas r  ON r.barbero_id = b.id
+        LEFT JOIN servicios s ON s.id = r.servicio_id
         GROUP BY b.id, b.nombre, b.iniciales
-        ORDER BY ingresos DESC
+        ORDER BY ingresos DESC, b.nombre ASC
     ");
     $barberoStats = $stmt->fetchAll();
 

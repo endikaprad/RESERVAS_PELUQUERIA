@@ -1201,12 +1201,15 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
         }
 
         .cfg-section-label {
-            font-size: .6rem;
-            letter-spacing: .2em;
+            font-size: .7rem;
+            letter-spacing: .18em;
             text-transform: uppercase;
-            color: #7a7880;
+            color: #b0adb8;
+            font-weight: 700;
             margin-bottom: .75rem;
             margin-top: 1.5rem;
+            padding-bottom: .4rem;
+            border-bottom: 1px solid #252530;
         }
 
         .cfg-section-label:first-child {
@@ -2039,8 +2042,13 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
             position: absolute;
             top: .85rem;
             right: .85rem;
-            font-size: .9rem;
             opacity: .18;
+            line-height: 0;
+        }
+        .kpi-badge svg {
+            width: 1.5rem;
+            height: 1.5rem;
+            fill: var(--kpi-accent, #fff);
         }
 
         .stats-section {
@@ -2956,13 +2964,14 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
 
         .datos-categoria { margin-bottom: 1.25rem; }
         .datos-categoria-label {
-            font-size: .62rem;
-            font-weight: 700;
-            letter-spacing: .12em;
+            font-size: .58rem;
+            font-weight: 600;
+            letter-spacing: .14em;
             text-transform: uppercase;
-            color: #52525b;
+            color: #c9a84c;
             margin-bottom: .5rem;
-            padding-left: .25rem;
+            padding-left: .6rem;
+            border-left: 2px solid rgba(201,168,76,.35);
         }
         .datos-categoria-list {
             display: flex;
@@ -3932,7 +3941,7 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
     <div class="admin-header">
         <div class="admin-brand">Prado <span>Barber</span> · Admin</div>
         <div class="header-actions">
-            <button class="stats-trigger-btn" onclick="openStats()" title="Estadísticas">📊</button>
+            <button class="stats-trigger-btn" onclick="openStats()" title="Estadísticas"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M5 9.2h3V19H5zM10.6 5h2.8v14h-2.8zm5.6 8H19v6h-2.8z"/></svg></button>
             <button class="settings-btn" onclick="openCfg()" title="Configuración">⚙</button>
             <form method="POST" style="margin:0;">
                 <button class="logout-btn" name="logout" value="1">Cerrar sesión</button>
@@ -4976,12 +4985,19 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
 
                 // KPIs
                 html += '<div class="stats-kpis">';
-                html += kpiCard('Reservas totales', kpi.total_reservas || 0, '#d42b2b', '📋', '');
-                html += kpiCard('Ingresos totales', kpi.ingresos_totales || 0, '#c9a84c', '💶', ' €');
-                html += kpiCard('Clientes únicos', kpi.clientes_unicos || 0, '#2550a0', '👥', '');
-                html += kpiCard('Citas hoy', hoy.citas_hoy || 0, '#22c55e', '📅', '');
-                html += kpiCard('Ingresos hoy', hoy.ingresos_hoy || 0, '#f59e0b', '💰', ' €');
-                html += kpiCard('Citas este mes', mes.citas_mes || 0, '#a78bfa', '📆', '');
+                const iconReservas = `<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M19 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2zm-7 3a1 1 0 1 1 0 2 1 1 0 0 1 0-2zm-5 0a1 1 0 1 1 0 2 1 1 0 0 1 0-2zm10 0a1 1 0 1 1 0 2 1 1 0 0 1 0-2zM7 11h10v2H7zm0 4h7v2H7z"/></svg>`;
+                const iconIngresosTotales = `<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/><path d="M11.5 6.5c-1.1 0-2 .9-2 2h1c0-.55.45-1 1-1s1 .45 1 1c0 .55-.45 1-1 1-.55 0-1 .45-1 1v.5h1V11c.55 0 1-.45 1-1 0-1.1-.9-2-2-2z" style="display:none"/><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm.5 14.5h-1V15h1v1.5zm0-3h-1c0-1.5 1.5-2 1.5-3 0-.55-.45-1-1-1s-1 .45-1 1h-1c0-1.1.9-2 2-2s2 .9 2 2c0 1.5-1.5 2-1.5 3z" style="display:none"/></svg>`;
+                const iconIngTot = `<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/></svg>`;
+                const iconClientes = `<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>`;
+                const iconCitasHoy = `<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M20 3h-1V1h-2v2H7V1H5v2H4c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 18H4V8h16v13zm-7-5H9v-2h4v2zm4-4H9v-2h8v2z"/></svg>`;
+                const iconIngresosHoy = `<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M21 18v1c0 1.1-.9 2-2 2H5c-1.11 0-2-.9-2-2V5c0-1.1.89-2 2-2h14c1.1 0 2 .9 2 2v1h-9c-1.11 0-2 .9-2 2v8c0 1.1.89 2 2 2h9zm-9-2h10V8H12v8zm4-2.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>`;
+                const iconCitesMes = `<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M17 12h-5v5h5v-5zM16 1v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2h-1V1h-2zm3 18H5V8h14v11z"/></svg>`;
+                html += kpiCard('Reservas totales', kpi.total_reservas || 0, '#d42b2b', iconReservas, '');
+                html += kpiCard('Ingresos totales', kpi.ingresos_totales || 0, '#c9a84c', iconIngTot, ' €');
+                html += kpiCard('Clientes únicos', kpi.clientes_unicos || 0, '#2550a0', iconClientes, '');
+                html += kpiCard('Citas hoy', hoy.citas_hoy || 0, '#22c55e', iconCitasHoy, '');
+                html += kpiCard('Ingresos hoy', hoy.ingresos_hoy || 0, '#f59e0b', iconIngresosHoy, ' €');
+                html += kpiCard('Citas este mes', mes.citas_mes || 0, '#a78bfa', iconCitesMes, '');
                 html += '</div>';
 
                 // Monthly charts
@@ -5062,22 +5078,24 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
 
             function buildBarChartTall(items, color) {
                 const maxV = Math.max(...items.map(x => x.value), 1);
-                const chartH = 180;
+                const chartH = 200;
                 const barMaxH = 120;
-                const padBottom = 32;
+                const padBottom = 48;
                 const padTop = 28;
 
                 let html = `<div style="display:flex;align-items:flex-end;gap:6px;height:${chartH}px;padding:${padTop}px 0 ${padBottom}px;position:relative;box-sizing:border-box;">`;
                 html += `<div style="position:absolute;bottom:${padBottom}px;left:0;right:0;height:1px;background:rgba(245,240,232,0.06);"></div>`;
 
+                const showEvery = items.length > 8 ? 3 : items.length > 5 ? 2 : 1;
                 items.forEach((item, i) => {
                     const h = Math.max(Math.round(item.value / maxV * barMaxH), 3);
+                    const showLabel = (i % showEvery === 0) || (i === items.length - 1);
                     html += `
         <div style="flex:1;display:flex;flex-direction:column;align-items:center;position:relative;height:100%;justify-content:flex-end;">
             <div style="font-size:.7rem;color:#a0a0b0;font-weight:500;margin-bottom:4px;line-height:1;">${item.value || ''}</div>
             <div style="width:80%;border-radius:4px 4px 0 0;background:${color};height:${h}px;min-height:3px;transition:height .4s;"
                  onmouseenter="showTip(event,'','${item.tip||item.value}')" onmouseleave="hideTip()"></div>
-            <div style="position:absolute;bottom:-${padBottom - 6}px;font-size:.75rem;color:#7a7880;white-space:nowrap;text-align:center;">${item.label}</div>
+            <div style="position:absolute;bottom:-${padBottom - 6}px;font-size:.7rem;color:#7a7880;white-space:nowrap;text-align:center;transform:rotate(-40deg);transform-origin:top center;${showLabel ? '' : 'visibility:hidden;'}">${item.label}</div>
         </div>`;
                 });
 
@@ -5310,6 +5328,13 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
         .hm3-stat{background:#0d0d14;border:1px solid #1c1c26;border-radius:8px;padding:10px;text-align:center;}
         .hm3-snum{font-family:'Playfair Display',serif;font-size:1.25rem;font-weight:700;line-height:1;}
         .hm3-slbl{font-size:10px;color:#7a7880;letter-spacing:.1em;text-transform:uppercase;margin-top:3px;}
+        @media(max-width:520px){
+          .hm3-top{flex-wrap:wrap;gap:8px;}
+          .hm3-top>div:first-child{flex-wrap:wrap;gap:6px;}
+          .hm3-nav{margin-left:0;}
+          .hm3-calendar{flex-direction:column;gap:18px;}
+          .hm3-month{min-width:0;padding-right:0;padding-bottom:0;}
+        }
         </style>
     <div class="hm3-top">
       <div style="display:flex;align-items:center;gap:.75rem;">
