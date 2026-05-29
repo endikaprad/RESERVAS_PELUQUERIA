@@ -259,7 +259,6 @@
 
     // ── Eliminar ───────────────────────────────────────────────
     async function eliminarItem(tipo, id, nombre) {
-        if (!confirm(`¿Eliminar "${nombre}"?\n\nEsta acción no se puede deshacer.\nSi tiene reservas asociadas no podrá eliminarse.`)) return;
         const accion = tipo === 'barbero' ? 'barbero_eliminar' : 'servicio_eliminar';
         try {
             const res  = await apiPost({ accion, id });
@@ -267,12 +266,104 @@
             if (json.ok) {
                 showStatus(true, `"${nombre}" eliminado correctamente.`);
                 loadDatos();
+            } else if (json.confirmar) {
+                mostrarConfirmEliminar(nombre, id, json.reservas);
             } else {
                 showStatus(false, json.error || 'No se pudo eliminar.');
             }
         } catch (e) {
             showStatus(false, 'Error de conexión.');
         }
+    }
+
+    function mostrarConfirmEliminar(nombre, id, numReservas) {
+        let overlay = document.getElementById('confirm-eliminar-overlay');
+        if (!overlay) {
+            overlay = document.createElement('div');
+            overlay.id = 'confirm-eliminar-overlay';
+            overlay.style.cssText = [
+                'position:fixed','inset:0','background:rgba(0,0,0,.78)',
+                'backdrop-filter:blur(6px)','z-index:1200',
+                'display:flex','align-items:center','justify-content:center','padding:1rem',
+                'opacity:0','transition:opacity .25s','pointer-events:none'
+            ].join(';');
+            overlay.innerHTML = `
+                <div id="confirm-eliminar-box" style="
+                    background:#111119;border:1px solid #2f2f3c;border-radius:14px;
+                    width:100%;max-width:400px;overflow:hidden;
+                    transform:translateY(16px) scale(.97);
+                    transition:transform .3s cubic-bezier(.16,1,.3,1),opacity .3s;opacity:0;">
+                    <div style="display:flex;align-items:center;justify-content:space-between;
+                        padding:1.1rem 1.5rem;border-bottom:1px solid #252530;">
+                        <span style="font-family:'Playfair Display',serif;font-size:1rem;font-weight:700;">
+                            ⚠ Servicio con reservas
+                        </span>
+                        <button onclick="cerrarConfirmEliminar()" style="
+                            background:none;border:none;color:#888;font-size:1.1rem;cursor:pointer;">✕</button>
+                    </div>
+                    <div style="padding:1.35rem 1.5rem;font-size:.88rem;line-height:1.6;color:#ccc;">
+                        <p id="confirm-eliminar-msg"></p>
+                        <p style="margin-top:.75rem;color:#e8a;font-size:.82rem;">
+                            Las reservas existentes quedarán sin servicio asignado pero no se borrarán.
+                        </p>
+                    </div>
+                    <div style="display:flex;justify-content:flex-end;gap:.65rem;
+                        padding:1rem 1.5rem;border-top:1px solid #252530;">
+                        <button onclick="cerrarConfirmEliminar()" style="
+                            background:transparent;border:1px solid #444;color:#ccc;
+                            padding:.6rem 1.3rem;border-radius:8px;cursor:pointer;font-size:.85rem;">
+                            Cancelar
+                        </button>
+                        <button id="confirm-eliminar-btn" style="
+                            background:#c0392b;border:none;color:#fff;
+                            padding:.6rem 1.3rem;border-radius:8px;cursor:pointer;font-size:.85rem;font-weight:600;">
+                            Eliminar de todas formas
+                        </button>
+                    </div>
+                </div>`;
+            document.body.appendChild(overlay);
+        }
+
+        const plural = numReservas === 1 ? 'reserva' : 'reservas';
+        document.getElementById('confirm-eliminar-msg').innerHTML =
+            `El servicio <strong style="color:#fff;">"${nombre}"</strong> tiene
+            <strong style="color:#f0c060;">${numReservas} ${plural}</strong> registradas.<br>
+            ¿Deseas eliminarlo de todas formas?`;
+
+        document.getElementById('confirm-eliminar-btn').onclick = async () => {
+            cerrarConfirmEliminar();
+            try {
+                const res  = await apiPost({ accion: 'servicio_eliminar', id, forzar: true });
+                const json = await res.json();
+                if (json.ok) {
+                    showStatus(true, `"${nombre}" eliminado correctamente.`);
+                    loadDatos();
+                } else {
+                    showStatus(false, json.error || 'No se pudo eliminar.');
+                }
+            } catch (e) {
+                showStatus(false, 'Error de conexión.');
+            }
+        };
+
+        requestAnimationFrame(() => {
+            overlay.style.opacity = '1';
+            overlay.style.pointerEvents = 'all';
+            const box = document.getElementById('confirm-eliminar-box');
+            box.style.transform = 'translateY(0) scale(1)';
+            box.style.opacity = '1';
+        });
+        overlay.onclick = (e) => { if (e.target === overlay) cerrarConfirmEliminar(); };
+    }
+
+    function cerrarConfirmEliminar() {
+        const overlay = document.getElementById('confirm-eliminar-overlay');
+        if (!overlay) return;
+        const box = document.getElementById('confirm-eliminar-box');
+        overlay.style.opacity = '0';
+        overlay.style.pointerEvents = 'none';
+        box.style.transform = 'translateY(16px) scale(.97)';
+        box.style.opacity = '0';
     }
 
     // ── Modal barbero ──────────────────────────────────────────
@@ -419,6 +510,7 @@
 
     // ── Exponer a window ───────────────────────────────────────
     window.DATOS = { abrirFormBarbero, abrirFormServicio, toggleItem, eliminarItem, cerrarModal, guardarModal, loadDatos };
+    window.cerrarConfirmEliminar = cerrarConfirmEliminar;
     window.abrirFormBarbero  = abrirFormBarbero;
     window.abrirFormServicio = abrirFormServicio;
     window.cerrarModal       = cerrarModal;

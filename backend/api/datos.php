@@ -224,13 +224,22 @@ try {
     }
 
     if ($accion === 'servicio_eliminar') {
-        $id = trim($body['id'] ?? '');
+        $id     = trim($body['id'] ?? '');
+        $forzar = !empty($body['forzar']);
         if (!$id) respErr('id es obligatorio');
 
         $check = $db->prepare("SELECT COUNT(*) FROM reservas WHERE servicio_id = ?");
         $check->execute([$id]);
-        if ((int)$check->fetchColumn() > 0)
-            respErr('No se puede eliminar: este servicio tiene reservas registradas. Desactívalo en su lugar.');
+        $numReservas = (int)$check->fetchColumn();
+
+        if ($numReservas > 0 && !$forzar) {
+            echo json_encode(['ok' => false, 'reservas' => $numReservas, 'confirmar' => true]);
+            exit;
+        }
+
+        if ($numReservas > 0 && $forzar) {
+            $db->prepare("UPDATE reservas SET servicio_id = NULL WHERE servicio_id = ?")->execute([$id]);
+        }
 
         $stmt = $db->prepare("DELETE FROM servicios WHERE id = ?");
         $stmt->execute([$id]);
