@@ -44,7 +44,10 @@ try {
     // ── 2. KPIs de hoy ───────────────────────────────────────
     $stmt = $db->prepare("
         SELECT
-            COUNT(*) AS citas_hoy,
+            COUNT(*) AS citas_hoy_total,
+            SUM(CASE WHEN r.estado = 'aceptada'  THEN 1 ELSE 0 END) AS citas_hoy_aceptadas,
+            SUM(CASE WHEN r.estado = 'pendiente' THEN 1 ELSE 0 END) AS citas_hoy_pendientes,
+            SUM(CASE WHEN r.estado = 'denegada'  THEN 1 ELSE 0 END) AS citas_hoy_denegadas,
             SUM(CASE WHEN r.estado = 'aceptada' THEN s.precio ELSE 0 END) AS ingresos_hoy
         FROM reservas r
         JOIN servicios s ON s.id = r.servicio_id
@@ -52,13 +55,18 @@ try {
     ");
     $stmt->execute([$hoy]);
     $hoyStats = $stmt->fetch();
+    // Alias de compatibilidad: citas_hoy = solo aceptadas
+    $hoyStats['citas_hoy'] = (int)$hoyStats['citas_hoy_aceptadas'];
 
     // ── 3. KPIs del mes actual ────────────────────────────────
     $mesInicio = date('Y-m-01');
     $mesFin    = date('Y-m-t');
     $stmt = $db->prepare("
         SELECT
-            COUNT(*) AS citas_mes,
+            COUNT(*) AS citas_mes_total,
+            SUM(CASE WHEN r.estado = 'aceptada'  THEN 1 ELSE 0 END) AS citas_mes_aceptadas,
+            SUM(CASE WHEN r.estado = 'pendiente' THEN 1 ELSE 0 END) AS citas_mes_pendientes,
+            SUM(CASE WHEN r.estado = 'denegada'  THEN 1 ELSE 0 END) AS citas_mes_denegadas,
             SUM(CASE WHEN r.estado = 'aceptada' THEN s.precio ELSE 0 END) AS ingresos_mes
         FROM reservas r
         JOIN servicios s ON s.id = r.servicio_id
@@ -66,6 +74,8 @@ try {
     ");
     $stmt->execute([$mesInicio, $mesFin]);
     $mesStats = $stmt->fetch();
+    // Alias de compatibilidad: citas_mes = solo aceptadas
+    $mesStats['citas_mes'] = (int)$mesStats['citas_mes_aceptadas'];
 
     // ── 4. Ingresos de los últimos 12 meses (por mes) ─────────
     $stmt = $db->query("

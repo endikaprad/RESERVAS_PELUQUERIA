@@ -4995,9 +4995,11 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
                 html += kpiCard('Reservas totales', kpi.total_reservas || 0, '#d42b2b', iconReservas, '');
                 html += kpiCard('Ingresos totales', kpi.ingresos_totales || 0, '#c9a84c', iconIngTot, ' €');
                 html += kpiCard('Clientes únicos', kpi.clientes_unicos || 0, '#2550a0', iconClientes, '');
-                html += kpiCard('Citas hoy', hoy.citas_hoy || 0, '#22c55e', iconCitasHoy, '');
+                const subHoy = `<span style="color:#22c55e">✓ ${hoy.citas_hoy_aceptadas||0}</span> &nbsp;·&nbsp; <span style="color:#f87171">✗ ${hoy.citas_hoy_denegadas||0}</span> &nbsp;·&nbsp; <span style="color:#facc15">⏳ ${hoy.citas_hoy_pendientes||0}</span>`;
+                html += kpiCardWithSub('Citas hoy (aceptadas)', hoy.citas_hoy || 0, '#22c55e', iconCitasHoy, '', subHoy);
                 html += kpiCard('Ingresos hoy', hoy.ingresos_hoy || 0, '#f59e0b', iconIngresosHoy, ' €');
-                html += kpiCard('Citas este mes', mes.citas_mes || 0, '#a78bfa', iconCitesMes, '');
+                const subMes = `<span style="color:#22c55e">✓ ${mes.citas_mes_aceptadas||0}</span> &nbsp;·&nbsp; <span style="color:#f87171">✗ ${mes.citas_mes_denegadas||0}</span> &nbsp;·&nbsp; <span style="color:#facc15">⏳ ${mes.citas_mes_pendientes||0}</span>`;
+                html += kpiCardWithSub('Citas este mes (aceptadas)', mes.citas_mes || 0, '#a78bfa', iconCitesMes, '', subMes);
                 html += '</div>';
 
                 // Monthly charts
@@ -5069,6 +5071,9 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
 
             function kpiCard(label, value, color, icon, suffix) {
                 return `<div class="kpi-card" style="--kpi-accent:${color}" data-target="${+value}" data-dec="0" data-suffix="${suffix}"><div class="kpi-badge">${icon}</div><div class="kpi-label">${label}</div><div class="kpi-value">0${suffix}</div></div>`;
+            }
+            function kpiCardWithSub(label, value, color, icon, suffix, subHtml) {
+                return `<div class="kpi-card" style="--kpi-accent:${color}" data-target="${+value}" data-dec="0" data-suffix="${suffix}"><div class="kpi-badge">${icon}</div><div class="kpi-label">${label}</div><div class="kpi-value">0${suffix}</div><div class="kpi-sub">${subHtml}</div></div>`;
             }
 
             // ── Bar chart con altura correcta ────────────────────────────
@@ -5329,17 +5334,17 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
         .hm3-snum{font-family:'Playfair Display',serif;font-size:1.25rem;font-weight:700;line-height:1;}
         .hm3-slbl{font-size:10px;color:#7a7880;letter-spacing:.1em;text-transform:uppercase;margin-top:3px;}
         @media(max-width:520px){
-          .hm3-top{flex-wrap:wrap;gap:8px;}
-          .hm3-top>div:first-child{flex-wrap:wrap;gap:6px;}
-          .hm3-nav{margin-left:0;}
-          .hm3-calendar{flex-direction:column;gap:18px;}
-          .hm3-month{min-width:0;padding-right:0;padding-bottom:0;}
-          .hm3-stats{grid-template-columns:repeat(2,1fr);gap:6px;margin-top:12px;}
-          .hm3-stat{padding:8px 6px;}
-          .hm3-snum{font-size:1.1rem;}
-          .hm3-slbl{font-size:9px;letter-spacing:.06em;}
-          .hm3-c{font-size:8px;}
-          .hm3-legend{flex-wrap:wrap;gap:4px;}
+          .hm3-top{flex-direction:column;align-items:flex-start;gap:10px;margin-bottom:12px;}
+          .hm3-top>div:first-child{display:flex;align-items:center;gap:.75rem;width:100%;}
+          .hm3-nav{margin-left:auto;}
+          .hm3-legend{width:100%;justify-content:flex-start;flex-wrap:wrap;gap:4px;}
+          .hm3-calendar{flex-direction:column;gap:20px;}
+          .hm3-month{min-width:0;padding-right:0;padding-bottom:0;width:100%;}
+          .hm3-c{font-size:9px;}
+          .hm3-stats{grid-template-columns:repeat(2,1fr);gap:8px;margin-top:16px;padding-top:14px;border-top:1px solid #1c1c26;}
+          .hm3-stat{padding:10px 8px;background:#111118;border-color:#222230;}
+          .hm3-snum{font-size:1.3rem;}
+          .hm3-slbl{font-size:10px;letter-spacing:.06em;margin-top:4px;}
         }
         </style>
     <div class="hm3-top">
