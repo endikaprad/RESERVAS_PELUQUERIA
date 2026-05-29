@@ -1,10 +1,4 @@
-/* ===== REVEAL ===== */
-.reveal { opacity:0; transform:translateY(28px); transition:opacity 0.7s ease, transform 0.7s ease; }
-.reveal.revealed { opacity:1; transform:none; }
-.reveal-delay-1 { transition-delay:0.1s; }
-.reveal-delay-2 { transition-delay:0.2s; }
-.reveal-delay-3 { transition-delay:0.3s; }
-.reveal-delay-4 { transition-delay:0.4s; }
+/* reveal defined in layout.css */
 
 /* ===== ANIMATED AMBIENT BACKGROUND ===== */
 /* A living canvas: red and blue plasma blobs drifting behind all content */
@@ -223,13 +217,21 @@ body::after {
     background: linear-gradient(135deg, var(--red) 0%, var(--red-dark) 100%);
     border-radius: var(--radius-sm);
     padding:.45rem 1.1rem;
-    transition: var(--transition);
+    transition: transform var(--spring-duration) var(--spring),
+                box-shadow var(--spring-duration) var(--spring);
     box-shadow: var(--shadow-red);
+    will-change: transform;
+    user-select: none;
 }
 
 .hv-card-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 32px rgba(212,43,43,0.4);
+    transform: translateY(-3px) scale(1.04);
+    box-shadow: 0 12px 36px rgba(212,43,43,0.45);
+}
+
+.hv-card-btn:active {
+    transform: scale(0.96) !important;
+    transition-duration: 0.1s !important;
 }
 
 .hv-card-services {
@@ -310,13 +312,16 @@ body::after {
     overflow:hidden; margin-bottom:1.25rem;
     position:relative;
     border: 1px solid var(--color-border);
-    transition: border-color var(--transition), transform var(--transition);
+    transition: border-color 0.2s ease,
+                transform var(--spring-duration) var(--spring),
+                box-shadow var(--spring-duration) var(--spring);
+    will-change: transform;
 }
 
 .team-card:hover .team-photo {
     border-color: var(--red);
-    transform: translateY(-4px);
-    box-shadow: 0 12px 32px rgba(212,43,43,0.15);
+    transform: translateY(-6px) scale(1.02);
+    box-shadow: 0 20px 40px rgba(212,43,43,0.18);
 }
 
 .team-photo-placeholder {
@@ -349,13 +354,16 @@ body::after {
     border: 1px solid var(--color-border);
     border-radius: var(--radius-lg);
     padding: 2rem;
-    transition: border-color var(--transition), transform var(--transition);
+    transition: border-color 0.2s ease,
+                transform var(--spring-duration) var(--spring),
+                box-shadow var(--spring-duration) var(--spring);
+    will-change: transform;
 }
 
 .testimonial-card:hover {
     border-color: rgba(37,80,160,0.45);
-    transform: translateY(-3px);
-    box-shadow: 0 8px 32px rgba(37,80,160,0.1);
+    transform: translateY(-5px) scale(1.01);
+    box-shadow: 0 16px 40px rgba(37,80,160,0.12);
 }
 
 .testimonial-stars { color:var(--red); font-size:0.9rem; letter-spacing:0.1em; margin-bottom:1rem; }

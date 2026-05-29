@@ -188,7 +188,7 @@
     letter-spacing: 0.18em;
     text-transform: uppercase;
     color: rgba(245, 240, 232, 0.55);
-    transition: color 0.3s ease;
+    transition: color 0.2s ease;
     position: relative;
 }
 
@@ -197,7 +197,8 @@
     position: absolute; bottom: -4px; left: 0;
     width: 0; height: 2px;
     background: var(--red);
-    transition: width 0.3s ease;
+    transition: width 0.4s var(--spring);
+    transform-origin: left;
 }
 
 .nav-links a:hover,
@@ -216,15 +217,24 @@
     font-weight: 600 !important;
     letter-spacing: 0.18em !important;
     text-transform: uppercase !important;
-    transition: background 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease !important;
+    transition: background 0.2s ease,
+                transform 0.4s var(--spring),
+                box-shadow 0.4s var(--spring) !important;
     box-shadow: var(--shadow-red) !important;
+    will-change: transform;
+    user-select: none;
 }
 
 .nav-cta:hover {
     background: var(--red-dark) !important;
-    transform: translateY(-2px) !important;
-    box-shadow: 0 12px 36px rgba(212,43,43,0.35) !important;
+    transform: translateY(-3px) scale(1.04) !important;
+    box-shadow: 0 16px 40px rgba(212,43,43,0.4) !important;
     color: #fff !important;
+}
+
+.nav-cta:active {
+    transform: scale(0.96) !important;
+    transition-duration: 0.1s !important;
 }
 
 .nav-cta::after { display: none !important; }
@@ -422,18 +432,28 @@ section {
 /* ===== REVEAL ANIMATIONS ===== */
 .reveal {
     opacity: 0;
-    transform: translateY(32px);
-    transition: opacity 0.7s ease, transform 0.7s ease;
+    transform: translateY(28px);
+    transition: opacity 0.6s var(--spring-smooth), transform 0.6s var(--spring-smooth);
 }
 .reveal.revealed { opacity: 1; transform: none; }
-.reveal-left  { transform: translateX(-32px); }
-.reveal-right { transform: translateX(32px); }
+.reveal-left  { transform: translateX(-28px); }
+.reveal-right { transform: translateX(28px); }
 .reveal-left.revealed, .reveal-right.revealed { transform: none; }
-.reveal-delay-1 { transition-delay: 0.1s; }
-.reveal-delay-2 { transition-delay: 0.2s; }
-.reveal-delay-3 { transition-delay: 0.3s; }
-.reveal-delay-4 { transition-delay: 0.4s; }
-.reveal-delay-5 { transition-delay: 0.5s; }
+.reveal-delay-1 { transition-delay: 0.08s; }
+.reveal-delay-2 { transition-delay: 0.16s; }
+.reveal-delay-3 { transition-delay: 0.24s; }
+.reveal-delay-4 { transition-delay: 0.32s; }
+.reveal-delay-5 { transition-delay: 0.40s; }
+
+/* ===== REDUCED MOTION ===== */
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+    .reveal { opacity: 1; transform: none; transition: none; }
+}
 
 /* ===== CTA BANNER ===== */
 .cta-banner {

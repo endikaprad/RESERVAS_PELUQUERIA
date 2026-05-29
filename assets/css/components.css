@@ -15,11 +15,23 @@
     letter-spacing: 0.18em;
     text-transform: uppercase;
     border-radius: var(--radius-sm);
-    transition: var(--transition);
+    transition: transform var(--spring-duration) var(--spring),
+                box-shadow var(--spring-duration) var(--spring),
+                background 0.2s ease,
+                border-color 0.2s ease,
+                color 0.2s ease;
     cursor: pointer;
     position: relative;
     overflow: hidden;
     border: none;
+    will-change: transform;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+}
+
+.btn:active {
+    transform: scale(0.97) !important;
+    transition-duration: 0.1s !important;
 }
 
 /* Shimmer on hover */
@@ -43,8 +55,8 @@
 }
 
 .btn-primary:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 12px 36px rgba(212,43,43,0.4), inset 0 1px 0 rgba(255,255,255,0.12);
+    transform: translateY(-3px) scale(1.02);
+    box-shadow: 0 16px 40px rgba(212,43,43,0.45), inset 0 1px 0 rgba(255,255,255,0.12);
 }
 
 /* ── OUTLINE: white border, red on hover ── */
@@ -68,8 +80,8 @@
 }
 
 .btn-blue:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 12px 36px rgba(37,80,160,0.4);
+    transform: translateY(-3px) scale(1.02);
+    box-shadow: 0 16px 40px rgba(37,80,160,0.45);
 }
 
 /* ── TRICOLOR: barber pole accent ── */
@@ -156,8 +168,11 @@
     border: 1px solid var(--color-border);
     border-radius: var(--radius-lg);
     overflow: hidden;
-    transition: border-color var(--transition), transform var(--transition), box-shadow var(--transition);
+    transition: border-color 0.2s ease,
+                transform var(--spring-duration) var(--spring),
+                box-shadow var(--spring-duration) var(--spring);
     position: relative;
+    will-change: transform;
 }
 
 /* Top tricolor accent */
@@ -175,8 +190,8 @@
 
 .service-card:hover {
     border-color: rgba(212,43,43,0.4);
-    transform: translateY(-4px);
-    box-shadow: 0 12px 40px rgba(212,43,43,0.12), 0 0 0 1px rgba(212,43,43,0.08);
+    transform: translateY(-6px) scale(1.01);
+    box-shadow: 0 20px 48px rgba(212,43,43,0.15), 0 0 0 1px rgba(212,43,43,0.08);
 }
 
 .service-card-body { padding: 1.75rem; }
@@ -213,13 +228,16 @@
     border: 1px solid var(--color-border);
     border-radius: var(--radius-lg);
     padding: 2rem;
-    transition: border-color var(--transition), transform var(--transition);
+    transition: border-color 0.2s ease,
+                transform var(--spring-duration) var(--spring),
+                box-shadow var(--spring-duration) var(--spring);
+    will-change: transform;
 }
 
 .card:hover {
     border-color: rgba(37,80,160,0.4);
-    transform: translateY(-3px);
-    box-shadow: 0 8px 32px rgba(37,80,160,0.1);
+    transform: translateY(-5px) scale(1.01);
+    box-shadow: 0 16px 40px rgba(37,80,160,0.12);
 }
 
 .card-icon {

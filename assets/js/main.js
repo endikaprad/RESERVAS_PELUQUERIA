@@ -158,3 +158,36 @@ async function loadNextAvailable() {
 document.addEventListener('DOMContentLoaded', loadNextAvailable);
 
 window.showToast = showToast;
+
+// ===== MAGNETIC BUTTONS (Emil Kowalski) =====
+function initMagneticButtons() {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    if (window.matchMedia('(hover: none)').matches) return;
+
+    const STRENGTH = 0.35;
+
+    document.querySelectorAll('.btn-primary, .btn-blue, .nav-cta').forEach(btn => {
+        let raf = null;
+
+        btn.addEventListener('mousemove', e => {
+            cancelAnimationFrame(raf);
+            raf = requestAnimationFrame(() => {
+                const rect   = btn.getBoundingClientRect();
+                const cx     = rect.left + rect.width  / 2;
+                const cy     = rect.top  + rect.height / 2;
+                const dx     = (e.clientX - cx) * STRENGTH;
+                const dy     = (e.clientY - cy) * STRENGTH;
+                btn.style.transform = `translate(${dx}px, ${dy}px)`;
+                btn.style.transition = 'transform 0.15s ease';
+            });
+        });
+
+        btn.addEventListener('mouseleave', () => {
+            cancelAnimationFrame(raf);
+            btn.style.transform = '';
+            btn.style.transition = 'transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)';
+        });
+    });
+}
+
+document.addEventListener('DOMContentLoaded', initMagneticButtons);
