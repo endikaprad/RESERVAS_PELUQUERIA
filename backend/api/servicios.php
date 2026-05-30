@@ -25,10 +25,10 @@ try {
     $db = getDB();
 
     $stmt      = $db->query(
-        "SELECT id, nombre, duracion, precio
+        "SELECT id, nombre, duracion, precio, categoria
          FROM servicios
          WHERE activo = 1
-         ORDER BY precio ASC"
+         ORDER BY categoria, orden ASC"
     );
     $servicios = $stmt->fetchAll(PDO::FETCH_ASSOC);
 

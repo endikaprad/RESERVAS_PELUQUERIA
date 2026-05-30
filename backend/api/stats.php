@@ -5,6 +5,7 @@
 // ============================================================
 
 require_once __DIR__ . '/../config.php';
+require_once __DIR__ . '/helpers.php';
 
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET, OPTIONS');
@@ -325,8 +326,8 @@ try {
         'heatmap_30d'      => $heatmap,
     ]);
 
-} catch (PDOException $e) {
-    err('Error de base de datos: ' . $e->getMessage());
+} catch (Throwable $e) {
+    err('Error: ' . $e->getMessage());
 }
 
 // Formatear mes en español sin strftime
