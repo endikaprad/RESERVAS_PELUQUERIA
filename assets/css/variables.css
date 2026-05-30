@@ -2,10 +2,12 @@
 
 /* === SCROLLBAR === */
 ::-webkit-scrollbar { width: 8px; }
-::-webkit-scrollbar-track { background: #09080f; }
-::-webkit-scrollbar-thumb { background: #d42b2b; border-radius: 4px; }
-::-webkit-scrollbar-thumb:hover { background: #a81e1e; }
-* { scrollbar-width: thin; scrollbar-color: #d42b2b #09080f; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: transparent; border-radius: 4px; transition: background 0.3s; }
+body.is-scrolling::-webkit-scrollbar-thumb { background: #d42b2b; }
+body.is-scrolling::-webkit-scrollbar-thumb:hover { background: #a81e1e; }
+* { scrollbar-width: thin; scrollbar-color: transparent transparent; }
+body.is-scrolling { scrollbar-color: #d42b2b transparent; }
 
 :root {
     /* === DARK BARBER PALETTE === */

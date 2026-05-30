@@ -67,6 +67,7 @@ let dayBlockedMotivo = '';
 
 let blockedDaysMap   = {};
 let blockedDaysKey   = '';
+let calNavBusy       = false;
 let blockedDaysLoading = false;
 let blockedDaysAbortController = null;
 
@@ -671,19 +672,20 @@ function renderTimeSlots() {
     const isToday     = booking.date && booking.date.toDateString() === now.toDateString();
     const currentHHMM = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
     wrap.innerHTML = TIME_SLOTS
-        .map(t => {
+        .map((t, idx) => {
             const taken    = takenSlots.includes(t);
             const pastTime = isToday && t <= currentHHMM;
             const selected = booking.time === t;
 
-            let cls = 'time-slot';
+            let cls = 'time-slot slot-in';
             if (taken)    cls += ' taken';
             else if (pastTime) cls += ' past';
             if (selected) cls += ' selected';
 
             const disabled = taken || pastTime;
-            const onclick = disabled ? '' : `onclick="selectTime('${t}')"`;
-            return `<div class="${cls}" ${onclick}>${t}</div>`;
+            const onclick  = disabled ? '' : `onclick="selectTime('${t}')"`;
+            const delay    = `animation-delay:${Math.min(idx, 14) * 32}ms`;
+            return `<div class="${cls}" style="${delay}" ${onclick}>${t}</div>`;
         }).join('');
 
     const hayOcupados = TIME_SLOTS.some(t => takenSlots.includes(t));
@@ -706,16 +708,21 @@ function selectTime(t) {
 }
 
 async function calNav(dir) {
+    if (calNavBusy) return;
+    calNavBusy = true;
+
     const grid = document.getElementById('cal-grid');
     const title = document.getElementById('cal-title');
 
     // Slide-out current month
     if (grid) {
-        grid.classList.remove('cal-slide-in-left', 'cal-slide-in-right');
+        grid.classList.remove('cal-slide-in-left', 'cal-slide-in-right', 'cal-slide-out-left', 'cal-slide-out-right');
+        void grid.offsetWidth;
         grid.classList.add(dir > 0 ? 'cal-slide-out-left' : 'cal-slide-out-right');
     }
     if (title) {
-        title.classList.remove('cal-fade-in');
+        title.classList.remove('cal-fade-in', 'cal-fade-out');
+        void title.offsetWidth;
         title.classList.add('cal-fade-out');
     }
 
@@ -733,7 +740,7 @@ async function calNav(dir) {
     await renderCalendar();
 
     if (grid) {
-        void grid.offsetWidth; // force reflow to restart animation
+        void grid.offsetWidth;
         grid.classList.add(dir > 0 ? 'cal-slide-in-right' : 'cal-slide-in-left');
     }
     if (title) {
@@ -746,6 +753,7 @@ async function calNav(dir) {
     setTimeout(() => {
         if (grid) grid.classList.remove('cal-slide-in-left', 'cal-slide-in-right');
         if (title) title.classList.remove('cal-fade-in');
+        calNavBusy = false;
     }, 350);
 }
 

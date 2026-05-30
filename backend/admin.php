@@ -408,6 +408,29 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
             color: #d42b2b;
         }
 
+        .home-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            background: transparent;
+            border: 1px solid #252530;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all .3s;
+            text-decoration: none;
+        }
+
+        .home-btn:hover {
+            border-color: #c9a84c;
+            background: rgba(201,168,76,.1);
+        }
+
+        .home-btn:hover svg path {
+            stroke: #c9a84c;
+        }
+
         .header-actions {
             display: flex;
             align-items: center;
@@ -4833,6 +4856,7 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
     <div class="admin-header">
         <div class="admin-brand">Prado <span>Barber</span> · Admin</div>
         <div class="header-actions">
+            <a href="../index.php" class="home-btn" title="Ir a la web principal"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M3 12L12 3l9 9" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 10v9a1 1 0 001 1h4v-4h4v4h4a1 1 0 001-1v-9" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
             <button class="stats-trigger-btn" onclick="openStats()" title="Estadísticas"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="12" width="4" height="8" rx="1.5" fill="white" opacity="0.9"/><rect x="10" y="7" width="4" height="13" rx="1.5" fill="white"/><rect x="17" y="4" width="4" height="16" rx="1.5" fill="white" opacity="0.75"/></svg></button>
             <button class="settings-btn" onclick="openCfg()" title="Configuración">⚙</button>
             <form method="POST" style="margin:0;">
@@ -5658,12 +5682,12 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
                     const isPendDel   = pendingDel.includes(iso);
                     const isToday     = dt.getTime() === today.getTime();
                     let cls = 'mini-cell';
-                    if (isPast || isClosedDay) cls += ' mc-disabled';
+                    if (isPendAdd) cls += ' mc-pending';
+                    else if (isPast || isClosedDay) cls += ' mc-disabled';
                     else if (isPendDel) cls += ' mc-unblocking';
                     else if (isBlocked) cls += ' mc-blocked';
-                    else if (isPendAdd) cls += ' mc-pending';
                     else if (isToday) cls += ' mc-today';
-                    const disabled = isPast || isClosedDay;
+                    const disabled = isPast || (isClosedDay && !isPendAdd);
                     const onclick = disabled ? '' : `onclick="mcCellClick('${iso}')"`;
                     const motivo = isBlocked ? (blockedDates[iso] || 'Bloqueado') : '';
                     const title2 = motivo ? `title="${motivo}"` : '';
@@ -5706,7 +5730,7 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
                 const fin = new Date(end + 'T00:00:00');
                 while (cur <= fin) {
                     const iso = isoDate(cur.getFullYear(), cur.getMonth(), cur.getDate());
-                    if (cur.getDay() !== 0 && !Object.prototype.hasOwnProperty.call(blockedDates, iso) && !pendingAdd.includes(iso))
+                    if (!Object.prototype.hasOwnProperty.call(blockedDates, iso) && !pendingAdd.includes(iso))
                         pendingAdd.push(iso);
                     cur.setDate(cur.getDate() + 1);
                 }

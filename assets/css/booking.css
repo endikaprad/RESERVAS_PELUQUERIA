@@ -314,19 +314,31 @@
     border-radius: 14px;
     font-size: 0.85rem;
     cursor: pointer;
-    transition: var(--transition);
+    transition: background 0.25s ease, border-color 0.25s ease, color 0.25s ease, transform 0.18s var(--spring), box-shadow 0.25s ease;
     border: 1px solid transparent;
+    will-change: transform;
 }
 
-.cal-cell:hover:not(.disabled):not(.empty) {
+.cal-cell:hover:not(.disabled):not(.empty):not(.selected) {
     border-color: var(--color-gold-dim);
     color: var(--color-gold);
+    transform: scale(1.08);
+}
+
+@keyframes calCellSelect {
+    0%   { transform: scale(1); box-shadow: 0 0 0 0 rgba(201,168,76,0); }
+    45%  { transform: scale(1.22); box-shadow: 0 0 0 8px rgba(201,168,76,0.22); }
+    72%  { transform: scale(0.92); }
+    88%  { transform: scale(1.04); }
+    100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(201,168,76,0); }
 }
 
 .cal-cell.selected {
     background: var(--color-gold);
     color: #000;
     font-weight: 500;
+    box-shadow: 0 4px 18px rgba(201,168,76,0.35);
+    animation: calCellSelect 0.45s var(--spring) both;
 }
 
 .cal-cell.today:not(.selected) {
@@ -351,6 +363,19 @@
     margin-bottom: 2.5rem;
 }
 
+@keyframes slotFadeUp {
+    from { opacity: 0; transform: translateY(10px) scale(0.92); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes slotSelectPop {
+    0%   { transform: scale(1); box-shadow: 0 0 0 0 rgba(201,168,76,0); }
+    40%  { transform: scale(1.12); box-shadow: 0 0 0 6px rgba(201,168,76,0.28); }
+    68%  { transform: scale(0.96); }
+    85%  { transform: scale(1.03); }
+    100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(201,168,76,0); }
+}
+
 .time-slot {
     background: var(--color-surface);
     border: 1px solid var(--color-border);
@@ -359,19 +384,28 @@
     text-align: center;
     font-size: 0.825rem;
     cursor: pointer;
-    transition: var(--transition);
+    transition: background 0.22s ease, border-color 0.22s ease, color 0.22s ease, transform 0.18s var(--spring), box-shadow 0.22s ease;
+    will-change: transform;
 }
 
-.time-slot:hover:not(.taken):not(.past) {
+.time-slot.slot-in {
+    animation: slotFadeUp 0.32s var(--spring-smooth) both;
+}
+
+.time-slot:hover:not(.taken):not(.past):not(.selected) {
     border-color: var(--color-gold-dim);
     color: var(--color-gold);
+    transform: translateY(-2px) scale(1.04);
+    box-shadow: 0 4px 12px rgba(201,168,76,0.12);
 }
 
 .time-slot.selected {
     border-color: var(--color-gold);
-    background: rgba(201, 168, 76, 0.08);
+    background: rgba(201, 168, 76, 0.1);
     color: var(--color-gold);
     font-weight: 500;
+    box-shadow: 0 2px 14px rgba(201,168,76,0.28);
+    animation: slotFadeUp 0.32s var(--spring-smooth) both, slotSelectPop 0.44s var(--spring) both;
 }
 
 .time-slot.taken {
