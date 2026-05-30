@@ -4854,9 +4854,11 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
 <body>
 
     <div class="admin-header">
-        <div class="admin-brand">Prado <span>Barber</span> · Admin</div>
+        <div style="display:flex;align-items:center;gap:.8rem;">
+            <a href="../index.html" class="home-btn" title="Ir a la web principal"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M3 12L12 3l9 9" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 10v9a1 1 0 001 1h4v-4h4v4h4a1 1 0 001-1v-9" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+            <div class="admin-brand">Prado <span>Barber</span> · Admin</div>
+        </div>
         <div class="header-actions">
-            <a href="../index.php" class="home-btn" title="Ir a la web principal"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M3 12L12 3l9 9" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 10v9a1 1 0 001 1h4v-4h4v4h4a1 1 0 001-1v-9" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
             <button class="stats-trigger-btn" onclick="openStats()" title="Estadísticas"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="12" width="4" height="8" rx="1.5" fill="white" opacity="0.9"/><rect x="10" y="7" width="4" height="13" rx="1.5" fill="white"/><rect x="17" y="4" width="4" height="16" rx="1.5" fill="white" opacity="0.75"/></svg></button>
             <button class="settings-btn" onclick="openCfg()" title="Configuración">⚙</button>
             <form method="POST" style="margin:0;">

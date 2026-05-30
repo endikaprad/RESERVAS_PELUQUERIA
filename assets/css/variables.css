@@ -1,14 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=DM+Sans:wght@300;400;500&display=swap');
 
-/* === SCROLLBAR === */
-::-webkit-scrollbar { width: 8px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: transparent; border-radius: 4px; transition: background 0.3s; }
-body.is-scrolling::-webkit-scrollbar-thumb { background: #d42b2b; }
-body.is-scrolling::-webkit-scrollbar-thumb:hover { background: #a81e1e; }
-* { scrollbar-width: thin; scrollbar-color: transparent transparent; }
-body.is-scrolling { scrollbar-color: #d42b2b transparent; }
-
 :root {
     /* === DARK BARBER PALETTE === */
     --color-bg:       #09080f;

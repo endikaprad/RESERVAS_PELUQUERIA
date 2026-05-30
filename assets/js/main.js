@@ -169,14 +169,6 @@ document.addEventListener('DOMContentLoaded', loadNextAvailable);
 
 window.showToast = showToast;
 
-// ===== SCROLLBAR VISIBLE SOLO AL HACER SCROLL =====
-let scrollHideTimer;
-window.addEventListener('scroll', () => {
-    document.body.classList.add('is-scrolling');
-    clearTimeout(scrollHideTimer);
-    scrollHideTimer = setTimeout(() => document.body.classList.remove('is-scrolling'), 800);
-}, { passive: true });
-
 // ===== SHIMMER RIPPLE ON CLICK =====
 function initMagneticButtons() {
     document.querySelectorAll('.btn-primary, .btn-blue, .nav-cta').forEach(btn => {

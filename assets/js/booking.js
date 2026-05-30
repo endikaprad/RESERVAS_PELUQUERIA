@@ -672,20 +672,19 @@ function renderTimeSlots() {
     const isToday     = booking.date && booking.date.toDateString() === now.toDateString();
     const currentHHMM = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
     wrap.innerHTML = TIME_SLOTS
-        .map((t, idx) => {
+        .map(t => {
             const taken    = takenSlots.includes(t);
             const pastTime = isToday && t <= currentHHMM;
             const selected = booking.time === t;
 
-            let cls = 'time-slot slot-in';
+            let cls = 'time-slot';
             if (taken)    cls += ' taken';
             else if (pastTime) cls += ' past';
             if (selected) cls += ' selected';
 
             const disabled = taken || pastTime;
-            const onclick  = disabled ? '' : `onclick="selectTime('${t}')"`;
-            const delay    = `animation-delay:${Math.min(idx, 14) * 32}ms`;
-            return `<div class="${cls}" style="${delay}" ${onclick}>${t}</div>`;
+            const onclick = disabled ? '' : `onclick="selectTime('${t}')"`;
+            return `<div class="${cls}" ${onclick}>${t}</div>`;
         }).join('');
 
     const hayOcupados = TIME_SLOTS.some(t => takenSlots.includes(t));
