@@ -535,6 +535,20 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
             border: 1px solid #252530;
             border-radius: 12px;
             padding: 1rem 1.1rem;
+            transition: box-shadow .25s, transform .25s cubic-bezier(.16,1,.3,1), border-color .25s;
+        }
+
+        .stat-card:has(.stat-value:not(.gold):not(.orange)):hover {
+            transform: translateY(-2px);
+            border-color: rgba(212,43,43,.5);
+        }
+        .stat-card:has(.stat-value.gold):hover {
+            transform: translateY(-2px);
+            border-color: rgba(201,168,76,.5);
+        }
+        .stat-card:has(.stat-value.orange):hover {
+            transform: translateY(-2px);
+            border-color: rgba(245,158,11,.5);
         }
 
         .stat-label {
@@ -2061,12 +2075,12 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
             pointer-events: none;
             transition: opacity .45s cubic-bezier(.16, 1, .3, 1), transform .45s cubic-bezier(.16, 1, .3, 1);
             scrollbar-width: thin;
-            scrollbar-color: var(--blue-mid) var(--color-bg);
+            scrollbar-color: #2550a0 #09080f;
         }
         .stats-panel::-webkit-scrollbar { width: 6px; }
-        .stats-panel::-webkit-scrollbar-track { background: var(--color-bg); }
-        .stats-panel::-webkit-scrollbar-thumb { background: var(--blue-mid); border-radius: 3px; }
-        .stats-panel::-webkit-scrollbar-thumb:hover { background: var(--blue); }
+        .stats-panel::-webkit-scrollbar-track { background: #09080f; }
+        .stats-panel::-webkit-scrollbar-thumb { background: #2550a0 !important; border-radius: 3px; }
+        .stats-panel::-webkit-scrollbar-thumb:hover { background: #1a3a6b !important; }
 
         .stats-panel.open {
             opacity: 1;
@@ -2372,9 +2386,10 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
         .kdm-bar-num {
             font-size: .72rem;
             font-weight: 600;
-            width: 36px;
+            min-width: 52px;
             text-align: right;
             flex-shrink: 0;
+            white-space: nowrap;
         }
 
         .kdm-list {
@@ -2463,7 +2478,6 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
         .kpi-card:hover {
             transform: translateY(-3px);
             border-color: var(--kpi-accent, #d42b2b);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, .35);
         }
 
         .kpi-label {
