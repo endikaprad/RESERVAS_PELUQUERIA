@@ -366,7 +366,7 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
 
         /* ── HEADER ── */
         .admin-header {
-            background: rgba(7,8,16,0.55);
+            background: rgb(7 8 16 / 49%);
             backdrop-filter: blur(18px) saturate(1.4);
             -webkit-backdrop-filter: blur(18px) saturate(1.4);
             border-bottom: 1px solid rgba(37,80,160,0.18);
@@ -2014,12 +2014,13 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
         .stats-overlay {
             position: fixed;
             inset: 0;
-            background: rgba(0, 0, 0, .9);
-            backdrop-filter: blur(12px);
+            background: rgba(7,8,16,0.72);
+            backdrop-filter: blur(24px) saturate(1.3);
+            -webkit-backdrop-filter: blur(24px) saturate(1.3);
             z-index: 1100;
             opacity: 0;
             pointer-events: none;
-            transition: opacity .4s ease;
+            transition: opacity .4s cubic-bezier(.16,1,.3,1);
         }
 
         .stats-overlay.open {
