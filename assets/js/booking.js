@@ -744,12 +744,13 @@ async function calNav(dir) {
         if (!sameMonth) { booking.date = null; booking.time = null; renderTimeSlots(); }
     }
 
-    // Clear old content immediately so stale month doesn't show during fetch
+    // Hide old content but keep layout so slots below don't jump
     if (grid) {
         grid.classList.remove('cal-slide-out-left', 'cal-slide-out-right');
-        grid.innerHTML = '';
+        grid.style.opacity = '0';
     }
     await renderCalendar();
+    if (grid) grid.style.opacity = '';
 
     if (grid) {
         void grid.offsetWidth;

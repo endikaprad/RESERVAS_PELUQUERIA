@@ -266,6 +266,10 @@ try {
     $rawDow = $stmt->fetchAll();
     $dowMap = [];
     foreach ($rawDow as $r) $dowMap[$r['dow']] = (int)$r['total'];
+    // horario_dias_abiertos usa ISO (1=Lun…7=Dom); DAYOFWEEK MySQL: 1=Dom,2=Lun…7=Sáb
+    $horCfg      = getHorarioCfg($db);
+    $diasAbiertos = array_map('intval', explode(',', $horCfg['horario_dias_abiertos']));
+    $abreDomingo  = in_array(7, $diasAbiertos, true); // ISO 7 = domingo
     $diasSemana = [
         ['label' => 'Lun', 'count' => $dowMap[2] ?? 0],
         ['label' => 'Mar', 'count' => $dowMap[3] ?? 0],
@@ -274,6 +278,9 @@ try {
         ['label' => 'Vie', 'count' => $dowMap[6] ?? 0],
         ['label' => 'Sáb', 'count' => $dowMap[7] ?? 0],
     ];
+    if ($abreDomingo) {
+        $diasSemana[] = ['label' => 'Dom', 'count' => $dowMap[1] ?? 0];
+    }
 
     // ── 8. Franjas horarias más populares ────────────────────
     $stmt = $db->query("

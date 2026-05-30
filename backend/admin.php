@@ -2307,6 +2307,8 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
         .kdm-cell {
             padding: 1.1rem 1.4rem;
             border-right: 1px solid #1e1e2c;
+            border-radius: 10px;
+            transition: box-shadow 0.2s;
         }
         .kdm-cell:last-child,
         .kdm-cell:nth-child(2n) { border-right: none; }
@@ -6439,7 +6441,7 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
                 let cellsHtml = '';
                 if (cfg.cells) {
                     cellsHtml = `<div class="kdm-grid">` + cfg.cells.map(c =>
-                        `<div class="kdm-cell">
+                        `<div class="kdm-cell" style="box-shadow:0 4px 18px 0 ${c.color}33, 0 1px 4px 0 ${c.color}22; border: 1px solid ${c.color}28;">
                             <div class="kdm-cell-label">${c.label}</div>
                             <div class="kdm-cell-value" style="color:${c.color};">${c.value}</div>
                         </div>`
@@ -6607,12 +6609,14 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
                 function seg(value, color, offset, delay) {
                     if (!value || total === 0) return '';
                     const dash = (value / total) * circ;
+                    const label = color==='#22c55e'?'Aceptadas':color==='#f59e0b'?'Pendientes':color==='#d42b2b'?'Denegadas':'Canceladas';
                     return `<circle class="conv-prog-seg" cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${color}" stroke-width="${strokeW}" stroke-linecap="butt"
               stroke-dasharray="${dash.toFixed(2)} ${circ.toFixed(2)}"
               stroke-dashoffset="${(-offset).toFixed(2)}"
               transform="rotate(-90 ${cx} ${cy})"
-              style="transition:opacity .6s ease ${delay}s;"
-              onmouseenter="showTip(event,'','${value} ${color==='#22c55e'?'aceptadas':color==='#f59e0b'?'pendientes':color==='#d42b2b'?'denegadas':'canceladas'}')"
+              pointer-events="visibleStroke"
+              style="transition:opacity .6s ease ${delay}s;cursor:pointer;"
+              onmouseenter="showTip(event,'','${value} ${label}')"
               onmouseleave="hideTip()"/>`;
                 }
 
@@ -6640,7 +6644,7 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
             <div class="donut-svg-wrap">${svgHtml}</div>
             <div class="donut-legend">
               ${donutLegendItem(aceptadas,'Aceptadas','#22c55e')}
-              ${donutLegendItem(pendientes,'Pendientes','#f59e0b')}
+              ${donutLegendItem(Math.max(canceladas,0),'Canceladas','#6b7280')}
               ${donutLegendItem(denegadas,'Denegadas','#f87171')}
               ${donutLegendItem(total,'Total','#f0ece3')}
             </div>
@@ -6749,14 +6753,20 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
                     return html;
                 }
 
-                function renderHeatmapContent() {
+                function renderHeatmapContent(dir) {
                     const [m1, m2] = getMonthRange(hmOffset);
-                    const isFuture = hmOffset > 0;
                     // No permitir navegar al futuro más allá del mes actual
                     document.getElementById('hm-btn-next').style.opacity = hmOffset >= 0 ? '0.3' : '1';
                     document.getElementById('hm-btn-next').style.pointerEvents = hmOffset >= 0 ? 'none' : 'auto';
 
-                    document.getElementById('hm-calendar').innerHTML = renderMonth(m1) + renderMonth(m2);
+                    const cal = document.getElementById('hm-calendar');
+                    cal.classList.remove('anim-left', 'anim-right');
+                    cal.innerHTML = renderMonth(m1) + renderMonth(m2);
+                    if (dir) {
+                        // forzar reflow para que la animación arranque de nuevo
+                        void cal.offsetWidth;
+                        cal.classList.add(dir === 'prev' ? 'anim-left' : 'anim-right');
+                    }
                 }
 
                 // Stats
@@ -6784,6 +6794,13 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
         .hm3-c{aspect-ratio:1;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:9px;position:relative;cursor:default;}
         .hm3-c:hover .hm3-tip{display:block;}
         .hm3-tip{display:none;position:absolute;bottom:calc(100% + 4px);left:50%;transform:translateX(-50%);background:#1c1c26;border:1px solid #2f2f3c;border-radius:5px;padding:3px 8px;font-size:10px;color:#f0ece3;white-space:nowrap;z-index:20;pointer-events:none;}
+        .hm3-calendar{overflow:hidden;}
+        @keyframes hm3SlideLeft{from{opacity:0;transform:translateX(22px)}to{opacity:1;transform:translateX(0)}}
+        @keyframes hm3SlideRight{from{opacity:0;transform:translateX(-22px)}to{opacity:1;transform:translateX(0)}}
+        .hm3-calendar.anim-left .hm3-month{animation:hm3SlideLeft .32s cubic-bezier(.22,.68,0,1.2) both;}
+        .hm3-calendar.anim-left .hm3-month:nth-child(2){animation-delay:.06s;}
+        .hm3-calendar.anim-right .hm3-month{animation:hm3SlideRight .32s cubic-bezier(.22,.68,0,1.2) both;}
+        .hm3-calendar.anim-right .hm3-month:nth-child(2){animation-delay:.06s;}
         .hm3-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:14px;}
         .hm3-stat{background:#0d0d14;border:1px solid #1c1c26;border-radius:8px;padding:10px;text-align:center;}
         .hm3-snum{font-family:'Playfair Display',serif;font-size:1.25rem;font-weight:700;line-height:1;}
@@ -6830,12 +6847,12 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
                     renderHeatmapContent();
                     document.getElementById('hm-btn-prev').addEventListener('click', () => {
                         hmOffset--;
-                        renderHeatmapContent();
+                        renderHeatmapContent('prev');
                     });
                     document.getElementById('hm-btn-next').addEventListener('click', () => {
                         if (hmOffset >= 0) return;
                         hmOffset++;
-                        renderHeatmapContent();
+                        renderHeatmapContent('next');
                     });
                 }, 0);
 
