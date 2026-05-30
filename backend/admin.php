@@ -70,6 +70,40 @@ if (!isset($_SESSION['admin'])) {
                 padding: 1rem;
             }
 
+            /* Admin login bg: cool navy control-room atmosphere */
+            body::before {
+                content: '';
+                position: fixed;
+                inset: 0;
+                z-index: 0;
+                background:
+                    radial-gradient(ellipse 75% 60% at 50% 0%,   rgba(20,45,100,0.40) 0%, transparent 65%),
+                    radial-gradient(ellipse 55% 45% at 0%  100%,  rgba(15,35,85,0.30)  0%, transparent 60%),
+                    radial-gradient(ellipse 45% 40% at 100% 80%,  rgba(25,55,120,0.22) 0%, transparent 58%),
+                    #070810;
+                pointer-events: none;
+            }
+
+            /* Subtle tech grid overlay */
+            body::after {
+                content: '';
+                position: fixed;
+                inset: 0;
+                z-index: 0;
+                background-image:
+                    linear-gradient(rgba(37,80,160,0.06) 1px, transparent 1px),
+                    linear-gradient(90deg, rgba(37,80,160,0.06) 1px, transparent 1px);
+                background-size: 48px 48px;
+                mask-image: radial-gradient(ellipse 90% 90% at 50% 50%, black 0%, transparent 80%);
+                -webkit-mask-image: radial-gradient(ellipse 90% 90% at 50% 50%, black 0%, transparent 80%);
+                pointer-events: none;
+            }
+
+            .login-box {
+                position: relative;
+                z-index: 1;
+            }
+
             .login-box {
                 background: #111119;
                 border: 1px solid #252530;
@@ -294,6 +328,35 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
             color: #f0ece3;
             font-family: 'DM Sans', sans-serif;
             min-height: 100vh;
+        }
+
+        /* Admin panel bg: cool navy control-room atmosphere */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            z-index: -2;
+            background:
+                radial-gradient(ellipse 75% 60% at 50% 0%,   rgba(20,45,100,0.40) 0%, transparent 65%),
+                radial-gradient(ellipse 55% 45% at 0%  100%,  rgba(15,35,85,0.30)  0%, transparent 60%),
+                radial-gradient(ellipse 45% 40% at 100% 80%,  rgba(25,55,120,0.22) 0%, transparent 58%),
+                #070810;
+            pointer-events: none;
+        }
+
+        /* Subtle tech grid overlay */
+        body::after {
+            content: '';
+            position: fixed;
+            inset: 0;
+            z-index: -1;
+            background-image:
+                linear-gradient(rgba(37,80,160,0.06) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(37,80,160,0.06) 1px, transparent 1px);
+            background-size: 48px 48px;
+            mask-image: radial-gradient(ellipse 90% 90% at 50% 50%, black 0%, transparent 80%);
+            -webkit-mask-image: radial-gradient(ellipse 90% 90% at 50% 50%, black 0%, transparent 80%);
+            pointer-events: none;
         }
 
         a {
