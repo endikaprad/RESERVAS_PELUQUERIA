@@ -728,16 +728,19 @@ async function calNav(dir) {
         if (!sameMonth) { booking.date = null; booking.time = null; renderTimeSlots(); }
     }
 
+    // Fetch + render BEFORE starting slide-in so content is ready when animation plays
+    if (grid) grid.classList.remove('cal-slide-out-left', 'cal-slide-out-right');
+    await renderCalendar();
+
     if (grid) {
-        grid.classList.remove('cal-slide-out-left', 'cal-slide-out-right');
+        void grid.offsetWidth; // force reflow to restart animation
         grid.classList.add(dir > 0 ? 'cal-slide-in-right' : 'cal-slide-in-left');
     }
     if (title) {
         title.classList.remove('cal-fade-out');
+        void title.offsetWidth;
         title.classList.add('cal-fade-in');
     }
-
-    await renderCalendar();
 
     // Clean up animation classes after they finish
     setTimeout(() => {

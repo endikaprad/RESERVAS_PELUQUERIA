@@ -5705,7 +5705,7 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
                 const cur = new Date(start + 'T00:00:00');
                 const fin = new Date(end + 'T00:00:00');
                 while (cur <= fin) {
-                    const iso = cur.toISOString().slice(0, 10);
+                    const iso = isoDate(cur.getFullYear(), cur.getMonth(), cur.getDate());
                     if (cur.getDay() !== 0 && !Object.prototype.hasOwnProperty.call(blockedDates, iso) && !pendingAdd.includes(iso))
                         pendingAdd.push(iso);
                     cur.setDate(cur.getDate() + 1);
