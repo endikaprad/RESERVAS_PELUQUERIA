@@ -488,11 +488,21 @@ function renderServices() {
         grid.innerHTML = '<div class="grid-error">No se pudieron cargar los servicios. Recarga la página.</div>';
         return;
     }
-    grid.innerHTML = SERVICES.map(s => `
+    grid.innerHTML = SERVICES.map((s, i) => `
         <div class="service-option ${booking.service?.id === s.id ? 'selected' : ''}" onclick="selectService('${s.id}')">
-          <div class="svc-name">${s.name}</div>
-          <div class="svc-meta">${s.duration}</div>
-          <div class="svc-price">${s.price} €</div>
+          <span class="svc-index">0${i + 1}</span>
+          <div class="svc-info">
+            <div class="svc-name">${s.name}</div>
+            <div class="svc-meta">${s.duration}</div>
+          </div>
+          <div class="svc-right">
+            <div class="svc-price">${s.price} €</div>
+            <div class="svc-check">
+              <svg width="11" height="9" viewBox="0 0 11 9" fill="none">
+                <path d="M1 4.5L4 7.5L10 1" stroke="#09080f" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+          </div>
         </div>`).join('');
 }
 
@@ -734,8 +744,11 @@ async function calNav(dir) {
         if (!sameMonth) { booking.date = null; booking.time = null; renderTimeSlots(); }
     }
 
-    // Fetch + render BEFORE starting slide-in so content is ready when animation plays
-    if (grid) grid.classList.remove('cal-slide-out-left', 'cal-slide-out-right');
+    // Clear old content immediately so stale month doesn't show during fetch
+    if (grid) {
+        grid.classList.remove('cal-slide-out-left', 'cal-slide-out-right');
+        grid.innerHTML = '';
+    }
     await renderCalendar();
 
     if (grid) {
