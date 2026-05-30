@@ -254,7 +254,7 @@ if ($filtroFecha === 'hoy') {
     $params[] = date('Y-m-d', strtotime('+1 day'));
 } elseif ($filtroFecha === 'semana') {
     $where .= ' AND r.fecha BETWEEN ? AND ?';
-    $params[] = $hoy;
+    $params[] = date('Y-m-d', strtotime('+1 day'));
     $params[] = date('Y-m-d', strtotime('+7 days'));
 } elseif ($filtroFecha === 'pasadas') {
     $where .= ' AND r.fecha < ?';
@@ -6481,7 +6481,7 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
                 let cellsHtml = '';
                 if (cfg.cells) {
                     cellsHtml = `<div class="kdm-grid">` + cfg.cells.map(c =>
-                        `<div class="kdm-cell" style="box-shadow:0 4px 18px 0 ${c.color}33, 0 1px 4px 0 ${c.color}22; border: 1px solid ${c.color}28;">
+                        `<div class="kdm-cell" style="border: 1px solid ${c.color}28;">
                             <div class="kdm-cell-label">${c.label}</div>
                             <div class="kdm-cell-value" style="color:${c.color};">${c.value}</div>
                         </div>`
@@ -6538,6 +6538,7 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
                     </div>`;
 
                 document.body.appendChild(overlay);
+                overlay.querySelector('.kpi-detail-modal').style.boxShadow = `0 32px 80px rgba(0,0,0,.6), 0 0 0 1px rgba(255,255,255,.04), 0 0 60px 0 ${cfg.color}40, 0 0 20px 0 ${cfg.color}28`;
                 document.body.style.overflow = 'hidden';
 
                 const closeModal = () => {
