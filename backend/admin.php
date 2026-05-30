@@ -366,8 +366,10 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
 
         /* ── HEADER ── */
         .admin-header {
-            background: #111119;
-            border-bottom: 1px solid #252530;
+            background: rgba(7,8,16,0.55);
+            backdrop-filter: blur(18px) saturate(1.4);
+            -webkit-backdrop-filter: blur(18px) saturate(1.4);
+            border-bottom: 1px solid rgba(37,80,160,0.18);
             padding: .9rem 1.25rem;
             display: flex;
             align-items: center;
