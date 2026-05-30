@@ -267,10 +267,7 @@ try {
     $rawDow = $stmt->fetchAll();
     $dowMap = [];
     foreach ($rawDow as $r) $dowMap[$r['dow']] = (int)$r['total'];
-    // horario_dias_abiertos usa ISO (1=Lun…7=Dom); DAYOFWEEK MySQL: 1=Dom,2=Lun…7=Sáb
-    $horCfg      = getHorarioCfg($db);
-    $diasAbiertos = array_map('intval', explode(',', $horCfg['horario_dias_abiertos']));
-    $abreDomingo  = in_array(7, $diasAbiertos, true); // ISO 7 = domingo
+    // DAYOFWEEK MySQL: 1=Dom, 2=Lun … 7=Sáb
     $diasSemana = [
         ['label' => 'Lun', 'count' => $dowMap[2] ?? 0],
         ['label' => 'Mar', 'count' => $dowMap[3] ?? 0],
@@ -278,10 +275,8 @@ try {
         ['label' => 'Jue', 'count' => $dowMap[5] ?? 0],
         ['label' => 'Vie', 'count' => $dowMap[6] ?? 0],
         ['label' => 'Sáb', 'count' => $dowMap[7] ?? 0],
+        ['label' => 'Dom', 'count' => $dowMap[1] ?? 0],
     ];
-    if ($abreDomingo) {
-        $diasSemana[] = ['label' => 'Dom', 'count' => $dowMap[1] ?? 0];
-    }
 
     // ── 8. Franjas horarias más populares ────────────────────
     $stmt = $db->query("
@@ -313,11 +308,36 @@ try {
     ");
     $heatmap = $stmt->fetchAll();
 
+    // ── 11. Evolución horaria (solo para 'hoy') ───────────────
+    $evolucionHoras = [];
+    if ($periodo === 'hoy') {
+        $stmt = $db->query("
+            SELECT LPAD(HOUR(hora), 2, '0') AS hora_key,
+                   COUNT(*) AS citas,
+                   SUM(CASE WHEN r.estado='aceptada' THEN s.precio ELSE 0 END) AS ingresos
+            FROM reservas r JOIN servicios s ON s.id=r.servicio_id
+            WHERE r.fecha = " . $db->quote($hoy) . "
+            GROUP BY hora_key ORDER BY hora_key ASC
+        ");
+        $rawH = $stmt->fetchAll();
+        $mapaH = [];
+        foreach ($rawH as $rh) $mapaH[$rh['hora_key']] = $rh;
+        foreach (['09','10','11','12','13','16','17','18','19'] as $h) {
+            $found = $mapaH[$h] ?? null;
+            $evolucionHoras[] = [
+                'hora'     => $h . ':00',
+                'citas'    => $found ? (int)$found['citas']    : 0,
+                'ingresos' => $found ? (float)$found['ingresos'] : 0.0,
+            ];
+        }
+    }
+
     ok([
         'kpi'              => $kpi,
         'hoy'              => $hoyStats,
         'mes'              => $mesStats,
         'ingresos_mensual' => $mesesCompletos,
+        'evolucion_horas'  => $evolucionHoras,
         'servicios_top'    => $serviciosTop,
         'barberos'         => $barberoStats,
         'dias_semana'      => $diasSemana,

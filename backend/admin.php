@@ -2060,7 +2060,13 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
             transform: translateY(28px);
             pointer-events: none;
             transition: opacity .45s cubic-bezier(.16, 1, .3, 1), transform .45s cubic-bezier(.16, 1, .3, 1);
+            scrollbar-width: thin;
+            scrollbar-color: var(--blue-mid) var(--color-bg);
         }
+        .stats-panel::-webkit-scrollbar { width: 6px; }
+        .stats-panel::-webkit-scrollbar-track { background: var(--color-bg); }
+        .stats-panel::-webkit-scrollbar-thumb { background: var(--blue-mid); border-radius: 3px; }
+        .stats-panel::-webkit-scrollbar-thumb:hover { background: var(--blue); }
 
         .stats-panel.open {
             opacity: 1;
@@ -2528,6 +2534,20 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
             grid-template-columns: 1fr 1fr 1fr;
             gap: 1rem;
         }
+
+        .stats-grid-barberos {
+            display: grid;
+            grid-template-columns: repeat(var(--barb-cols, 3), 1fr);
+            gap: 1rem;
+            justify-items: stretch;
+        }
+
+        .stats-grid-barberos.barb-count-1 {
+            max-width: 380px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
 
         .stats-card {
             background: #111119;
@@ -3151,10 +3171,17 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
             animation: statsNumPop .5s cubic-bezier(.34, 1.56, .64, 1) both;
         }
 
+        @media(max-width:900px) and (min-width:701px) {
+            .stats-grid-barberos {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
         @media(max-width:700px) {
 
             .stats-grid-2,
-            .stats-grid-3 {
+            .stats-grid-3,
+            .stats-grid-barberos {
                 grid-template-columns: 1fr;
             }
 
@@ -6082,34 +6109,13 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
                 const barbs = d.barberos || [];
                 const svcs = d.servicios_top || [];
                 const meses = d.ingresos_mensual || [];
+                const horasHoy = d.evolucion_horas || [];
                 const dow = d.dias_semana || [];
                 const horas = d.horas_top || [];
                 const hmap = d.heatmap_30d || [];
                 const tasa = d.tasa_conversion != null ? d.tasa_conversion : 0;
 
-                const BASE = [{
-                        id: 'endika',
-                        nombre: 'Endika Prado',
-                        iniciales: 'EP'
-                    },
-                    {
-                        id: 'marcos',
-                        nombre: 'Marcos Vila',
-                        iniciales: 'MV'
-                    },
-                    {
-                        id: 'alex',
-                        nombre: 'Alex Ramos',
-                        iniciales: 'AR'
-                    },
-                ];
-                const barbsAll = BASE.map(base => barbs.find(b => b.iniciales === base.iniciales) || {
-                    ...base,
-                    total_citas: 0,
-                    ingresos: 0,
-                    aceptadas: 0,
-                    pendientes: 0
-                });
+                const barbsAll = barbs;
                 const maxBarbIng = Math.max(...barbsAll.map(b => +b.ingresos), 1);
                 const maxHora = Math.max(...horas.map(h => +h.total), 1);
 
@@ -6127,9 +6133,16 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
                 html += kpiCard('Reservas totales', kpi.total_reservas || 0, '#d42b2b', iconReservas, '', 'reservas_totales');
                 html += kpiCard('Ingresos totales', kpi.ingresos_totales || 0, '#c9a84c', iconIngTot, ' €', 'ingresos_totales');
                 html += kpiCard('Clientes únicos', kpi.clientes_unicos || 0, '#2550a0', iconClientes, '', 'clientes_unicos');
-                html += kpiCard('Citas hoy', hoy.citas_hoy || 0, '#22c55e', iconCitasHoy, '', 'citas_hoy');
-                html += kpiCard('Ingresos hoy', hoy.ingresos_hoy || 0, '#f59e0b', iconIngresosHoy, ' €', 'ingresos_hoy');
-                html += kpiCard('Citas este mes', mes.citas_mes || 0, '#a78bfa', iconCitesMes, '', 'citas_mes');
+                if (periodo === 'todo') {
+                    html += kpiCard('Citas hoy', hoy.citas_hoy || 0, '#22c55e', iconCitasHoy, '', 'citas_hoy');
+                    html += kpiCard('Ingresos hoy', hoy.ingresos_hoy || 0, '#f59e0b', iconIngresosHoy, ' €', 'ingresos_hoy');
+                    html += kpiCard('Citas este mes', mes.citas_mes || 0, '#a78bfa', iconCitesMes, '', 'citas_mes');
+                } else {
+                    const _ticketMedio = +(kpi.aceptadas || 0) > 0 ? Math.round(+(kpi.ingresos_totales || 0) / +(kpi.aceptadas)) : 0;
+                    html += kpiCard('Aceptadas', kpi.aceptadas || 0, '#22c55e', iconCitasHoy, '', '');
+                    html += kpiCard('Pendientes', kpi.pendientes || 0, '#f59e0b', iconIngresosHoy, '', '');
+                    html += kpiCard('Ticket medio', _ticketMedio, '#a78bfa', iconCitesMes, ' €', '');
+                }
                 html += '</div>';
 
                 // Barra de estado de reservas — contextualizada bajo el grupo de KPIs
@@ -6187,19 +6200,32 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
                 const periodoLbl = PERIODO_LABELS[periodo] || '';
                 const periodoBadge = `<span class="period-badge">${periodoLbl}</span>`;
 
-                // Monthly charts
-                html += `<div class="stats-section"><div class="stats-section-label">Evolución — ingresos &amp; citas ${periodoBadge}</div>`;
-                html += '<div class="stats-grid-2">';
-                html += '<div class="stats-card" style="padding-bottom:.5rem"><div class="stats-card-title">Ingresos (€)</div>' + buildLineChart(meses, 'ingresos', '€') + '</div>';
-                html += '<div class="stats-card"><div class="stats-card-title">Citas</div>' + buildBarChart(meses.map(m => ({
-                    label: m.label,
-                    value: m.citas,
-                    tip: m.citas + ' citas — ' + m.label
-                })), '#2550a0') + '</div>';
-                html += '</div></div>';
+                // Evolution charts — hourly for 'hoy', standard for other periods
+                if (periodo === 'hoy') {
+                    html += `<div class="stats-section"><div class="stats-section-label">Actividad por franja horaria ${periodoBadge}</div>`;
+                    html += '<div class="stats-grid-2">';
+                    html += '<div class="stats-card" style="padding-bottom:.5rem"><div class="stats-card-title">Ingresos por hora (€)</div>' + buildBarChartTall(horasHoy.map(h => ({label: h.hora, value: h.ingresos, tip: h.ingresos.toFixed(0) + '€ — ' + h.hora})), '#c9a84c') + '</div>';
+                    html += '<div class="stats-card"><div class="stats-card-title">Citas por hora</div>' + buildBarChartTall(horasHoy.map(h => ({label: h.hora, value: h.citas, tip: h.citas + ' cita' + (h.citas !== 1 ? 's' : '') + ' — ' + h.hora})), '#2550a0') + '</div>';
+                    html += '</div></div>';
+                } else {
+                    html += `<div class="stats-section"><div class="stats-section-label">Evolución — ingresos &amp; citas ${periodoBadge}</div>`;
+                    html += '<div class="stats-grid-2">';
+                    html += '<div class="stats-card" style="padding-bottom:.5rem"><div class="stats-card-title">Ingresos (€)</div>' + buildLineChart(meses, 'ingresos', '€') + '</div>';
+                    html += '<div class="stats-card"><div class="stats-card-title">Citas</div>' + buildBarChart(meses.map(m => ({
+                        label: m.label,
+                        value: m.citas,
+                        tip: m.citas + ' citas — ' + m.label
+                    })), '#2550a0') + '</div>';
+                    html += '</div></div>';
+                }
 
-                // Barbers
-                html += `<div class="stats-section"><div class="stats-section-label">Rendimiento por barbero ${periodoBadge}</div><div class="stats-grid-3">`;
+                // Barbers — grid dinámico según número de barberos
+                const barbCount = barbsAll.length;
+                // 1→1col, 2/4→2cols, 3/5/6+→3cols (evita huérfanos desencuadrados)
+                const barbCols = barbCount <= 1 ? 1 : barbCount === 2 || barbCount === 4 ? 2 : 3;
+                const barbGridClass = `stats-grid-barberos barb-count-${barbCount}`;
+                const barbGridStyle = `--barb-cols:${barbCols};`;
+                html += `<div class="stats-section"><div class="stats-section-label">Rendimiento por barbero ${periodoBadge}</div><div class="${barbGridClass}" style="${barbGridStyle}">`;
                 barbsAll.forEach((b, i) => {
                     html += barberCard(b, maxBarbIng, i);
                 });
@@ -7308,6 +7334,7 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
 
             const SH_API = './api/blocked-slots.php';
             const SLOTS_API = './api/slots.php';
+            const SH_BARBEROS = <?= json_encode(array_column($barberos, 'id'), JSON_UNESCAPED_UNICODE) ?>;
 
 
             // Estado
@@ -7591,7 +7618,7 @@ $mesesES = ['', 'ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
 
             async function shLoadReservations() {
                 // Cargamos reservas de todos los barberos conocidos para marcar slots como reservados
-                const barberos = ['endika', 'marcos', 'alex'];
+                const barberos = SH_BARBEROS;
                 const promises = barberos.map(b =>
                     fetch(`${SLOTS_API}?fecha=${shFecha}&barbero=${b}`)
                     .then(r => r.json())

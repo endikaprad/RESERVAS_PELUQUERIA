@@ -28,7 +28,14 @@ try {
         "SELECT id, nombre, duracion, precio, categoria
          FROM servicios
          WHERE activo = 1
-         ORDER BY categoria, orden ASC"
+         ORDER BY
+           CASE categoria
+             WHEN 'cortes' THEN 1
+             WHEN 'barba'  THEN 2
+             WHEN 'packs'  THEN 3
+             ELSE 4
+           END,
+           orden ASC"
     );
     $servicios = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
